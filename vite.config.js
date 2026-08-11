@@ -11,6 +11,11 @@ export default (command, mode) => {
 	const env = loadEnv(mode, __dirname, 'SHOPRO_');
 	return {
 		envPrefix: "SHOPRO_",
+		resolve: {
+			alias: {
+				sheep: path.resolve(__dirname, './sheep'),
+			},
+		},
 		plugins: [
 			uni(),
 			// viteCompression({
