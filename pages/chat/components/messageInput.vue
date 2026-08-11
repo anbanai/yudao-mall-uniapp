@@ -54,9 +54,8 @@
     },
     set(newValue) {
       emits(`update:modelValue`, newValue);
-    }
+    },
   });
-
 
   // 打开工具菜单
   function onTools(mode) {

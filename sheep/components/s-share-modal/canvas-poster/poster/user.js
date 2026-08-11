@@ -9,7 +9,9 @@ const user = async (poster) => {
   return [
     {
       type: 'image',
-      src: formatImageUrlProtocol(sheep.$url.cdn(sheep.$store('app').platform.share.posterInfo.user_bg)),
+      src: formatImageUrlProtocol(
+        sheep.$url.cdn(sheep.$store('app').platform.share.posterInfo.user_bg),
+      ),
       css: {
         width,
         position: 'fixed',
@@ -29,7 +31,7 @@ const user = async (poster) => {
         fontFamily: 'sans-serif',
         position: 'fixed',
         top: width * 0.4,
-        left: (width-widthNickName) / 2,
+        left: (width - widthNickName) / 2,
       },
     },
     {

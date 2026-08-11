@@ -1,8 +1,11 @@
 <template>
   <view class="content-container">
-    <span v-for="(part, index) in formattedContent" :key="index"
-          @click="handleClick(part)"
-          :class="{'highlight-number': part.isNumber, 'phone-number': part.isPhone}">
+    <span
+      v-for="(part, index) in formattedContent"
+      :key="index"
+      @click="handleClick(part)"
+      :class="{ 'highlight-number': part.isNumber, 'phone-number': part.isPhone }"
+    >
       {{ part.text }}
     </span>
   </view>
@@ -14,8 +17,8 @@
     props: {
       content: {
         type: String,
-        required: true
-      }
+        required: true,
+      },
     },
     computed: {
       formattedContent() {
@@ -51,11 +54,11 @@
         }
 
         return result;
-      }
+      },
     },
     methods: {
       splitAndPush(str, isNumber = false, isPhone = false) {
-        return str.split('').map(char => ({ text: char, isNumber, isPhone }));
+        return str.split('').map((char) => ({ text: char, isNumber, isPhone }));
       },
       handleClick(part) {
         if (part.isPhone) {
@@ -63,8 +66,8 @@
         } else if (part.isNumber) {
           this.$emit('number-click', { number: part.text });
         }
-      }
-    }
+      },
+    },
   };
 </script>
 
@@ -75,7 +78,7 @@
   }
 
   .phone-number {
-    color: #007AFF;
+    color: #007aff;
     text-decoration: underline;
   }
 </style>

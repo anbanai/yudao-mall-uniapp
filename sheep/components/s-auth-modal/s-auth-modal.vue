@@ -93,7 +93,7 @@
         :class="{ shake: currentProtocol }"
       >
         <view class="agreement-title ss-m-b-20">请选择是否同意以下协议(请联网查看)：</view>
-        
+
         <view class="agreement-options-container">
           <!-- 同意选项 -->
           <view class="agreement-option ss-m-b-20">
@@ -112,7 +112,7 @@
               </view>
             </view>
           </view>
-          
+
           <!-- 拒绝选项 -->
           <view class="agreement-option">
             <view class="radio ss-flex ss-col-center" @tap="onRefuse">
@@ -162,7 +162,7 @@
   function onAgree() {
     state.protocol = true;
   }
-  
+
   // 拒绝协议
   function onRefuse() {
     state.protocol = false;
@@ -191,7 +191,7 @@
       setTimeout(() => {
         currentProtocol.value = false;
       }, 1000);
-      
+
       if (state.protocol === false) {
         sheep.$helper.toast('您已拒绝协议，无法继续登录');
       } else {
@@ -291,7 +291,7 @@
   .agreement-text {
     color: $dark-9;
   }
-  
+
   .agreement-title {
     font-size: 28rpx;
     color: $dark-9;
@@ -299,12 +299,12 @@
     width: 100%;
     padding-left: 60rpx;
   }
-  
+
   .agreement-options-container {
     width: 100%;
     padding-left: 100rpx;
   }
-  
+
   .agreement-option {
     width: 100%;
     display: flex;

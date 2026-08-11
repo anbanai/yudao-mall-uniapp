@@ -4,9 +4,11 @@
     <su-status-bar />
     <view
       class="ui-bar ss-flex ss-col-center ss-row-between"
-      :class="[{
-           'ss-p-x-20': sheep.$platform.provider !== 'alipay'
-      }]"
+      :class="[
+        {
+          'ss-p-x-20': sheep.$platform.provider !== 'alipay',
+        },
+      ]"
       :style="[{ height: sys_navBar - sys_statusBar + 'px' }]"
     >
       <!-- 左 -->

@@ -110,7 +110,7 @@
       return;
     }
     // 成功后，用户重新登录
-    showAuthModal('accountLogin')
+    showAuthModal('accountLogin');
   };
 </script>
 

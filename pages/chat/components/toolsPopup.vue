@@ -1,8 +1,5 @@
 <template>
-  <su-popup
-    :show="showTools"
-    @close="handleClose"
-  >
+  <su-popup :show="showTools" @close="handleClose">
     <view class="ss-modal-box ss-flex-col">
       <slot></slot>
       <view class="content ss-flex ss-flex-1">
@@ -20,7 +17,8 @@
             <swiper-item v-for="emoji in emojiPage" :key="emoji">
               <view class="ss-flex ss-flex-wrap">
                 <image
-                  v-for="item in emoji" :key="item"
+                  v-for="item in emoji"
+                  :key="item"
                   class="emoji-img"
                   :src="sheep.$url.cdn(`/static/img/chat/emoji/${item.file}`)"
                   @tap="onEmoji(item)"

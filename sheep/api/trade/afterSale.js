@@ -57,7 +57,7 @@ const AfterSaleApi = {
       method: 'PUT',
       data,
     });
-  }
+  },
 };
 
 export default AfterSaleApi;

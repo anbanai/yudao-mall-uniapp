@@ -63,7 +63,7 @@
   onMounted(async () => {
     let { code, data } = await BrokerageApi.getBrokerageUserSummary();
     if (code === 0) {
-      state.summary = data || {}
+      state.summary = data || {};
     }
   });
 </script>

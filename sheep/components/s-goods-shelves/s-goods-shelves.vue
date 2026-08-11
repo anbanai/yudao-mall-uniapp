@@ -94,7 +94,7 @@
    */
   import { onMounted, ref, computed } from 'vue';
   import sheep from '@/sheep';
-  import SpuApi from "@/sheep/api/product/spu";
+  import SpuApi from '@/sheep/api/product/spu';
 
   const props = defineProps({
     data: {

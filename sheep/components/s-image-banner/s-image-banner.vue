@@ -31,20 +31,20 @@
 
   function px2rpx(px) {
     //计算比例
-    let scale = uni.upx2px(100)/100;
-    return px/scale
+    let scale = uni.upx2px(100) / 100;
+    return px / scale;
   }
 
   const imgList = computed(() =>
-      props.data.items.map((item) => {
-        const src = item.type === 'img' ? item.imgUrl : item.videoUrl;
-        return {
-          ...item,
-          type: item.type === 'img' ? 'image' : 'video',
-          src: sheep.$url.cdn(src),
-          poster: sheep.$url.cdn(item.imgUrl),
-        };
-      }),
+    props.data.items.map((item) => {
+      const src = item.type === 'img' ? item.imgUrl : item.videoUrl;
+      return {
+        ...item,
+        type: item.type === 'img' ? 'image' : 'video',
+        src: sheep.$url.cdn(src),
+        poster: sheep.$url.cdn(item.imgUrl),
+      };
+    }),
   );
 </script>
 

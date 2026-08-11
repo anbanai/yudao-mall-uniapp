@@ -104,7 +104,7 @@
       // 控制徽标的位置，对象或者字符串形式，可以设置top和right属性
       badgeStyle: {
         type: Object,
-        default: ()=>{},
+        default: () => {},
       },
       isCenter: {
         type: Boolean,

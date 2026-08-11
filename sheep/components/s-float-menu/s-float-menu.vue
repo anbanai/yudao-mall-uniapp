@@ -27,8 +27,8 @@
     data: {
       type: Object,
       default() {},
-    }
-  })
+    },
+  });
 
   // 悬浮按钮配置： https://uniapp.dcloud.net.cn/component/uniui/uni-fab.html#fab-props
   const state = reactive({
@@ -46,7 +46,7 @@
   state.direction = props.data.direction;
   props.data?.list.forEach((item) => {
     // 按钮文字
-    const text = props.data?.showText ? item.text : ''
+    const text = props.data?.showText ? item.text : '';
     // 生成内容配置项
     state.content.push({ iconPath: sheep.$url.cdn(item.imgUrl), url: item.url, text });
     // 生成样式配置项

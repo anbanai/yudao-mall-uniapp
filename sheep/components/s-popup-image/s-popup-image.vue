@@ -34,12 +34,12 @@
     data: {
       type: Object,
       default() {},
-    }
-  })
+    },
+  });
 
   // const modalStore = sheep.$store('modal');
   const modalStore = JSON.parse(uni.getStorageSync('modal-store') || '{}');
-  console.log(modalStore)
+  console.log(modalStore);
   const advHistory = modalStore.advHistory || [];
   const currentIndex = ref(0);
   const popupList = computed(() => {

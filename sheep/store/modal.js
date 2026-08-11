@@ -12,7 +12,7 @@ const modal = defineStore('modal', {
       changeMobile: 0,
       resetPassword: 0,
       changePassword: 0,
-    }
+    },
   }),
   persist: {
     enabled: true,

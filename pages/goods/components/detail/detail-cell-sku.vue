@@ -15,15 +15,15 @@
       },
     },
     sku: {
-      type: Object
-    }
+      type: Object,
+    },
   });
   const value = computed(() => {
     if (!props.sku?.id) {
       return '请选择商品规格';
     }
     let str = '';
-    props.sku.properties.forEach(property => {
+    props.sku.properties.forEach((property) => {
       str += property.propertyName + ':' + property.valueName + ' ';
     });
     return str;

@@ -8,7 +8,9 @@ const goods = async (poster) => {
   return [
     {
       type: 'image',
-      src: formatImageUrlProtocol(sheep.$url.cdn(sheep.$store('app').platform.share.posterInfo.goods_bg)),
+      src: formatImageUrlProtocol(
+        sheep.$url.cdn(sheep.$store('app').platform.share.posterInfo.goods_bg),
+      ),
       css: {
         width,
         position: 'fixed',

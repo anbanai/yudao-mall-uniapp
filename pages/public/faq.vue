@@ -53,7 +53,7 @@
     if (true) {
       sheep.$router.go('/pages/public/richtext', {
         title: '常见问题',
-      })
+      });
       return;
     }
     getFaqList();

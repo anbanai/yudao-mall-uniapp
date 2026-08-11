@@ -16,7 +16,7 @@ const DiyApi = {
       url: '/promotion/diy-template/get',
       method: 'GET',
       params: {
-        id
+        id,
       },
       custom: {
         showError: false,
@@ -29,8 +29,8 @@ const DiyApi = {
       url: '/promotion/diy-page/get',
       method: 'GET',
       params: {
-        id
-      }
+        id,
+      },
     });
   },
 };

@@ -150,7 +150,8 @@
   });
 
   const computedQuery = () => {
-    uni.createSelectorQuery()
+    uni
+      .createSelectorQuery()
       .in(vm)
       .select(`#fixed-${uuid}`)
       .boundingClientRect((data) => {

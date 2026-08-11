@@ -5,7 +5,7 @@ const AreaApi = {
   getAreaTree: () => {
     return request({
       url: '/system/area/tree',
-      method: 'GET'
+      method: 'GET',
     });
   },
 };

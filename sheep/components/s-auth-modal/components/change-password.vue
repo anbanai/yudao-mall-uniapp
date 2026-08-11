@@ -53,9 +53,7 @@
       </uni-forms-item>
     </uni-forms>
 
-    <button class="ss-reset-button type-btn" @tap="closeAuthModal">
-      取消修改
-    </button>
+    <button class="ss-reset-button type-btn" @tap="closeAuthModal"> 取消修改 </button>
   </view>
 </template>
 

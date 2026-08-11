@@ -35,7 +35,7 @@
           class="list-border"
           @tap="
             sheep.$router.go('/pages/public/richtext', {
-              title: '关于我们'
+              title: '关于我们',
             })
           "
         />
@@ -59,7 +59,7 @@
             class="tcp-text"
             @tap="
               sheep.$router.go('/pages/public/richtext', {
-                title: '用户协议'
+                title: '用户协议',
               })
             "
           >
@@ -70,7 +70,7 @@
             class="tcp-text"
             @tap="
               sheep.$router.go('/pages/public/richtext', {
-                title: '隐私协议'
+                title: '隐私协议',
               })
             "
           >

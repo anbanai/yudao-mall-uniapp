@@ -156,7 +156,8 @@
       },
       getRect(selector, all) {
         return new Promise((resolve) => {
-          uni.createSelectorQuery()
+          uni
+            .createSelectorQuery()
             .in(this)
             [all ? 'selectAll' : 'select'](selector)
             .boundingClientRect((rect) => {

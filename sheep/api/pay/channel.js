@@ -6,7 +6,7 @@ const PayChannelApi = {
     return request({
       url: '/pay/channel/get-enable-code-list',
       method: 'GET',
-      params: { appId }
+      params: { appId },
     });
   },
 };

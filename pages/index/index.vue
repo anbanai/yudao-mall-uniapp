@@ -79,7 +79,7 @@
     }
   });
 
-  onShow(async() => {
+  onShow(async () => {
     // #ifdef APP-PLUS
     // ios首次授权网络，需要重新加载一次应用初始化
     // 可能需要考虑上uni.onNetworkStatusChange，uni.offNetworkStatusChange组合拳以及主动主动唤起权限申请

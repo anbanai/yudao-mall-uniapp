@@ -26,7 +26,7 @@
     page: {},
   });
   onLoad(async (options) => {
-    let id = options.id
+    let id = options.id;
 
     // #ifdef MP
     // 小程序预览自定义页面

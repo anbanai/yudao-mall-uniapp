@@ -7,7 +7,7 @@ const SocialApi = {
       url: '/member/social-user/get',
       method: 'GET',
       params: {
-        type
+        type,
       },
       custom: {
         showLoading: false,
@@ -22,7 +22,7 @@ const SocialApi = {
       data: {
         type,
         code,
-        state
+        state,
       },
       custom: {
         custom: {
@@ -40,7 +40,7 @@ const SocialApi = {
       method: 'DELETE',
       data: {
         type,
-        openid
+        openid,
       },
       custom: {
         showLoading: false,

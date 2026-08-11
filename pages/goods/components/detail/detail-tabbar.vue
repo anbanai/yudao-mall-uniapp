@@ -119,15 +119,15 @@
     if (props.modelValue.favorite) {
       const { code } = await FavoriteApi.deleteFavorite(props.modelValue.id);
       if (code !== 0) {
-        return
+        return;
       }
       sheep.$helper.toast('取消收藏');
       props.modelValue.favorite = false;
-    // 情况二：添加收藏
+      // 情况二：添加收藏
     } else {
       const { code } = await FavoriteApi.createFavorite(props.modelValue.id);
       if (code !== 0) {
-        return
+        return;
       }
       sheep.$helper.toast('收藏成功');
       props.modelValue.favorite = true;

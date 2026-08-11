@@ -9,21 +9,21 @@ const CartApi = {
       custom: {
         showSuccess: true,
         successMsg: '已添加到购物车~',
-      }
+      },
     });
   },
   updateCartCount: (data) => {
     return request({
       url: '/trade/cart/update-count',
       method: 'PUT',
-      data: data
+      data: data,
     });
   },
   updateCartSelected: (data) => {
     return request({
       url: '/trade/cart/update-selected',
       method: 'PUT',
-      data: data
+      data: data,
     });
   },
   deleteCart: (ids) => {
@@ -31,8 +31,8 @@ const CartApi = {
       url: '/trade/cart/delete',
       method: 'DELETE',
       params: {
-        ids
-      }
+        ids,
+      },
     });
   },
   getCartList: () => {

@@ -10,7 +10,6 @@
 </template>
 
 <script setup>
-
   const props = defineProps({
     goodsData: {
       type: Object,
@@ -18,4 +17,3 @@
     },
   });
 </script>
-

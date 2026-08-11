@@ -18,16 +18,18 @@
     const event = options.event;
     const code = options.code;
     const state = options.state;
-    if (event === 'login') { // 场景一：登录
+    if (event === 'login') {
+      // 场景一：登录
       await sheep.$platform.useProvider().login(code, state);
-    } else if (event === 'bind') { // 场景二：绑定
+    } else if (event === 'bind') {
+      // 场景二：绑定
       await sheep.$platform.useProvider().bind(code, state);
     }
 
     // 检测 H5 登录回调
     let returnUrl = uni.getStorageSync('returnUrl');
     if (returnUrl) {
-      uni.removeStorage({key:'returnUrl'});
+      uni.removeStorage({ key: 'returnUrl' });
       location.replace(returnUrl);
     } else {
       uni.switchTab({
