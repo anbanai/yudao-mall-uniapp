@@ -1,6 +1,6 @@
 {
-  "name": "芋道商城",
-  "appid": "__UNI__460BC4C",
+  "name": "不忍独享",
+  "appid": "wx427975d783c9d126",
   "description": "基于 uni-app + Vue3 技术驱动的在线商城系统，内含诸多功能与丰富的活动，期待您的使用和反馈。",
   "versionName": "2026.07",
   "versionCode": "183",
@@ -182,7 +182,7 @@
     "versionCode": 100
   },
   "mp-weixin": {
-    "appid": "wx66186af0759f47c9",
+    "appid": "wx427975d783c9d126",
     "setting": {
       "urlCheck": false,
       "minified": true,
@@ -225,7 +225,7 @@
     "async": {
       "timeout": 20000
     },
-    "title": "芋道商城",
+    "title": "不忍独享",
     "optimization": {
       "treeShaking": {
         "enable": true
