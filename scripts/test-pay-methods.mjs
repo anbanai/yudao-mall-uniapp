@@ -19,21 +19,50 @@ const getPayMethods = new Function(
   },
 );
 
+const valuesFor = (channels) => getPayMethods(channels).map((method) => method.value);
+
 assert.deepEqual(
-  getPayMethods(['wx_app']).map((method) => method.value),
+  valuesFor(['wx_app']),
   ['wechat'],
   'only enabled App channels should be returned',
 );
 
+assert.deepEqual(
+  valuesFor(['mock', 'wallet', 'alipay_app', 'wx_app']),
+  ['wechat', 'alipay', 'wallet', 'mock'],
+  'enabled channels should keep the existing payment method order',
+);
+
 platform.name = 'H5';
 assert.deepEqual(
-  getPayMethods(['alipay_wap']).map((method) => method.value),
-  ['alipay'],
-  'only the enabled H5 channel should be returned',
+  valuesFor(['alipay_wap', 'wallet', 'mock']),
+  ['alipay', 'wallet', 'mock'],
+  'H5 should expose supported enabled channels only',
+);
+
+platform.name = 'WechatOfficialAccount';
+assert.deepEqual(
+  valuesFor(['wx_pub', 'alipay_wap']),
+  ['wechat', 'alipay'],
+  'official accounts should map both supported channels',
+);
+
+platform.name = 'WechatMiniProgram';
+assert.deepEqual(
+  valuesFor(['wx_lite', 'alipay_wap']),
+  ['wechat', 'alipay'],
+  'mini programs should map both supported channels',
+);
+
+platform.name = 'Unknown';
+assert.deepEqual(
+  valuesFor(['wx_app', 'alipay_app', 'wallet', 'mock']),
+  ['wallet', 'mock'],
+  'unsupported platforms should still expose platform-independent methods',
 );
 
 assert.deepEqual(
-  getPayMethods([]).map((method) => method.value),
+  valuesFor([]),
   [],
   'an empty backend channel list should return no payment methods',
 );
