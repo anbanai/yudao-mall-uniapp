@@ -15,11 +15,11 @@
 **Files:**
 - Create: `scripts/test-pay-methods.mjs`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
   Import `getPayMethods`, set the platform to a supported platform, and assert that an enabled channel is returned while an unavailable channel is absent. Also assert that an empty backend channel list returns an empty array.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
   Run: `node scripts/test-pay-methods.mjs`
   Expected: FAIL because `getPayMethods` currently returns disabled payment method entries.
@@ -29,11 +29,11 @@
 **Files:**
 - Modify: `sheep/platform/pay.js:307-358`
 
-- [ ] **Step 1: Implement the minimal filter**
+- [x] **Step 1: Implement the minimal filter**
 
   Keep the existing method definitions and platform checks, then return `payMethods.filter((item) => !item.disabled)` after all checks have completed.
 
-- [ ] **Step 2: Run the regression check**
+- [x] **Step 2: Run the regression check**
 
   Run: `node scripts/test-pay-methods.mjs`
   Expected: PASS for enabled-only, platform-specific, and empty-channel cases.
@@ -43,15 +43,15 @@
 **Files:**
 - Verify: `sheep/platform/pay.js`, `scripts/test-pay-methods.mjs`
 
-- [ ] **Step 1: Run formatting/diff checks**
+- [x] **Step 1: Run formatting/diff checks**
 
   Run: `git diff --check` and inspect the targeted diff to confirm no unrelated files changed.
 
-- [ ] **Step 2: Run the H5 build**
+- [x] **Step 2: Run the H5 build**
 
   Run: `npm run build:h5`
   Expected: Uni-app H5 build exits successfully.
 
-- [ ] **Step 3: Record the completed verification**
+- [x] **Step 3: Record the completed verification**
 
   Report the regression check and build results, and note any pre-existing unrelated worktree changes without modifying them.
