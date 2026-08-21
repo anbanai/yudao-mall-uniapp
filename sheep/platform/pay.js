@@ -370,7 +370,7 @@ export function getPayMethods(channels) {
   if (channels.includes('mock')) {
     mockMethod.disabled = false;
   }
-  return payMethods;
+  return payMethods.filter((item) => !item.disabled);
 }
 
 // 支付结果跳转,success:成功，fail:失败
