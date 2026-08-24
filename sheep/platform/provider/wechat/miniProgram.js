@@ -14,7 +14,7 @@ function load() {
 }
 
 // 微信小程序静默授权登陆
-const login = async () => {
+const login = async (silent = false) => {
   return new Promise(async (resolve, reject) => {
     // 1. 获得微信 code
     const codeResult = await uni.login();
@@ -23,7 +23,7 @@ const login = async () => {
     }
 
     // 2. 社交登录
-    const loginResult = await AuthUtil.socialLogin(socialType, codeResult.code, 'default');
+    const loginResult = await AuthUtil.socialLogin(socialType, codeResult.code, 'default', silent);
     if (loginResult.code === 0) {
       setOpenid(loginResult.data.openid);
       return resolve(true);

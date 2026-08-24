@@ -80,7 +80,7 @@ const AuthUtil = {
     });
   },
   // 社交快捷登录
-  socialLogin: (type, code, state) => {
+  socialLogin: (type, code, state, silent = false) => {
     return request({
       url: '/member/auth/social-login',
       method: 'POST',
@@ -91,6 +91,8 @@ const AuthUtil = {
       },
       custom: {
         showSuccess: true,
+        showLoading: !silent,
+        showError: !silent,
         loadingMsg: '登录中',
       },
     });
