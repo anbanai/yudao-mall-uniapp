@@ -13,15 +13,21 @@
         v-for="(item, index) in template.components"
         :key="index"
         :styles="item.property.style"
+        :allow-overflow="item.id === 'ProductGroup' && item.property.sticky"
       >
-        <s-block-item :type="item.id" :data="item.property" :styles="item.property.style" />
+        <s-block-item
+          :type="item.id"
+          :data="item.property"
+          :styles="item.property.style"
+          :refresh-key="productGroupRefreshKey"
+        />
       </s-block>
     </s-layout>
   </view>
 </template>
 
 <script setup>
-  import { computed } from 'vue';
+  import { computed, ref } from 'vue';
   import { onLoad, onShow, onPageScroll, onPullDownRefresh } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import $share from '@/sheep/platform/share';
@@ -31,6 +37,8 @@
   });
 
   const template = computed(() => sheep.$store('app').template?.home);
+  const productGroupRefreshKey = ref(0);
+  let hasShown = false;
   // 在此处拦截改变一下首页轮播图 此处先写死后期复活 放到启动函数里
   // (async function() {
   // console.log('原代码首页定制化数据',template)
@@ -80,6 +88,11 @@
   });
 
   onShow(async () => {
+    if (hasShown) {
+      productGroupRefreshKey.value += 1;
+    } else {
+      hasShown = true;
+    }
     // #ifdef APP-PLUS
     // ios首次授权网络，需要重新加载一次应用初始化
     // 可能需要考虑上uni.onNetworkStatusChange，uni.offNetworkStatusChange组合拳以及主动主动唤起权限申请

@@ -9,7 +9,7 @@
     >
       <view
         class="goods-xs-list"
-        v-for="item in goodsList"
+        v-for="item in displayGoodsList"
         :key="item.id"
         :style="[
           {
@@ -38,7 +38,7 @@
       :style="[{ margin: '-' + data.space + 'rpx' }]"
     >
       <view
-        v-for="item in goodsList"
+        v-for="item in displayGoodsList"
         :key="item.id"
         class="goods-card-box"
         :style="[
@@ -67,7 +67,7 @@
         <view class="goods-box ss-flex">
           <view
             class="goods-card-box"
-            v-for="item in goodsList"
+            v-for="item in displayGoodsList"
             :key="item.id"
             :style="[{ marginRight: data.space * 2 + 'rpx' }]"
           >
@@ -92,7 +92,7 @@
   /**
    * 商品栏
    */
-  import { onMounted, ref, computed } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import sheep from '@/sheep';
   import SpuApi from '@/sheep/api/product/spu';
 
@@ -105,16 +105,37 @@
       type: Object,
       default() {},
     },
+    goodsList: {
+      type: Array,
+      default: undefined,
+    },
   });
-  const { layoutType, spuIds } = props.data;
-  let { marginLeft, marginRight } = props.styles;
-  const goodsList = ref([]);
-  onMounted(async () => {
-    if (spuIds.length > 0) {
-      let { data } = await SpuApi.getSpuListByIds(spuIds.join(','));
-      goodsList.value = data;
-    }
-  });
+  const layoutType = computed(() => props.data.layoutType);
+  const marginLeft = computed(() => props.styles.marginLeft || 0);
+  const marginRight = computed(() => props.styles.marginRight || 0);
+  const fetchedGoodsList = ref([]);
+  const displayGoodsList = computed(() => props.goodsList ?? fetchedGoodsList.value);
+
+  watch(
+    () => props.data.spuIds,
+    async (spuIds) => {
+      if (props.goodsList !== undefined) {
+        fetchedGoodsList.value = [];
+        return;
+      }
+      if (!Array.isArray(spuIds) || spuIds.length === 0) {
+        fetchedGoodsList.value = [];
+        return;
+      }
+      try {
+        const { code, data } = await SpuApi.getSpuListByIds(spuIds.join(','));
+        fetchedGoodsList.value = code === 0 && Array.isArray(data) ? data : [];
+      } catch {
+        fetchedGoodsList.value = [];
+      }
+    },
+    { immediate: true },
+  );
 </script>
 
 <style lang="scss" scoped>

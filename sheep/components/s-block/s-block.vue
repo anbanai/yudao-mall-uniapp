@@ -9,11 +9,16 @@
    */
   import { computed, provide, unref } from 'vue';
   import sheep from '@/sheep';
+  import { getBlockOverflow } from './block.mjs';
 
   const props = defineProps({
     styles: {
       type: Object,
       default() {},
+    },
+    allowOverflow: {
+      type: Boolean,
+      default: false,
     },
   });
 
@@ -53,7 +58,7 @@
         borderTopRightRadius: `${props.styles.borderTopRightRadius || 0}px`,
         borderBottomRightRadius: `${props.styles.borderBottomRightRadius || 0}px`,
         borderBottomLeftRadius: `${props.styles.borderBottomLeftRadius || 0}px`,
-        overflow: 'hidden',
+        overflow: getBlockOverflow(props.allowOverflow),
       };
     }
   });
