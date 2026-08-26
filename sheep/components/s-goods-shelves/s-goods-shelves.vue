@@ -1,6 +1,6 @@
 <!-- 装修商品组件：商品栏 -->
 <template>
-  <view>
+  <view :class="['goods-shelves', variant && `goods-shelves--${variant}`]">
     <!-- 布局1. 两列商品，图片左文案右 -->
     <view
       v-if="layoutType === 'twoCol'"
@@ -19,6 +19,7 @@
       >
         <s-goods-column
           class="goods-card"
+          :variant="variant"
           size="xs"
           :goodsFields="data.fields"
           :tagStyle="data.badge"
@@ -49,7 +50,9 @@
       >
         <s-goods-column
           class="goods-card"
+          :variant="variant"
           size="sm"
+          :title-lines="variant === 'productGroup' ? 2 : 1"
           :goodsFields="data.fields"
           :tagStyle="data.badge"
           :data="item"
@@ -73,7 +76,9 @@
           >
             <s-goods-column
               class="goods-card"
+              :variant="variant"
               size="sm"
+              :title-lines="variant === 'productGroup' ? 2 : 1"
               :goodsFields="data.fields"
               :tagStyle="data.badge"
               :data="item"
@@ -108,6 +113,10 @@
     goodsList: {
       type: Array,
       default: undefined,
+    },
+    variant: {
+      type: String,
+      default: '',
     },
   });
   const layoutType = computed(() => props.data.layoutType);
@@ -164,5 +173,26 @@
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .goods-shelves--productGroup {
+    padding: 16rpx;
+    background: #f7f8fa;
+
+    .goods-xs-box,
+    .goods-sm-box {
+      margin: -8rpx;
+    }
+
+    .goods-card-box,
+    .goods-xs-list {
+      padding: 8rpx !important;
+    }
+
+    .goods-scroll-box {
+      margin: 0 -16rpx;
+      width: calc(100% + 32rpx);
+      padding: 0 16rpx;
+    }
   }
 </style>

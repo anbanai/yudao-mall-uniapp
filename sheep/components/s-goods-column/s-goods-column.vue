@@ -4,7 +4,7 @@
     <!-- xs卡片：横向紧凑型，一行放两个，图片左内容右边  -->
     <view
       v-if="size === 'xs'"
-      class="xs-goods-card ss-flex ss-col-stretch"
+      :class="['xs-goods-card', variant && `goods-card--${variant}`, 'ss-flex', 'ss-col-stretch']"
       :style="[elStyles]"
       @tap="onClick"
     >
@@ -69,7 +69,7 @@
     </view>
 
     <!-- sm卡片：竖向紧凑，一行放三个，图上内容下 -->
-    <view v-if="size === 'sm'" class="sm-goods-card ss-flex-col" :style="[elStyles]" @tap="onClick">
+    <view v-if="size === 'sm'" :class="['sm-goods-card', variant && `goods-card--${variant}`, 'ss-flex-col']" :style="[elStyles]" @tap="onClick">
       <view v-if="tagStyle.show" class="tag-icon-box">
         <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
       </view>
@@ -86,7 +86,7 @@
       >
         <view
           v-if="goodsFields.title?.show || goodsFields.name?.show"
-          class="sm-goods-title ss-line-1 ss-m-b-16"
+          :class="[titleLines > 1 ? 'ss-line-2' : 'ss-line-1', 'sm-goods-title', 'ss-m-b-16']"
         >
           {{ data.title || data.name }}
         </view>
@@ -596,6 +596,14 @@
       type: Boolean,
       default: true,
     },
+    titleLines: {
+      type: Number,
+      default: 1,
+    },
+    variant: {
+      type: String,
+      default: '',
+    },
     seckillTag: {
       type: Boolean,
       default: false,
@@ -838,6 +846,33 @@
     .sm-goods-price {
       font-size: 30rpx;
       color: $red;
+    }
+  }
+
+  .sm-goods-card.goods-card--productGroup {
+    border-radius: 10rpx;
+    box-shadow: 0 2rpx 10rpx rgba(31, 35, 41, 0.04);
+
+    .sm-img-box {
+      height: 216rpx;
+      background: #f5f6f7;
+    }
+
+    .sm-goods-content {
+      min-height: 142rpx;
+      padding: 16rpx 14rpx 18rpx;
+    }
+
+    .sm-goods-title {
+      min-height: 72rpx;
+      line-height: 36rpx;
+      font-weight: 500;
+      color: #26282b;
+    }
+
+    .sm-goods-price {
+      line-height: 38rpx;
+      font-weight: 600;
     }
   }
 
