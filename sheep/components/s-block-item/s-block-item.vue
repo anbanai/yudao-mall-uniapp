@@ -34,6 +34,13 @@
     <s-goods-card v-if="type === 'ProductCard'" :data="data" :styles="styles" />
     <!-- 商品组件：商品栏 -->
     <s-goods-shelves v-if="type === 'ProductList'" :data="data" :styles="styles" />
+    <!-- 商品组件：商品分组 -->
+    <s-goods-group
+      v-if="type === 'ProductGroup'"
+      :data="data"
+      :styles="styles"
+      :refresh-key="refreshKey"
+    />
 
     <!-- 营销组件：拼团 -->
     <s-groupon-block v-if="type === 'PromotionCombination'" :data="data" :styles="styles" />
@@ -75,6 +82,10 @@
     styles: {
       type: Object,
       default() {},
+    },
+    refreshKey: {
+      type: Number,
+      default: 0,
     },
   });
   function onSearch() {}
