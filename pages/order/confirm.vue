@@ -59,7 +59,7 @@
           class="order-item ss-flex ss-col-center ss-row-between"
           v-if="state.orderPayload.pointActivityId"
         >
-          <view class="item-title">剩余积分</view>
+          <view class="item-title">积分抵扣</view>
           <view class="ss-flex ss-col-center">
             <image
               :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
