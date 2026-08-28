@@ -8,6 +8,7 @@
     "prettier": "prettier --write  \"{pages,sheep}/**/*.{js,json,tsx,css,less,scss,vue,html,md}\"",
     "test:pay-methods": "node scripts/test-pay-methods.mjs",
     "test:product-group": "node scripts/test-product-group.mjs",
+    "test:order-points": "node scripts/test-order-points.mjs",
     "dev:h5": "UNI_INPUT_DIR=. UNI_OUTPUT_DIR=./dist/dev/h5 uni",
     "dev:mp-weixin": "UNI_INPUT_DIR=. UNI_OUTPUT_DIR=./dist/dev/mp-weixin uni -p mp-weixin",
     "build:h5": "UNI_INPUT_DIR=. UNI_OUTPUT_DIR=./dist/build/h5 uni build",
