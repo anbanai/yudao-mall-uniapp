@@ -266,12 +266,8 @@
     }
 
     :deep() {
-      .imgred {
-        width: 100%;
-      }
-
       .imgred,
-      img {
+      ._img {
         width: 100%;
       }
     }

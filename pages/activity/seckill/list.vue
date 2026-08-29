@@ -306,10 +306,6 @@
       height: 100%;
       border-radius: 14rpx;
       overflow: hidden;
-
-      img {
-        border-radius: 14rpx;
-      }
     }
   }
 
