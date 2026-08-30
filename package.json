@@ -2,8 +2,8 @@
   "id": "shopro",
   "name": "shopro",
   "displayName": "不忍独享",
-  "version": "2026.07",
-  "description": "不忍独享-官方商城",
+  "version": "2026.08",
+  "description": "好茶不忍独享",
   "scripts": {
     "prettier": "prettier --write  \"{pages,sheep}/**/*.{js,json,tsx,css,less,scss,vue,html,md}\"",
     "test:pay-methods": "node scripts/test-pay-methods.mjs",
