@@ -10,7 +10,7 @@
             :class="{ 'login-tab-active': authType === 'wechatLogin' }"
             @tap="showAuthModal('wechatLogin')"
           >
-            微信登录
+            快捷登录
           </button>
           <button
             class="ss-reset-button login-tab"

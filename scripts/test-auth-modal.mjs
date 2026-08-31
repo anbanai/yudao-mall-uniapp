@@ -59,7 +59,14 @@ function evaluateDisabled(button, context) {
   );
 }
 
-function collectLoginTabTargets(node, targets = []) {
+function getTextContent(node) {
+  if (node.type === NodeTypes.TEXT) {
+    return node.content.trim();
+  }
+  return (node.children || []).map(getTextContent).join('');
+}
+
+function collectLoginTabs(node, tabs = []) {
   if (node.type === NodeTypes.ELEMENT && node.tag === 'button') {
     const tap = node.props.find(
       (prop) =>
@@ -69,18 +76,24 @@ function collectLoginTabTargets(node, targets = []) {
         prop.exp?.content.includes('showAuthModal('),
     );
     const loginType = tap?.exp?.content.match(/showAuthModal\('([^']+Login)'\)/)?.[1];
-    if (loginType) targets.push(loginType);
+    if (loginType) {
+      tabs.push({ type: loginType, label: getTextContent(node) });
+    }
   }
   for (const child of node.children || []) {
-    collectLoginTabTargets(child, targets);
+    collectLoginTabs(child, tabs);
   }
-  return targets;
+  return tabs;
 }
 
 assert.deepEqual(
-  collectLoginTabTargets(template),
-  ['wechatLogin', 'smsLogin', 'accountLogin'],
-  'mini-program users should get three peer login tabs with WeChat first',
+  collectLoginTabs(template),
+  [
+    { type: 'wechatLogin', label: '快捷登录' },
+    { type: 'smsLogin', label: '短信登录' },
+    { type: 'accountLogin', label: '账号登录' },
+  ],
+  'mini-program users should get three peer login tabs with quick login first',
 );
 
 function preprocessForPlatform(source, platform) {
