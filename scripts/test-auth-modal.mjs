@@ -157,14 +157,28 @@ assert.ok(
   'H5 closeAuthModal source not found',
 );
 
-const h5ModalState = { auth: 'smsLogin', authTransition: false, authTransitionId: 0 };
+const h5ModalState = {
+  auth: 'smsLogin',
+  authTransition: false,
+  authTransitionId: 0,
+  authTransitionCloseId: 0,
+};
 const scheduledCallbacks = [];
 const h5ModalStore = {
+  get auth() {
+    return h5ModalState.auth;
+  },
   get authTransition() {
     return h5ModalState.authTransition;
   },
   get authTransitionId() {
     return h5ModalState.authTransitionId;
+  },
+  get authTransitionCloseId() {
+    return h5ModalState.authTransitionCloseId;
+  },
+  set authTransitionCloseId(value) {
+    h5ModalState.authTransitionCloseId = value;
   },
   $patch(update) {
     update(h5ModalState);
@@ -227,7 +241,11 @@ assert.ok(
   handlePopupCloseStart >= 0 && handlePopupCloseEnd > handlePopupCloseStart,
   'handlePopupClose source not found',
 );
-const popupModalStore = { authTransition: true };
+const popupModalStore = {
+  authTransition: true,
+  authTransitionId: 1,
+  authTransitionCloseId: 1,
+};
 let popupCloseCalls = 0;
 const handlePopupClose = new Function(
   'modalStore',
@@ -238,9 +256,66 @@ const handlePopupClose = new Function(
 });
 handlePopupClose();
 assert.equal(popupCloseCalls, 0, 'an internal H5 transition should ignore the popup close event');
+assert.equal(
+  popupModalStore.authTransitionCloseId,
+  0,
+  'the expected internal popup close should only be ignored once',
+);
+handlePopupClose();
+assert.equal(
+  popupCloseCalls,
+  1,
+  'a second popup close during an H5 transition should be treated as a genuine user close',
+);
 popupModalStore.authTransition = false;
 handlePopupClose();
-assert.equal(popupCloseCalls, 1, 'a genuine popup close should close the auth modal');
+assert.equal(popupCloseCalls, 2, 'a genuine popup close should close the auth modal');
+
+const initialPopupModalStore = {
+  authTransition: false,
+  authTransitionId: 0,
+  authTransitionCloseId: 0,
+};
+let initialPopupCloseCalls = 0;
+const handleInitialPopupClose = new Function(
+  'modalStore',
+  'closeAuthModal',
+  `${setupSource.slice(handlePopupCloseStart, handlePopupCloseEnd)}\nreturn handlePopupClose;`,
+)(initialPopupModalStore, () => {
+  initialPopupCloseCalls += 1;
+});
+handleInitialPopupClose();
+assert.equal(
+  initialPopupCloseCalls,
+  1,
+  'a popup close outside an H5 transition should never be mistaken for an internal close',
+);
+
+h5ModalState.auth = 'smsLogin';
+h5AuthFunctions.showAuthModal('accountLogin');
+const transitionCloseHandler = new Function(
+  'modalStore',
+  'closeAuthModal',
+  `${setupSource.slice(handlePopupCloseStart, handlePopupCloseEnd)}\nreturn handlePopupClose;`,
+)(h5ModalStore, h5AuthFunctions.closeAuthModal);
+transitionCloseHandler();
+assert.equal(
+  h5ModalState.authTransition,
+  true,
+  'the expected internal popup close should keep the H5 transition active',
+);
+transitionCloseHandler();
+scheduledCallbacks.shift()();
+assert.equal(
+  h5ModalState.auth,
+  '',
+  'a user close during an H5 transition must prevent the scheduled modal reopen',
+);
+assert.equal(
+  h5ModalState.authTransition,
+  false,
+  'a user close during an H5 transition should cancel the transition',
+);
 
 const toggleAgreementStart = setupSource.indexOf('function toggleAgreement() {');
 const toggleAgreementEnd = setupSource.indexOf('\n  }', toggleAgreementStart) + 4;
@@ -291,6 +366,66 @@ assert.equal(
   'closing the login modal should reset the agreement checkbox',
 );
 
+h5ModalState.auth = 'smsLogin';
+resetProtocolState.protocol = true;
+h5AuthFunctions.showAuthModal('accountLogin');
+transitionCloseHandler();
+h5AuthFunctions.showAuthModal('smsLogin');
+transitionCloseHandler();
+while (scheduledCallbacks.length) {
+  scheduledCallbacks.shift()();
+}
+assert.equal(
+  h5ModalState.auth,
+  '',
+  'a user close after consecutive H5 mode changes must prevent every scheduled reopen',
+);
+assert.equal(
+  h5ModalState.authTransition,
+  false,
+  'a user close after consecutive H5 mode changes should cancel the latest transition',
+);
+resetAgreementOnClose([h5ModalState.auth, h5ModalState.authTransition]);
+assert.equal(
+  resetProtocolState.protocol,
+  false,
+  'cancelling consecutive H5 mode changes should reset the agreement checkbox',
+);
+
+h5ModalState.auth = 'smsLogin';
+h5AuthFunctions.showAuthModal('accountLogin');
+const firstTransitionId = h5ModalState.authTransitionId;
+h5AuthFunctions.showAuthModal('smsLogin');
+assert.notEqual(
+  h5ModalState.authTransitionId,
+  firstTransitionId,
+  'a later H5 mode change should supersede the earlier transition',
+);
+assert.equal(
+  h5ModalState.authTransitionCloseId,
+  h5ModalState.authTransitionId,
+  'an outstanding programmatic close should follow the latest transition',
+);
+transitionCloseHandler();
+assert.equal(
+  h5ModalState.authTransitionCloseId,
+  0,
+  'the outstanding programmatic close should still be consumed only once',
+);
+while (scheduledCallbacks.length) {
+  scheduledCallbacks.shift()();
+}
+assert.equal(
+  h5ModalState.auth,
+  'smsLogin',
+  'only the latest H5 mode should reopen after consecutive changes',
+);
+assert.equal(
+  h5ModalState.authTransition,
+  false,
+  'the latest consecutive H5 mode change should finish its transition',
+);
+
 assert.equal(
   collectElements(template, 'checkbox').length,
   1,
@@ -332,9 +467,19 @@ assert.equal(
   'SMS code request should be disabled before the agreement is accepted',
 );
 assert.equal(
+  evaluateDisabled(getCodeButton, { state: { isMobileEnd: false }, props: { agreeStatus: true } }),
+  false,
+  'SMS code request should be enabled after the agreement is accepted',
+);
+assert.equal(
   evaluateDisabled(smsSubmitButton, { props: { agreeStatus: false } }),
   true,
   'SMS login should be disabled before the agreement is accepted',
+);
+assert.equal(
+  evaluateDisabled(smsSubmitButton, { props: { agreeStatus: true } }),
+  false,
+  'SMS login should be enabled after the agreement is accepted',
 );
 
 const accountLoginComponent = await loadComponent(
@@ -350,6 +495,11 @@ assert.equal(
   evaluateDisabled(accountSubmitButton, { props: { agreeStatus: false } }),
   true,
   'account login should be disabled before the agreement is accepted',
+);
+assert.equal(
+  evaluateDisabled(accountSubmitButton, { props: { agreeStatus: true } }),
+  false,
+  'account login should be enabled after the agreement is accepted',
 );
 
 const getPhoneNumberStart = setupSource.indexOf('const getPhoneNumber = async (e) => {');

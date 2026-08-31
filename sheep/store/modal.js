@@ -5,6 +5,7 @@ const modal = defineStore('modal', {
     auth: '', // 授权弹框 wechatLogin|accountLogin|smsLogin|resetPassword|changeMobile|changePassword
     authTransition: false, // H5 登录方式切换时的临时关闭状态
     authTransitionId: 0, // 用于取消过期的 H5 登录方式切换
+    authTransitionCloseId: 0, // H5 登录方式切换时预期触发的一次性弹窗关闭事件
     share: false, // 分享弹框
     menu: false, // 快捷菜单弹框
     advHistory: [], // 广告弹框记录

@@ -185,7 +185,11 @@
   watch([authType, () => modalStore.authTransition], resetAgreementOnClose);
 
   function handlePopupClose() {
-    if (modalStore.authTransition) {
+    if (
+      modalStore.authTransition &&
+      modalStore.authTransitionCloseId === modalStore.authTransitionId
+    ) {
+      modalStore.authTransitionCloseId = 0;
       return;
     }
     closeAuthModal();

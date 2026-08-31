@@ -17,10 +17,12 @@ export function showAuthModal(type = '') {
   }
   const modal = $store('modal');
   // #ifdef H5
+  const hasPendingPopupClose = modal.auth !== '' || modal.authTransitionCloseId !== 0;
   const transitionId = (modal.authTransitionId || 0) + 1;
   modal.$patch((state) => {
     state.authTransition = true;
     state.authTransitionId = transitionId;
+    state.authTransitionCloseId = hasPendingPopupClose ? transitionId : 0;
   });
   closeAuthModal(true);
   setTimeout(() => {
@@ -30,6 +32,7 @@ export function showAuthModal(type = '') {
     modal.$patch((state) => {
       state.auth = type;
       state.authTransition = false;
+      state.authTransitionCloseId = 0;
     });
   }, 200);
   // #endif
@@ -48,6 +51,7 @@ export function closeAuthModal(preserveTransition = false) {
     if (!preserveTransition) {
       state.authTransition = false;
       state.authTransitionId = (state.authTransitionId || 0) + 1;
+      state.authTransitionCloseId = 0;
     }
   });
 }
