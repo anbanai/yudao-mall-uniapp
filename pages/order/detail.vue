@@ -271,6 +271,7 @@
   import DeliveryApi from '@/sheep/api/trade/delivery';
   import PayOrderApi from '@/sheep/api/pay/order';
   import PickUpVerify from '@/pages/order/pickUpVerify.vue';
+  import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const headerBg = sheep.$url.css('/static/img/shop/order/order_bg.png');
@@ -320,9 +321,7 @@
 
   // 查看物流
   async function onExpress(id) {
-    sheep.$router.go('/pages/order/express/log', {
-      id,
-    });
+    await openOrderLogistics(id);
   }
 
   // 确认收货

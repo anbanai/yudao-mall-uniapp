@@ -131,6 +131,7 @@
   import { concat, isEmpty } from 'lodash-es';
   import OrderApi from '@/sheep/api/trade/order';
   import { resetPagination } from '@/sheep/helper/utils';
+  import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';
 
   // 数据
   const state = reactive({
@@ -273,9 +274,7 @@
 
   // 查看物流
   async function onExpress(id) {
-    sheep.$router.go('/pages/order/express/log', {
-      id,
-    });
+    await openOrderLogistics(id);
   }
 
   // 取消订单

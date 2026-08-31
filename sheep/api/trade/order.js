@@ -144,6 +144,18 @@ const OrderApi = {
       },
     });
   },
+  // 生成微信物流查询组件运单令牌
+  ensureWechatWaybillToken: (id) => {
+    return request({
+      url: '/trade/order/ensure-wechat-waybill-token',
+      method: 'POST',
+      params: { id },
+      custom: {
+        showLoading: false,
+        showError: false,
+      },
+    });
+  },
   // 获得交易订单数量
   getOrderCount: () => {
     return request({
