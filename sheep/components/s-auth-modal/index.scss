@@ -57,9 +57,6 @@
   }
 }
 
-// .code-btn[disabled] {
-// 	background-color: #fff;
-// }
 .code-btn-start {
   width: 160rpx;
   height: 56rpx;
@@ -70,6 +67,12 @@
   font-weight: 400;
   color: var(--ui-BG-Main);
   opacity: 1;
+
+  &[disabled] {
+    border-color: #d8dadd;
+    color: #b8bcc2;
+    opacity: 1;
+  }
 }
 
 .forgot-btn {
@@ -89,6 +92,12 @@
   font-size: 26rpx;
   font-weight: 500;
   color: #fff;
+
+  &[disabled] {
+    background: #e5e7eb;
+    color: #a8adb5;
+    opacity: 1;
+  }
 }
 
 .type-btn {
@@ -107,6 +116,10 @@
     height: 68rpx;
     border-radius: 50%;
     margin: 0 30rpx;
+
+    &[disabled] {
+      opacity: 0.35;
+    }
   }
   .auto-login-img {
     width: 68rpx;

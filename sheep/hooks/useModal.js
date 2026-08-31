@@ -6,13 +6,30 @@ import test from '@/sheep/helper/test.js';
 import AuthUtil from '@/sheep/api/member/auth';
 
 // 打开授权弹框
-export function showAuthModal(type = 'smsLogin') {
+export function showAuthModal(type = '') {
+  if (!type) {
+    // #ifdef MP-WEIXIN
+    type = 'wechatLogin';
+    // #endif
+    // #ifndef MP-WEIXIN
+    type = 'smsLogin';
+    // #endif
+  }
   const modal = $store('modal');
   // #ifdef H5
-  closeAuthModal();
+  const transitionId = (modal.authTransitionId || 0) + 1;
+  modal.$patch((state) => {
+    state.authTransition = true;
+    state.authTransitionId = transitionId;
+  });
+  closeAuthModal(true);
   setTimeout(() => {
+    if (!modal.authTransition || modal.authTransitionId !== transitionId) {
+      return;
+    }
     modal.$patch((state) => {
       state.auth = type;
+      state.authTransition = false;
     });
   }, 200);
   // #endif
@@ -25,9 +42,13 @@ export function showAuthModal(type = 'smsLogin') {
 }
 
 // 关闭授权弹框
-export function closeAuthModal() {
+export function closeAuthModal(preserveTransition = false) {
   $store('modal').$patch((state) => {
     state.auth = '';
+    if (!preserveTransition) {
+      state.authTransition = false;
+      state.authTransitionId = (state.authTransitionId || 0) + 1;
+    }
   });
 }
 
