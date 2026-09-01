@@ -1,23 +1,23 @@
-const CATEGORY_LIMIT = 15;
+const GROUP_LIMIT = 15;
 const DEFAULT_PAGE_SIZE = 10;
 const MIN_PAGE_SIZE = 1;
 const MAX_PAGE_SIZE = 50;
 
-export function normalizeCategoryIds(categoryIds = []) {
-  return [...new Set(categoryIds.map(Number).filter((id) => Number.isInteger(id) && id > 0))].slice(
+export function normalizeGroupIds(groupIds = []) {
+  return [...new Set(groupIds.map(Number).filter((id) => Number.isInteger(id) && id > 0))].slice(
     0,
-    CATEGORY_LIMIT,
+    GROUP_LIMIT,
   );
 }
 
-export function orderSelectedCategories(categoryIds, categories = []) {
-  const categoryMap = new Map(
-    categories
-      .filter((category) => Number.isInteger(Number(category?.id)))
-      .map((category) => [Number(category.id), category]),
+export function orderSelectedGroups(groupIds, groups = []) {
+  const groupMap = new Map(
+    groups
+      .filter((group) => Number.isInteger(Number(group?.id)))
+      .map((group) => [Number(group.id), group]),
   );
-  return normalizeCategoryIds(categoryIds)
-    .map((id) => categoryMap.get(id))
+  return normalizeGroupIds(groupIds)
+    .map((id) => groupMap.get(id))
     .filter(Boolean);
 }
 
@@ -46,11 +46,19 @@ function getSortParams(sortType) {
 export function buildProductGroupQuery(source, tab) {
   return {
     ...(tab === 'all'
-      ? { categoryIds: normalizeCategoryIds(source.categoryIds).join(',') }
-      : { categoryId: Number(tab) }),
+      ? { groupIds: normalizeGroupIds(source.groupIds).join(',') }
+      : { groupIds: String(Number(tab)) }),
     pageNo: 1,
     pageSize: normalizePageSize(source.pageSize),
     ...getSortParams(source.sortType),
+  };
+}
+
+export function buildProductGroupRouteQuery(source, tab, groupName) {
+  return {
+    groupIds: tab === 'all' ? normalizeGroupIds(source.groupIds).join(',') : String(Number(tab)),
+    groupName: encodeURIComponent(groupName || ''),
+    sortType: source.sortType || 'default',
   };
 }
 
