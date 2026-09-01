@@ -1,16 +1,50 @@
 import assert from 'node:assert/strict';
 
-import {
+import * as productGroup from '../sheep/components/s-goods-group/product-group.mjs';
+import { getBlockOverflow } from '../sheep/components/s-block/block.mjs';
+
+const {
   buildProductGroupQuery,
   buildProductGroupRouteQuery,
   createProductGroupLoader,
   normalizeGroupIds,
   orderSelectedGroups,
-} from '../sheep/components/s-goods-group/product-group.mjs';
-import { getBlockOverflow } from '../sheep/components/s-block/block.mjs';
+} = productGroup;
 
 assert.equal(getBlockOverflow(true), 'visible');
 assert.equal(getBlockOverflow(false), 'hidden');
+
+assert.deepEqual(productGroup.resolveProductGroupMenu?.({}), {
+  activeBackgroundColor: '#e6f4ff',
+  activeColor: '#0958d9',
+  backgroundColor: '#ffffff',
+  color: '#595959',
+  layout: 'horizontal',
+});
+
+assert.deepEqual(
+  productGroup.getProductGroupMenuItemStyle?.(
+    {
+      activeBackgroundColor: '#fff1f0',
+      activeColor: '#a8071a',
+      backgroundColor: '#f5f5f5',
+      color: '#434343',
+      layout: 'vertical',
+    },
+    true,
+  ),
+  {
+    backgroundColor: '#fff1f0',
+    color: '#a8071a',
+    fontWeight: '600',
+  },
+);
+
+assert.equal(productGroup.getProductGroupMenuHeight?.(2), 'auto');
+assert.equal(
+  productGroup.getProductGroupMenuHeight?.(12),
+  'calc(100vh - env(safe-area-inset-top))',
+);
 
 assert.deepEqual(
   normalizeGroupIds([1, 2, 1, ...Array.from({ length: 20 }, (_, i) => i + 3)]),

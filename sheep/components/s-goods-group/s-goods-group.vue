@@ -1,58 +1,115 @@
 <template>
-  <view class="goods-group">
-    <view v-if="showTabs" class="goods-group__tabs-shell">
-      <su-sticky v-if="data.sticky" bgColor="#fff" :z-index="20">
-        <view class="goods-group__tabs">
-          <su-tabs
-            :list="tabs"
-            :current="activeIndex"
-            :item-style="tabItemStyle"
-            :active-style="tabActiveStyle"
-            :inactive-style="tabInactiveStyle"
-            line-color="#222"
-            line-width="36"
-            line-height="5"
-            @change="handleTabChange"
-          />
-        </view>
+  <view :class="['goods-group', { 'goods-group--vertical': isVerticalMenu }]">
+    <view v-if="showTabs && !isVerticalMenu" class="goods-group__menu-shell">
+      <su-sticky v-if="data.sticky" :bg-color="menu.backgroundColor" :z-index="20">
+        <scroll-view
+          class="goods-group__menu goods-group__menu--horizontal"
+          scroll-x
+          enable-flex
+          :show-scrollbar="false"
+          :style="menuContainerStyle"
+        >
+          <view class="goods-group__menu-row">
+            <view
+              v-for="(tab, index) in tabs"
+              :key="tab.key"
+              class="goods-group__menu-item goods-group__menu-item--horizontal"
+              :style="getMenuItemStyle(index)"
+              @tap="handleTabChange(index)"
+            >
+              <text>{{ tab.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
       </su-sticky>
-      <view v-else class="goods-group__tabs">
-        <su-tabs
-          :list="tabs"
-          :current="activeIndex"
-          :item-style="tabItemStyle"
-          :active-style="tabActiveStyle"
-          :inactive-style="tabInactiveStyle"
-          line-color="#222"
-          line-width="36"
-          line-height="5"
-          @change="handleTabChange"
+      <scroll-view
+        v-else
+        class="goods-group__menu goods-group__menu--horizontal"
+        scroll-x
+        enable-flex
+        :show-scrollbar="false"
+        :style="menuContainerStyle"
+      >
+        <view class="goods-group__menu-row">
+          <view
+            v-for="(tab, index) in tabs"
+            :key="tab.key"
+            class="goods-group__menu-item goods-group__menu-item--horizontal"
+            :style="getMenuItemStyle(index)"
+            @tap="handleTabChange(index)"
+          >
+            <text>{{ tab.name }}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    <view :class="['goods-group__body', { 'goods-group__body--vertical': isVerticalMenu }]">
+      <su-sticky
+        v-if="isVerticalMenu && data.sticky"
+        class="goods-group__vertical-sticky"
+        :bg-color="menu.backgroundColor"
+        :z-index="20"
+      >
+        <scroll-view
+          class="goods-group__menu goods-group__menu--vertical"
+          scroll-y
+          :show-scrollbar="false"
+          :style="[menuContainerStyle, { height: menuHeight }]"
+        >
+          <view
+            v-for="(tab, index) in tabs"
+            :key="tab.key"
+            class="goods-group__menu-item goods-group__menu-item--vertical"
+            :style="getMenuItemStyle(index)"
+            @tap="handleTabChange(index)"
+          >
+            <text>{{ tab.name }}</text>
+          </view>
+        </scroll-view>
+      </su-sticky>
+      <scroll-view
+        v-else-if="isVerticalMenu"
+        class="goods-group__menu goods-group__menu--vertical"
+        scroll-y
+        :show-scrollbar="false"
+        :style="[menuContainerStyle, { height: menuHeight }]"
+      >
+        <view
+          v-for="(tab, index) in tabs"
+          :key="tab.key"
+          class="goods-group__menu-item goods-group__menu-item--vertical"
+          :style="getMenuItemStyle(index)"
+          @tap="handleTabChange(index)"
+        >
+          <text>{{ tab.name }}</text>
+        </view>
+      </scroll-view>
+      <view class="goods-group__content">
+        <view v-if="isLoading" class="goods-group__loading" aria-label="加载中">
+          <view v-for="item in loadingItems" :key="item" class="goods-group__skeleton">
+            <view class="goods-group__skeleton-image" />
+            <view class="goods-group__skeleton-line goods-group__skeleton-line--long" />
+            <view class="goods-group__skeleton-line" />
+          </view>
+        </view>
+        <s-empty
+          v-else-if="hasLoaded && (!tabs.length || !goodsList.length)"
+          icon="/static/data-empty.png"
+          :text="tabs.length ? '该分组暂无商品' : '暂无可用分组'"
+          padding-top="80"
         />
+        <s-goods-shelves
+          v-else
+          :data="data"
+          :styles="styles"
+          :goods-list="goodsList"
+          variant="productGroup"
+        />
+        <view v-if="hasLoaded && goodsList.length" class="goods-group__more" @tap="handleMore">
+          <text>查看更多</text>
+          <text class="sicon-forward" />
+        </view>
       </view>
-    </view>
-    <view v-if="isLoading" class="goods-group__loading" aria-label="加载中">
-      <view v-for="item in loadingItems" :key="item" class="goods-group__skeleton">
-        <view class="goods-group__skeleton-image" />
-        <view class="goods-group__skeleton-line goods-group__skeleton-line--long" />
-        <view class="goods-group__skeleton-line" />
-      </view>
-    </view>
-    <s-empty
-      v-else-if="hasLoaded && (!tabs.length || !goodsList.length)"
-      icon="/static/data-empty.png"
-      :text="tabs.length ? '该分组暂无商品' : '暂无可用分组'"
-      padding-top="80"
-    />
-    <s-goods-shelves
-      v-else
-      :data="data"
-      :styles="styles"
-      :goods-list="goodsList"
-      variant="productGroup"
-    />
-    <view v-if="hasLoaded && goodsList.length" class="goods-group__more" @tap="handleMore">
-      <text>查看更多</text>
-      <text class="sicon-forward" />
     </view>
   </view>
 </template>
@@ -65,8 +122,11 @@
     buildProductGroupQuery,
     buildProductGroupRouteQuery,
     createProductGroupLoader,
+    getProductGroupMenuHeight,
+    getProductGroupMenuItemStyle,
     normalizeGroupIds,
     orderSelectedGroups,
+    resolveProductGroupMenu,
   } from './product-group.mjs';
 
   const props = defineProps({
@@ -90,9 +150,6 @@
   const isLoading = ref(false);
   const hasLoaded = ref(false);
   const loadingItems = [1, 2, 3, 4, 5, 6];
-  const tabItemStyle = { height: '88rpx', padding: '0 24rpx' };
-  const tabActiveStyle = { color: '#202124', fontWeight: '600' };
-  const tabInactiveStyle = { color: '#7b8088', fontWeight: '400' };
   let mounted = true;
   let refreshGeneration = 0;
 
@@ -102,6 +159,10 @@
     ...groups.value.map((group) => ({ key: String(group.id), name: group.name })),
   ]);
   const showTabs = computed(() => tabs.value.length > 1);
+  const menu = computed(() => resolveProductGroupMenu(props.data.menu));
+  const isVerticalMenu = computed(() => showTabs.value && menu.value.layout === 'vertical');
+  const menuContainerStyle = computed(() => ({ backgroundColor: menu.value.backgroundColor }));
+  const menuHeight = computed(() => getProductGroupMenuHeight(tabs.value.length));
   const queryData = computed(() => ({
     ...props.data,
     groupIds: groups.value.map((group) => Number(group.id)),
@@ -137,8 +198,12 @@
     }
   }
 
-  function handleTabChange(tab) {
-    activeIndex.value = tab.index;
+  function getMenuItemStyle(index) {
+    return getProductGroupMenuItemStyle(menu.value, activeIndex.value === index);
+  }
+
+  function handleTabChange(index) {
+    activeIndex.value = index;
     void loadActiveTab();
   }
 
@@ -216,17 +281,65 @@
     background: #f7f8fa;
   }
 
-  .goods-group__tabs-shell {
+  .goods-group__menu-shell {
     position: relative;
     z-index: 10;
-    background: #fff;
     border-bottom: 1rpx solid #edf0f2;
     box-shadow: 0 4rpx 14rpx rgba(31, 35, 41, 0.04);
   }
 
-  .goods-group__tabs {
-    padding: 0 16rpx;
-    background: #fff;
+  .goods-group__menu--horizontal {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .goods-group__menu-row {
+    display: flex;
+    width: max-content;
+  }
+
+  .goods-group__menu-item {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26rpx;
+    line-height: 40rpx;
+  }
+
+  .goods-group__menu-item--horizontal {
+    flex-shrink: 0;
+    min-height: 88rpx;
+    padding: 16rpx 28rpx;
+  }
+
+  .goods-group__body--vertical {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .goods-group__menu--vertical {
+    flex-shrink: 0;
+    width: 176rpx;
+  }
+
+  .goods-group__vertical-sticky {
+    flex-shrink: 0;
+    width: 176rpx;
+  }
+
+  .goods-group__menu-item--vertical {
+    width: 100%;
+    min-height: 88rpx;
+    padding: 16rpx;
+    text-align: center;
+    word-break: break-all;
+  }
+
+  .goods-group__content {
+    min-width: 0;
+    flex: 1;
   }
 
   .goods-group__loading {
@@ -256,6 +369,10 @@
     border-radius: 10rpx;
     background: #fff;
     padding-bottom: 20rpx;
+  }
+
+  .goods-group--vertical .goods-group__skeleton {
+    width: calc(50% - 16rpx);
   }
 
   .goods-group__skeleton-image,
