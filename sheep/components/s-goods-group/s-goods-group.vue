@@ -40,7 +40,7 @@
     <s-empty
       v-else-if="hasLoaded && (!tabs.length || !goodsList.length)"
       icon="/static/data-empty.png"
-      :text="tabs.length ? '该分类暂无商品' : '暂无可用分类'"
+      :text="tabs.length ? '该分组暂无商品' : '暂无可用分组'"
       padding-top="80"
     />
     <s-goods-shelves
@@ -50,18 +50,23 @@
       :goods-list="goodsList"
       variant="productGroup"
     />
+    <view v-if="hasLoaded && goodsList.length" class="goods-group__more" @tap="handleMore">
+      <text>查看更多</text>
+      <text class="sicon-forward" />
+    </view>
   </view>
 </template>
 
 <script setup>
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-  import CategoryApi from '@/sheep/api/product/category';
-  import SpuApi from '@/sheep/api/product/spu';
+  import sheep from '@/sheep';
+  import GroupApi from '@/sheep/api/product/group';
   import {
     buildProductGroupQuery,
+    buildProductGroupRouteQuery,
     createProductGroupLoader,
-    normalizeCategoryIds,
-    orderSelectedCategories,
+    normalizeGroupIds,
+    orderSelectedGroups,
   } from './product-group.mjs';
 
   const props = defineProps({
@@ -79,7 +84,7 @@
     },
   });
 
-  const categories = ref([]);
+  const groups = ref([]);
   const activeIndex = ref(0);
   const goodsList = ref([]);
   const isLoading = ref(false);
@@ -91,19 +96,19 @@
   let mounted = true;
   let refreshGeneration = 0;
 
-  const selectedCategoryIds = computed(() => normalizeCategoryIds(props.data.categoryIds));
+  const selectedGroupIds = computed(() => normalizeGroupIds(props.data.groupIds));
   const tabs = computed(() => [
-    ...(props.data.showAll && categories.value.length ? [{ key: 'all', name: '全部' }] : []),
-    ...categories.value.map((category) => ({ key: String(category.id), name: category.name })),
+    ...(props.data.showAll && groups.value.length ? [{ key: 'all', name: '全部' }] : []),
+    ...groups.value.map((group) => ({ key: String(group.id), name: group.name })),
   ]);
   const showTabs = computed(() => tabs.value.length > 1);
   const queryData = computed(() => ({
     ...props.data,
-    categoryIds: categories.value.map((category) => Number(category.id)),
+    groupIds: groups.value.map((group) => Number(group.id)),
   }));
 
   const loader = createProductGroupLoader(async (query) => {
-    const response = await SpuApi.getSpuPage(query);
+    const response = await GroupApi.getGroupSpuPage(query);
     return response?.code === 0 ? response.data?.list || [] : [];
   });
 
@@ -137,32 +142,45 @@
     void loadActiveTab();
   }
 
+  function handleMore() {
+    const tab = tabs.value[activeIndex.value];
+    if (!tab) return;
+    sheep.$router.go(
+      '/pages/goods/group-list',
+      buildProductGroupRouteQuery(
+        queryData.value,
+        tab.key === 'all' ? 'all' : Number(tab.key),
+        tab.name,
+      ),
+    );
+  }
+
   async function refresh() {
     const generation = ++refreshGeneration;
     loader.clear();
-    categories.value = [];
+    groups.value = [];
     goodsList.value = [];
     isLoading.value = false;
     hasLoaded.value = false;
     activeIndex.value = 0;
     try {
-      const categoryIds = selectedCategoryIds.value;
-      if (!categoryIds.length) {
+      const groupIds = selectedGroupIds.value;
+      if (!groupIds.length) {
         hasLoaded.value = true;
         return;
       }
-      const response = await CategoryApi.getCategoryListByIds(categoryIds.join(','));
+      const response = await GroupApi.getGroupListByIds(groupIds.join(','));
       if (!mounted || generation !== refreshGeneration) return;
       if (response?.code !== 0) {
-        categories.value = [];
+        groups.value = [];
         hasLoaded.value = true;
         return;
       }
-      categories.value = orderSelectedCategories(categoryIds, response.data || []);
+      groups.value = orderSelectedGroups(groupIds, response.data || []);
       await loadActiveTab(generation);
     } catch {
       if (mounted && generation === refreshGeneration) {
-        categories.value = [];
+        groups.value = [];
         goodsList.value = [];
         isLoading.value = false;
         hasLoaded.value = true;
@@ -176,7 +194,7 @@
   );
 
   watch(
-    () => [props.data.categoryIds, props.data.pageSize, props.data.showAll, props.data.sortType],
+    () => [props.data.groupIds, props.data.pageSize, props.data.showAll, props.data.sortType],
     () => void refresh(),
     { deep: true },
   );
@@ -218,6 +236,18 @@
     background: #f7f8fa;
   }
 
+  .goods-group__more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    min-height: 76rpx;
+    color: #60646c;
+    font-size: 26rpx;
+    background: #fff;
+    border-top: 1rpx solid #edf0f2;
+  }
+
   .goods-group__skeleton {
     box-sizing: border-box;
     width: calc(33.333% - 16rpx);
@@ -253,7 +283,11 @@
   }
 
   @keyframes goods-group-shimmer {
-    0% { background-position: 100% 0; }
-    100% { background-position: 0 0; }
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: 0 0;
+    }
   }
 </style>
