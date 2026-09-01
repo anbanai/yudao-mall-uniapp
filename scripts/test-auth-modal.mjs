@@ -482,6 +482,55 @@ assert.equal(
   'SMS login should be enabled after the agreement is accepted',
 );
 
+const smsLoginSetupSource = smsLoginComponent.descriptor.scriptSetup.content;
+const smsLoginStart = smsLoginSetupSource.indexOf('async function smsLoginSubmit() {');
+const smsLoginEnd = smsLoginSetupSource.indexOf('\n  }', smsLoginStart) + 4;
+assert.ok(smsLoginStart >= 0 && smsLoginEnd > smsLoginStart, 'SMS login handler not found');
+let smsLoginCalls = 0;
+let smsLoginBindCalls = 0;
+let smsLoginChangeMobileCalls = 0;
+let smsLoginCloseCalls = 0;
+const submitSmsLogin = new Function(
+  'unref',
+  'smsLoginRef',
+  'props',
+  'AuthUtil',
+  'state',
+  'closeAuthModal',
+  'showAuthModal',
+  `${smsLoginSetupSource.slice(smsLoginStart, smsLoginEnd)}\nreturn smsLoginSubmit;`,
+)(
+  (value) => value,
+  { validate: async () => true },
+  { agreeStatus: true },
+  {
+    smsLogin: async () => {
+      smsLoginCalls += 1;
+      return { code: 0 };
+    },
+    bindUserPhoneNumber: async () => {
+      smsLoginBindCalls += 1;
+      return true;
+    },
+  },
+  { model: { mobile: '13800138000', code: '1234' } },
+  () => {
+    smsLoginCloseCalls += 1;
+  },
+  (authType) => {
+    if (authType === 'changeMobile') smsLoginChangeMobileCalls += 1;
+  },
+);
+await submitSmsLogin();
+assert.equal(smsLoginCalls, 1, 'SMS login should submit through the login API');
+assert.equal(smsLoginBindCalls, 0, 'SMS login should not make a second phone binding request');
+assert.equal(
+  smsLoginChangeMobileCalls,
+  0,
+  'successful SMS login should not require a second phone binding step',
+);
+assert.equal(smsLoginCloseCalls, 1, 'successful SMS login should close the login modal');
+
 const accountLoginComponent = await loadComponent(
   'sheep/components/s-auth-modal/components/account-login.vue',
 );
@@ -502,6 +551,507 @@ assert.equal(
   'account login should be enabled after the agreement is accepted',
 );
 
+const changeMobileComponent = await loadComponent(
+  'sheep/components/s-auth-modal/components/change-mobile.vue',
+);
+const changeMobileRoot = changeMobileComponent.template.children.find(
+  (child) => child.type === NodeTypes.ELEMENT,
+);
+assert.ok(changeMobileRoot, 'change mobile root not found');
+const changeMobileSetupSource = changeMobileComponent.descriptor.scriptSetup.content;
+const changeMobileStateStart = changeMobileSetupSource.indexOf('const state = reactive({');
+const changeMobileStateEnd = changeMobileSetupSource.indexOf('\n  });', changeMobileStateStart) + 5;
+assert.ok(
+  changeMobileStateStart >= 0 && changeMobileStateEnd > changeMobileStateStart,
+  'change mobile state not found',
+);
+const initialChangeMobileState = new Function(
+  'reactive',
+  'code',
+  'mobile',
+  `${changeMobileSetupSource.slice(changeMobileStateStart, changeMobileStateEnd)}\nreturn state;`,
+)((value) => value, {}, {});
+assert.equal(
+  initialChangeMobileState.bindMode,
+  'wechat',
+  'WeChat Mini Program should default to the WeChat authorization tab',
+);
+const setBindModeStart = changeMobileSetupSource.indexOf('function setBindMode(mode) {');
+const setBindModeEnd = changeMobileSetupSource.indexOf('\n  }', setBindModeStart) + 4;
+assert.ok(setBindModeStart >= 0 && setBindModeEnd > setBindModeStart, 'bind mode switch not found');
+const bindModeState = { bindMode: 'wechat', isSubmitting: false };
+const setBindMode = new Function(
+  'state',
+  `${changeMobileSetupSource.slice(setBindModeStart, setBindModeEnd)}\nreturn setBindMode;`,
+)(bindModeState);
+setBindMode('sms');
+assert.equal(bindModeState.bindMode, 'sms', 'idle users should be able to open SMS binding');
+bindModeState.isSubmitting = true;
+setBindMode('wechat');
+assert.equal(
+  bindModeState.bindMode,
+  'sms',
+  'binding mode should stay stable while a submission is active',
+);
+
+const bindingTabs = changeMobileRoot.children
+  .filter(
+    (child) =>
+      child.type === NodeTypes.ELEMENT &&
+      child.tag === 'view' &&
+      child.props.some(
+        (prop) =>
+          prop.type === NodeTypes.ATTRIBUTE &&
+          prop.name === 'class' &&
+          prop.value?.content.includes('bind-tabs'),
+      ),
+  )
+  .flatMap((tabBar) =>
+    tabBar.children
+      .filter((child) => child.type === NodeTypes.ELEMENT && child.tag === 'button')
+      .map((button) => {
+        const tap = button.props.find(
+          (prop) =>
+            prop.type === NodeTypes.DIRECTIVE && prop.name === 'on' && prop.arg?.content === 'tap',
+        );
+        return {
+          label: getTextContent(button),
+          mode: tap?.exp?.content.match(/setBindMode\('([^']+)'\)/)?.[1],
+        };
+      }),
+  );
+assert.deepEqual(
+  bindingTabs,
+  [
+    { label: '微信授权', mode: 'wechat' },
+    { label: '短信验证', mode: 'sms' },
+  ],
+  'WeChat phone binding should use two peer tabs with authorization first',
+);
+
+const changeMobileFormIndex = changeMobileRoot.children.findIndex(
+  (child) => child.type === NodeTypes.ELEMENT && child.tag === 'uni-forms',
+);
+const wechatPhoneButtonIndex = changeMobileRoot.children.findIndex(
+  (child) =>
+    child.type === NodeTypes.ELEMENT &&
+    child.tag === 'button' &&
+    child.props.some(
+      (prop) =>
+        prop.type === NodeTypes.DIRECTIVE &&
+        prop.name === 'on' &&
+        prop.arg?.content === 'getphonenumber' &&
+        prop.exp?.content.includes('getPhoneNumber'),
+    ),
+);
+assert.ok(changeMobileFormIndex >= 0, 'SMS mobile binding form not found');
+assert.ok(wechatPhoneButtonIndex >= 0, 'WeChat phone authorization button not found');
+assert.ok(
+  wechatPhoneButtonIndex < changeMobileFormIndex,
+  'WeChat phone authorization should be the primary action before the SMS fallback',
+);
+const wechatPhoneButton = changeMobileRoot.children[wechatPhoneButtonIndex];
+assert.equal(
+  getTextContent(wechatPhoneButton),
+  '授权并绑定',
+  'the primary action should describe the result of WeChat authorization',
+);
+assert.equal(
+  evaluateDisabled(wechatPhoneButton, { state: { isSubmitting: false } }),
+  false,
+  'WeChat phone authorization should be enabled while idle',
+);
+assert.equal(
+  evaluateDisabled(wechatPhoneButton, { state: { isSubmitting: true } }),
+  true,
+  'WeChat phone authorization should be disabled while binding',
+);
+const changeMobileSubmitButton = findButtonByEvent(
+  changeMobileComponent.template,
+  'tap',
+  'changeMobileSubmit',
+);
+assert.ok(changeMobileSubmitButton, 'SMS mobile binding submit button not found');
+assert.equal(
+  evaluateDisabled(changeMobileSubmitButton, { state: { isSubmitting: false } }),
+  false,
+  'SMS mobile binding should be enabled while idle',
+);
+assert.equal(
+  evaluateDisabled(changeMobileSubmitButton, { state: { isSubmitting: true } }),
+  true,
+  'SMS mobile binding should be disabled while another binding request is active',
+);
+const wechatPhoneVisibility = wechatPhoneButton.props.find(
+  (prop) => prop.type === NodeTypes.DIRECTIVE && prop.name === 'if',
+);
+assert.ok(wechatPhoneVisibility?.exp?.content, 'WeChat phone authorization needs a platform rule');
+const isWechatPhoneButtonVisible = new Function(
+  'sheep',
+  'state',
+  `return Boolean(${wechatPhoneVisibility.exp.content});`,
+);
+assert.equal(
+  isWechatPhoneButtonVisible({ $platform: { name: 'WechatMiniProgram' } }, { bindMode: 'wechat' }),
+  true,
+  'the default WeChat tab should show phone authorization',
+);
+assert.equal(
+  isWechatPhoneButtonVisible({ $platform: { name: 'WechatMiniProgram' } }, { bindMode: 'sms' }),
+  false,
+  'the SMS tab should hide the WeChat authorization action',
+);
+assert.equal(
+  isWechatPhoneButtonVisible({ $platform: { name: 'H5' } }, { bindMode: 'wechat' }),
+  false,
+  'non-WeChat platforms should not show WeChat authorization',
+);
+
+const changeMobileForm = changeMobileRoot.children[changeMobileFormIndex];
+const smsFormVisibility = changeMobileForm.props.find(
+  (prop) => prop.type === NodeTypes.DIRECTIVE && prop.name === 'if',
+);
+assert.ok(smsFormVisibility?.exp?.content, 'SMS binding form needs a mode visibility rule');
+const isSmsBindingVisible = new Function(
+  'sheep',
+  'state',
+  `return Boolean(${smsFormVisibility.exp.content});`,
+);
+assert.equal(
+  isSmsBindingVisible({ $platform: { name: 'WechatMiniProgram' } }, { bindMode: 'wechat' }),
+  false,
+  'the default WeChat tab should hide the SMS binding form',
+);
+assert.equal(
+  isSmsBindingVisible({ $platform: { name: 'WechatMiniProgram' } }, { bindMode: 'sms' }),
+  true,
+  'the SMS tab should show the SMS binding form',
+);
+assert.equal(
+  isSmsBindingVisible({ $platform: { name: 'H5' } }, { bindMode: 'wechat' }),
+  true,
+  'non-WeChat platforms should open directly on SMS binding',
+);
+
+const unmountGuardStart = changeMobileSetupSource.indexOf('onBeforeUnmount(() => {');
+const unmountGuardEnd = changeMobileSetupSource.indexOf('\n  });', unmountGuardStart) + 5;
+assert.ok(
+  unmountGuardStart >= 0 && unmountGuardEnd > unmountGuardStart,
+  'change mobile should invalidate pending operations when its component unmounts',
+);
+const unmountState = { active: true };
+let unmountCallback;
+new Function(
+  'onBeforeUnmount',
+  'instanceState',
+  changeMobileSetupSource.slice(unmountGuardStart, unmountGuardEnd),
+)((callback) => {
+  unmountCallback = callback;
+}, unmountState);
+unmountCallback();
+assert.equal(unmountState.active, false, 'unmounting should invalidate the component instance');
+
+const bindPhoneStart = changeMobileSetupSource.indexOf('async function getPhoneNumber(e) {');
+const bindPhoneEnd = changeMobileSetupSource.indexOf('\n  }', bindPhoneStart) + 4;
+assert.ok(bindPhoneStart >= 0 && bindPhoneEnd > bindPhoneStart, 'phone binding handler not found');
+let bindPhoneCalls = 0;
+let refreshUserCalls = 0;
+let closeBindingCalls = 0;
+let resolvePhoneBinding;
+let resolveUserRefresh;
+const phoneBindingResult = new Promise((resolve) => {
+  resolvePhoneBinding = resolve;
+});
+const userRefreshResult = new Promise((resolve) => {
+  resolveUserRefresh = resolve;
+});
+const bindingState = { isSubmitting: false };
+const bindWechatPhone = new Function(
+  'sheep',
+  'closeAuthModal',
+  'state',
+  'instanceState',
+  `${changeMobileSetupSource.slice(bindPhoneStart, bindPhoneEnd)}\nreturn getPhoneNumber;`,
+)(
+  {
+    $platform: {
+      useProvider: () => ({
+        bindUserPhoneNumber: () => {
+          bindPhoneCalls += 1;
+          return phoneBindingResult;
+        },
+      }),
+    },
+    $store: () => ({
+      getInfo: () => {
+        refreshUserCalls += 1;
+        return userRefreshResult;
+      },
+    }),
+  },
+  () => {
+    closeBindingCalls += 1;
+  },
+  bindingState,
+  { active: true },
+);
+await bindWechatPhone({ detail: { errMsg: 'getPhoneNumber:fail user deny' } });
+assert.equal(bindPhoneCalls, 0, 'refusing WeChat phone authorization should not call binding API');
+assert.equal(
+  closeBindingCalls,
+  0,
+  'refusing WeChat phone authorization should keep SMS fallback open',
+);
+const acceptedPhoneEvent = { detail: { errMsg: 'getPhoneNumber:ok', code: 'bind-code' } };
+const firstBinding = bindWechatPhone(acceptedPhoneEvent);
+const repeatedBinding = bindWechatPhone(acceptedPhoneEvent);
+assert.equal(bindPhoneCalls, 1, 'accepting WeChat phone authorization should bind the phone');
+assert.equal(bindingState.isSubmitting, true, 'phone authorization should stay busy while binding');
+resolvePhoneBinding(true);
+await Promise.resolve();
+assert.equal(
+  refreshUserCalls,
+  1,
+  'successful WeChat phone binding should refresh user information',
+);
+assert.equal(
+  closeBindingCalls,
+  0,
+  'successful WeChat phone binding should wait for refreshed user information before closing',
+);
+resolveUserRefresh();
+await Promise.all([firstBinding, repeatedBinding]);
+assert.equal(closeBindingCalls, 1, 'successful WeChat phone binding should close the modal');
+assert.equal(bindingState.isSubmitting, false, 'phone authorization should leave the busy state');
+
+const smsBindStart = changeMobileSetupSource.indexOf('async function changeMobileSubmit() {');
+const smsBindEnd = changeMobileSetupSource.indexOf('\n  }', smsBindStart) + 4;
+assert.ok(smsBindStart >= 0 && smsBindEnd > smsBindStart, 'SMS phone binding handler not found');
+
+let resolveSmsUpdate;
+let resolveSmsRefresh;
+const smsUpdateResult = new Promise((resolve) => {
+  resolveSmsUpdate = resolve;
+});
+const smsRefreshResult = new Promise((resolve) => {
+  resolveSmsRefresh = resolve;
+});
+const smsBindingState = {
+  isSubmitting: false,
+  model: { mobile: '13800138000', code: '1234' },
+};
+let smsRefreshCalls = 0;
+let smsCloseCalls = 0;
+const bindSmsPhone = new Function(
+  'unref',
+  'changeMobileRef',
+  'UserApi',
+  'state',
+  'sheep',
+  'closeAuthModal',
+  'instanceState',
+  `${changeMobileSetupSource.slice(smsBindStart, smsBindEnd)}\nreturn changeMobileSubmit;`,
+)(
+  (value) => value,
+  { validate: async () => true },
+  { updateUserMobile: () => smsUpdateResult },
+  smsBindingState,
+  {
+    $store: () => ({
+      getInfo: () => {
+        smsRefreshCalls += 1;
+        return smsRefreshResult;
+      },
+    }),
+  },
+  () => {
+    smsCloseCalls += 1;
+  },
+  { active: true },
+);
+const currentSmsBinding = bindSmsPhone();
+assert.equal(smsBindingState.isSubmitting, true, 'SMS binding should stay busy while submitting');
+resolveSmsUpdate({ code: 0 });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(smsRefreshCalls, 1, 'successful SMS binding should refresh user information');
+assert.equal(
+  smsCloseCalls,
+  0,
+  'successful SMS binding should wait for refreshed user information before closing',
+);
+resolveSmsRefresh();
+await currentSmsBinding;
+assert.equal(smsCloseCalls, 1, 'successful SMS binding should close the modal once');
+assert.equal(smsBindingState.isSubmitting, false, 'SMS binding should leave the busy state');
+
+let crossWechatCalls = 0;
+let crossSmsValidateCalls = 0;
+let crossSmsCalls = 0;
+let resolveCrossWechat;
+let resolveCrossSms;
+const crossWechatResult = new Promise((resolve) => {
+  resolveCrossWechat = resolve;
+});
+const crossSmsResult = new Promise((resolve) => {
+  resolveCrossSms = resolve;
+});
+const crossSubmitState = {
+  isSubmitting: false,
+  model: { mobile: '13800138000', code: '1234' },
+};
+const crossSheep = {
+  $platform: {
+    useProvider: () => ({
+      bindUserPhoneNumber: () => {
+        crossWechatCalls += 1;
+        return crossWechatResult;
+      },
+    }),
+  },
+  $store: () => ({ getInfo: async () => {} }),
+};
+const crossWechatBinding = new Function(
+  'sheep',
+  'closeAuthModal',
+  'state',
+  'instanceState',
+  `${changeMobileSetupSource.slice(bindPhoneStart, bindPhoneEnd)}\nreturn getPhoneNumber;`,
+)(crossSheep, () => {}, crossSubmitState, { active: true });
+const crossSmsBinding = new Function(
+  'unref',
+  'changeMobileRef',
+  'UserApi',
+  'state',
+  'sheep',
+  'closeAuthModal',
+  'instanceState',
+  `${changeMobileSetupSource.slice(smsBindStart, smsBindEnd)}\nreturn changeMobileSubmit;`,
+)(
+  (value) => value,
+  {
+    validate: async () => {
+      crossSmsValidateCalls += 1;
+      return true;
+    },
+  },
+  {
+    updateUserMobile: () => {
+      crossSmsCalls += 1;
+      return crossSmsResult;
+    },
+  },
+  crossSubmitState,
+  crossSheep,
+  () => {},
+  { active: true },
+);
+
+const activeWechatBinding = crossWechatBinding(acceptedPhoneEvent);
+await crossSmsBinding();
+assert.equal(crossWechatCalls, 1, 'the active WeChat binding should submit once');
+assert.equal(
+  crossSmsValidateCalls,
+  0,
+  'SMS binding should not start while WeChat binding is active',
+);
+assert.equal(crossSmsCalls, 0, 'SMS update API should not race an active WeChat binding');
+resolveCrossWechat(false);
+await activeWechatBinding;
+assert.equal(
+  crossSubmitState.isSubmitting,
+  false,
+  'a rejected WeChat binding response should restore the shared submit state',
+);
+
+const activeSmsBinding = crossSmsBinding();
+await Promise.resolve();
+await crossWechatBinding(acceptedPhoneEvent);
+assert.equal(crossSmsCalls, 1, 'the active SMS binding should submit once');
+assert.equal(crossWechatCalls, 1, 'WeChat binding should not race an active SMS update');
+resolveCrossSms({ code: 1 });
+await activeSmsBinding;
+assert.equal(
+  crossSubmitState.isSubmitting,
+  false,
+  'a rejected SMS binding response should restore the shared submit state',
+);
+
+let resolveStaleWechatBinding;
+const staleWechatBindingResult = new Promise((resolve) => {
+  resolveStaleWechatBinding = resolve;
+});
+const staleWechatState = { isSubmitting: false };
+const staleWechatInstance = { active: true };
+let staleWechatCloseCalls = 0;
+const staleWechatHandler = new Function(
+  'sheep',
+  'closeAuthModal',
+  'state',
+  'instanceState',
+  `${changeMobileSetupSource.slice(bindPhoneStart, bindPhoneEnd)}\nreturn getPhoneNumber;`,
+)(
+  {
+    $platform: {
+      useProvider: () => ({ bindUserPhoneNumber: () => staleWechatBindingResult }),
+    },
+    $store: () => ({ getInfo: async () => {} }),
+  },
+  () => {
+    staleWechatCloseCalls += 1;
+  },
+  staleWechatState,
+  staleWechatInstance,
+);
+const staleWechatOperation = staleWechatHandler(acceptedPhoneEvent);
+staleWechatInstance.active = false;
+resolveStaleWechatBinding(true);
+await staleWechatOperation;
+assert.equal(
+  staleWechatCloseCalls,
+  0,
+  'a completed WeChat binding from an unmounted instance must not close a newer modal',
+);
+
+let resolveStaleSmsBinding;
+const staleSmsBindingResult = new Promise((resolve) => {
+  resolveStaleSmsBinding = resolve;
+});
+const staleSmsState = {
+  isSubmitting: false,
+  model: { mobile: '13800138000', code: '1234' },
+};
+const staleSmsInstance = { active: true };
+let staleSmsCloseCalls = 0;
+const staleSmsHandler = new Function(
+  'unref',
+  'changeMobileRef',
+  'UserApi',
+  'state',
+  'sheep',
+  'closeAuthModal',
+  'instanceState',
+  `${changeMobileSetupSource.slice(smsBindStart, smsBindEnd)}\nreturn changeMobileSubmit;`,
+)(
+  (value) => value,
+  { validate: async () => true },
+  { updateUserMobile: () => staleSmsBindingResult },
+  staleSmsState,
+  { $store: () => ({ getInfo: async () => {} }) },
+  () => {
+    staleSmsCloseCalls += 1;
+  },
+  staleSmsInstance,
+);
+const staleSmsOperation = staleSmsHandler();
+staleSmsInstance.active = false;
+resolveStaleSmsBinding({ code: 0 });
+await staleSmsOperation;
+assert.equal(
+  staleSmsCloseCalls,
+  0,
+  'a completed SMS binding from an unmounted instance must not close a newer modal',
+);
+
 const getPhoneNumberStart = setupSource.indexOf('const getPhoneNumber = async (e) => {');
 const getPhoneNumberEnd = setupSource.indexOf('\n  };', getPhoneNumberStart) + 5;
 assert.ok(
@@ -512,11 +1062,14 @@ assert.ok(
 const protocolState = { protocol: null };
 const toastMessages = [];
 let mobileLoginCalls = 0;
+let quickLoginBindCalls = 0;
+let quickLoginChangeMobileCalls = 0;
 let closeCalls = 0;
 const getPhoneNumber = new Function(
   'state',
   'sheep',
   'closeAuthModal',
+  'showAuthModal',
   `${setupSource.slice(getPhoneNumberStart, getPhoneNumberEnd)}\nreturn getPhoneNumber;`,
 )(
   protocolState,
@@ -528,11 +1081,18 @@ const getPhoneNumber = new Function(
           mobileLoginCalls += 1;
           return true;
         },
+        bindUserPhoneNumber: async () => {
+          quickLoginBindCalls += 1;
+          return true;
+        },
       }),
     },
   },
   () => {
     closeCalls += 1;
+  },
+  (authType) => {
+    if (authType === 'changeMobile') quickLoginChangeMobileCalls += 1;
   },
 );
 
@@ -544,6 +1104,12 @@ assert.equal(closeCalls, 0, 'the login modal must remain open before the agreeme
 protocolState.protocol = true;
 await getPhoneNumber(phoneNumberEvent);
 assert.equal(mobileLoginCalls, 1, 'accepted users should be able to submit quick login');
+assert.equal(quickLoginBindCalls, 0, 'quick login should not make a second phone binding request');
+assert.equal(
+  quickLoginChangeMobileCalls,
+  0,
+  'successful quick login should not require a second phone binding step',
+);
 assert.equal(closeCalls, 1, 'a successful quick login should close the modal');
 
 function findWechatLoginButton(node) {
