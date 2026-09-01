@@ -2,6 +2,32 @@ const GROUP_LIMIT = 15;
 const DEFAULT_PAGE_SIZE = 10;
 const MIN_PAGE_SIZE = 1;
 const MAX_PAGE_SIZE = 50;
+const MENU_DEFAULTS = {
+  activeBackgroundColor: '#e6f4ff',
+  activeColor: '#0958d9',
+  backgroundColor: '#ffffff',
+  color: '#595959',
+  layout: 'horizontal',
+};
+const MENU_MAX_VISIBLE_ITEMS = 8;
+
+export function resolveProductGroupMenu(menu = {}) {
+  return { ...MENU_DEFAULTS, ...(menu || {}) };
+}
+
+export function getProductGroupMenuItemStyle(menu, active) {
+  return {
+    backgroundColor: active ? menu.activeBackgroundColor : menu.backgroundColor,
+    color: active ? menu.activeColor : menu.color,
+    fontWeight: active ? '600' : '400',
+  };
+}
+
+export function getProductGroupMenuHeight(itemCount) {
+  return Number(itemCount) > MENU_MAX_VISIBLE_ITEMS
+    ? 'calc(100vh - env(safe-area-inset-top))'
+    : 'auto';
+}
 
 export function normalizeGroupIds(groupIds = []) {
   return [...new Set(groupIds.map(Number).filter((id) => Number.isInteger(id) && id > 0))].slice(
