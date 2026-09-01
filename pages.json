@@ -143,6 +143,17 @@
 					}
 				},
 				{
+					"path": "group-list",
+					"style": {
+						"navigationBarTitleText": "分组商品"
+					},
+					"meta": {
+						"sync": true,
+						"title": "分组商品",
+						"group": "商品"
+					}
+				},
+				{
 					"path": "comment/add",
 					"style": {
 						"navigationBarTitleText": "评价商品"
