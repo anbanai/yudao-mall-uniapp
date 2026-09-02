@@ -38,6 +38,16 @@
       </view>
     </view>
     <s-empty
+      v-else-if="loadError"
+      icon="/static/internet-empty.png"
+      text="商品加载失败，请重试"
+      showAction
+      actionText="重新加载"
+      buttonColor="#ff3000"
+      padding-top="80"
+      @clickAction="retry"
+    />
+    <s-empty
       v-else-if="hasLoaded && (!tabs.length || !goodsList.length)"
       icon="/static/data-empty.png"
       :text="tabs.length ? '该分类暂无商品' : '暂无可用分类'"
@@ -60,6 +70,7 @@
   import {
     buildProductCategoryQuery,
     createProductCategoryLoader,
+    getProductCategoryResponseData,
     normalizeCategoryIds,
     orderSelectedCategories,
   } from './product-category.mjs';
@@ -75,6 +86,7 @@
   const goodsList = ref([]);
   const isLoading = ref(false);
   const hasLoaded = ref(false);
+  const loadError = ref(false);
   const loadingItems = [1, 2, 3, 4, 5, 6];
   const tabItemStyle = { height: '88rpx', padding: '0 24rpx' };
   const tabActiveStyle = { color: '#202124', fontWeight: '600' };
@@ -95,7 +107,7 @@
 
   const loader = createProductCategoryLoader(async (query) => {
     const response = await SpuApi.getSpuPage(query);
-    return response?.code === 0 ? response.data?.list || [] : [];
+    return getProductCategoryResponseData(response)?.list || [];
   });
 
   async function loadActiveTab(generation = refreshGeneration) {
@@ -107,25 +119,47 @@
     }
     isLoading.value = true;
     hasLoaded.value = false;
-    const result = await loader.load(
-      tab.key,
-      buildProductCategoryQuery(queryData.value, tab.key === 'all' ? 'all' : Number(tab.key)),
-    );
-    if (
-      result.accepted &&
-      mounted &&
-      generation === refreshGeneration &&
-      tabs.value[activeIndex.value]?.key === tab.key
-    ) {
-      goodsList.value = result.list;
-      isLoading.value = false;
-      hasLoaded.value = true;
+    loadError.value = false;
+    try {
+      const result = await loader.load(
+        tab.key,
+        buildProductCategoryQuery(queryData.value, tab.key === 'all' ? 'all' : Number(tab.key)),
+      );
+      if (
+        result.accepted &&
+        mounted &&
+        generation === refreshGeneration &&
+        tabs.value[activeIndex.value]?.key === tab.key
+      ) {
+        goodsList.value = result.list;
+        isLoading.value = false;
+        hasLoaded.value = true;
+      }
+    } catch {
+      if (
+        mounted &&
+        generation === refreshGeneration &&
+        tabs.value[activeIndex.value]?.key === tab.key
+      ) {
+        goodsList.value = [];
+        isLoading.value = false;
+        hasLoaded.value = false;
+        loadError.value = true;
+      }
     }
   }
 
   function handleTabChange(tab) {
     activeIndex.value = tab.index;
     void loadActiveTab();
+  }
+
+  function retry() {
+    if (tabs.value.length) {
+      void loadActiveTab();
+    } else {
+      void refresh();
+    }
   }
 
   async function refresh() {
@@ -135,6 +169,7 @@
     goodsList.value = [];
     isLoading.value = false;
     hasLoaded.value = false;
+    loadError.value = false;
     activeIndex.value = 0;
     try {
       const categoryIds = selectedCategoryIds.value;
@@ -144,18 +179,18 @@
       }
       const response = await CategoryApi.getCategoryListByIds(categoryIds.join(','));
       if (!mounted || generation !== refreshGeneration) return;
-      if (response?.code !== 0) {
-        hasLoaded.value = true;
-        return;
-      }
-      categories.value = orderSelectedCategories(categoryIds, response.data || []);
+      categories.value = orderSelectedCategories(
+        categoryIds,
+        getProductCategoryResponseData(response) || [],
+      );
       await loadActiveTab(generation);
     } catch {
       if (mounted && generation === refreshGeneration) {
         categories.value = [];
         goodsList.value = [];
         isLoading.value = false;
-        hasLoaded.value = true;
+        hasLoaded.value = false;
+        loadError.value = true;
       }
     }
   }
