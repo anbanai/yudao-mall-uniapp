@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 
 import * as productGroup from '../sheep/components/s-goods-group/product-group.mjs';
+import * as productCategory from '../sheep/components/s-goods-category/product-category.mjs';
+import { resolveDiyProductComponentType } from '../sheep/components/s-block-item/block-item.mjs';
 import { getBlockOverflow } from '../sheep/components/s-block/block.mjs';
 
 const {
@@ -13,6 +15,41 @@ const {
 
 assert.equal(getBlockOverflow(true), 'visible');
 assert.equal(getBlockOverflow(false), 'hidden');
+
+assert.equal(resolveDiyProductComponentType('ProductCategory', {}), 'ProductCategory');
+assert.equal(
+  resolveDiyProductComponentType('ProductGroup', { categoryIds: [1] }),
+  'ProductCategory',
+  'legacy category-backed ProductGroup data should still render as a category component',
+);
+assert.equal(
+  resolveDiyProductComponentType('ProductGroup', { categoryIds: [1], groupIds: [] }),
+  'ProductCategory',
+  'legacy category data normalized by an intermediate release should remain a category component',
+);
+assert.equal(resolveDiyProductComponentType('ProductGroup', { groupIds: [1] }), 'ProductGroup');
+
+assert.deepEqual(productCategory.normalizeCategoryIds?.([2, 1, 2, 0]), [2, 1]);
+assert.deepEqual(
+  productCategory.buildProductCategoryQuery?.(
+    { categoryIds: [2, 1, 2], pageSize: 99, sortType: 'latest' },
+    'all',
+  ),
+  {
+    categoryIds: '2,1',
+    pageNo: 1,
+    pageSize: 50,
+    sortAsc: false,
+    sortField: 'createTime',
+  },
+);
+assert.deepEqual(
+  productCategory.buildProductCategoryQuery?.(
+    { categoryIds: [2, 1], pageSize: 10, sortType: 'default' },
+    2,
+  ),
+  { categoryId: 2, pageNo: 1, pageSize: 10 },
+);
 
 assert.deepEqual(productGroup.resolveProductGroupMenu?.({}), {
   activeBackgroundColor: '#e6f4ff',
