@@ -13,7 +13,9 @@
         v-for="(item, index) in template.components"
         :key="index"
         :styles="item.property.style"
-        :allow-overflow="item.id === 'ProductGroup' && item.property.sticky"
+        :allow-overflow="
+          (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
+        "
       >
         <s-block-item
           :type="item.id"
