@@ -88,6 +88,13 @@ export function buildProductGroupRouteQuery(source, tab, groupName) {
   };
 }
 
+export function getProductGroupResponseData(response) {
+  if (response?.code !== 0) {
+    throw new Error(response?.msg || 'request failed');
+  }
+  return response.data;
+}
+
 export function createProductGroupLoader(requestPage) {
   const cache = new Map();
   let generation = 0;
@@ -99,19 +106,21 @@ export function createProductGroupLoader(requestPage) {
     async load(key, query) {
       const requestGeneration = generation;
       if (!cache.has(key)) {
-        cache.set(
-          key,
-          Promise.resolve()
-            .then(() => requestPage(query))
-            .then((list) => (Array.isArray(list) ? list : []))
-            .catch(() => []),
-        );
+        cache.set(key, Promise.resolve().then(() => requestPage(query)));
       }
-      const list = await cache.get(key);
+      const request = cache.get(key);
+      let list;
+      try {
+        list = await request;
+      } catch (error) {
+        if (cache.get(key) === request) cache.delete(key);
+        if (requestGeneration !== generation) return { accepted: false, list: [] };
+        throw error;
+      }
       if (requestGeneration !== generation) {
         return { accepted: false, list: [] };
       }
-      return { accepted: true, list };
+      return { accepted: true, list: Array.isArray(list) ? list : [] };
     },
   };
 }

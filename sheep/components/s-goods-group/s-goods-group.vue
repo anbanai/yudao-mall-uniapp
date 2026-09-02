@@ -93,6 +93,16 @@
           </view>
         </view>
         <s-empty
+          v-else-if="loadError"
+          icon="/static/internet-empty.png"
+          text="商品加载失败，请重试"
+          showAction
+          actionText="重新加载"
+          buttonColor="#ff3000"
+          padding-top="80"
+          @clickAction="retry"
+        />
+        <s-empty
           v-else-if="hasLoaded && (!tabs.length || !goodsList.length)"
           icon="/static/data-empty.png"
           :text="tabs.length ? '该分组暂无商品' : '暂无可用分组'"
@@ -122,6 +132,7 @@
     buildProductGroupQuery,
     buildProductGroupRouteQuery,
     createProductGroupLoader,
+    getProductGroupResponseData,
     getProductGroupMenuHeight,
     getProductGroupMenuItemStyle,
     normalizeGroupIds,
@@ -149,6 +160,7 @@
   const goodsList = ref([]);
   const isLoading = ref(false);
   const hasLoaded = ref(false);
+  const loadError = ref(false);
   const loadingItems = [1, 2, 3, 4, 5, 6];
   let mounted = true;
   let refreshGeneration = 0;
@@ -170,7 +182,7 @@
 
   const loader = createProductGroupLoader(async (query) => {
     const response = await GroupApi.getGroupSpuPage(query);
-    return response?.code === 0 ? response.data?.list || [] : [];
+    return getProductGroupResponseData(response)?.list || [];
   });
 
   async function loadActiveTab(generation = refreshGeneration) {
@@ -182,19 +194,33 @@
     }
     isLoading.value = true;
     hasLoaded.value = false;
-    const result = await loader.load(
-      tab.key,
-      buildProductGroupQuery(queryData.value, tab.key === 'all' ? 'all' : Number(tab.key)),
-    );
-    if (
-      result.accepted &&
-      mounted &&
-      generation === refreshGeneration &&
-      tabs.value[activeIndex.value]?.key === tab.key
-    ) {
-      goodsList.value = result.list;
-      isLoading.value = false;
-      hasLoaded.value = true;
+    loadError.value = false;
+    try {
+      const result = await loader.load(
+        tab.key,
+        buildProductGroupQuery(queryData.value, tab.key === 'all' ? 'all' : Number(tab.key)),
+      );
+      if (
+        result.accepted &&
+        mounted &&
+        generation === refreshGeneration &&
+        tabs.value[activeIndex.value]?.key === tab.key
+      ) {
+        goodsList.value = result.list;
+        isLoading.value = false;
+        hasLoaded.value = true;
+      }
+    } catch {
+      if (
+        mounted &&
+        generation === refreshGeneration &&
+        tabs.value[activeIndex.value]?.key === tab.key
+      ) {
+        goodsList.value = [];
+        isLoading.value = false;
+        hasLoaded.value = false;
+        loadError.value = true;
+      }
     }
   }
 
@@ -205,6 +231,14 @@
   function handleTabChange(index) {
     activeIndex.value = index;
     void loadActiveTab();
+  }
+
+  function retry() {
+    if (tabs.value.length) {
+      void loadActiveTab();
+    } else {
+      void refresh();
+    }
   }
 
   function handleMore() {
@@ -227,6 +261,7 @@
     goodsList.value = [];
     isLoading.value = false;
     hasLoaded.value = false;
+    loadError.value = false;
     activeIndex.value = 0;
     try {
       const groupIds = selectedGroupIds.value;
@@ -236,19 +271,15 @@
       }
       const response = await GroupApi.getGroupListByIds(groupIds.join(','));
       if (!mounted || generation !== refreshGeneration) return;
-      if (response?.code !== 0) {
-        groups.value = [];
-        hasLoaded.value = true;
-        return;
-      }
-      groups.value = orderSelectedGroups(groupIds, response.data || []);
+      groups.value = orderSelectedGroups(groupIds, getProductGroupResponseData(response) || []);
       await loadActiveTab(generation);
     } catch {
       if (mounted && generation === refreshGeneration) {
         groups.value = [];
         goodsList.value = [];
         isLoading.value = false;
-        hasLoaded.value = true;
+        hasLoaded.value = false;
+        loadError.value = true;
       }
     }
   }

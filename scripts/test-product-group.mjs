@@ -9,9 +9,15 @@ const {
   buildProductGroupQuery,
   buildProductGroupRouteQuery,
   createProductGroupLoader,
+  getProductGroupResponseData,
   normalizeGroupIds,
   orderSelectedGroups,
 } = productGroup;
+
+const {
+  createProductCategoryLoader,
+  getProductCategoryResponseData,
+} = productCategory;
 
 assert.equal(getBlockOverflow(true), 'visible');
 assert.equal(getBlockOverflow(false), 'hidden');
@@ -166,13 +172,43 @@ assert.deepEqual(
   },
 );
 
-const failedLoader = createProductGroupLoader(async () => {
-  throw new Error('network error');
+assert.deepEqual(getProductGroupResponseData({ code: 0, data: { list: [{ id: 2 }] } }), {
+  list: [{ id: 2 }],
 });
+assert.throws(
+  () => getProductGroupResponseData({ code: 500, msg: 'group request failed' }),
+  /group request failed/,
+);
+assert.deepEqual(getProductCategoryResponseData({ code: 0, data: [{ id: 3 }] }), [{ id: 3 }]);
+assert.throws(
+  () => getProductCategoryResponseData({ code: 500, msg: 'category request failed' }),
+  /category request failed/,
+);
+
+let failedGroupCalls = 0;
+const failedGroupLoader = createProductGroupLoader(async () => {
+  failedGroupCalls += 1;
+  if (failedGroupCalls === 1) throw new Error('network error');
+  return [{ id: 2 }];
+});
+await assert.rejects(failedGroupLoader.load('2', query), /network error/);
 assert.deepEqual(
-  await failedLoader.load('2', query),
-  { accepted: true, list: [] },
-  'failed product requests should render an empty group',
+  await failedGroupLoader.load('2', query),
+  { accepted: true, list: [{ id: 2 }] },
+  'failed group product requests should be evicted so retry can succeed',
+);
+
+let failedCategoryCalls = 0;
+const failedCategoryLoader = createProductCategoryLoader(async () => {
+  failedCategoryCalls += 1;
+  if (failedCategoryCalls === 1) throw new Error('network error');
+  return [{ id: 3 }];
+});
+await assert.rejects(failedCategoryLoader.load('3', { categoryId: 3 }), /network error/);
+assert.deepEqual(
+  await failedCategoryLoader.load('3', { categoryId: 3 }),
+  { accepted: true, list: [{ id: 3 }] },
+  'failed category product requests should be evicted so retry can succeed',
 );
 
 console.log('product group query checks passed');
