@@ -9,6 +9,7 @@
     "test:pay-methods": "node scripts/test-pay-methods.mjs",
     "test:product-group": "node scripts/test-product-group.mjs",
     "test:order-points": "node scripts/test-order-points.mjs",
+    "test:point-block": "node scripts/test-point-block.mjs",
     "test:wechat-logistics": "node scripts/test-wechat-logistics.mjs",
     "dev:h5": "UNI_INPUT_DIR=. UNI_OUTPUT_DIR=./dist/dev/h5 uni",
     "dev:mp-weixin": "UNI_INPUT_DIR=\"$PWD\" UNI_OUTPUT_DIR=\"$PWD/dist/dev/mp-weixin\" uni -p mp-weixin",

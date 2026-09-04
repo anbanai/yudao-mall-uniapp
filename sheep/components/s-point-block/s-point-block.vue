@@ -146,6 +146,7 @@
   import SpuApi from '@/sheep/api/product/spu';
   import PointApi from '@/sheep/api/promotion/point';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+  import { mergePointActivitiesWithSpus } from './point-block.mjs';
 
   // 布局类型
   const LayoutTypeEnum = {
@@ -233,48 +234,43 @@
    */
   async function getPointActivityDetailList(ids) {
     const { data } = await PointApi.getPointActivityListByIds(ids);
-    return data;
+    return Array.isArray(data) ? data : [];
   }
 
   /**
-   * 根据商品编号，获取商品详情
+   * 根据商品编号列表，批量获取商品详情
    * @param ids 商品编号列表
-   * @return {Promise<undefined>} 商品列表
+   * @return {Promise<Array>} 商品列表
    */
-  async function getSpuDetail(ids) {
-    const { data: spu } = await SpuApi.getSpuDetail(ids);
-    return spu;
+  async function getSpuList(ids) {
+    if (ids.length === 0) {
+      return [];
+    }
+    const { data } = await SpuApi.getSpuListByIds(ids.join(','));
+    return Array.isArray(data) ? data : [];
   }
 
   // 初始化
   onMounted(async () => {
-    // 加载活动列表
-    const activityList = await getPointActivityDetailList(activityIds.join(','));
-    // 循环获取活动商品SPU详情并添加到spuList
-    for (const activity of activityList) {
-      state.spuList.push(await getSpuDetail(activity.spuId));
+    if (!Array.isArray(activityIds) || activityIds.length === 0) {
+      return;
     }
+    try {
+      const activityList = await getPointActivityDetailList(activityIds.join(','));
+      const spuList = await getSpuList(activityList.map((activity) => activity.spuId));
+      state.spuList = mergePointActivitiesWithSpus(
+        activityList,
+        spuList,
+        PromotionActivityTypeEnum.POINT.type,
+      );
 
-    // 循环活动列表
-    activityList.forEach((activity) => {
-      // 查找对应的 spu 并更新价格
-      const spu = state.spuList.find((spu) => activity.spuId === spu.id);
-      if (spu) {
-        spu.pointStock = activity.stock;
-        spu.pointTotalStock = activity.totalStock;
-        spu.point = activity.point;
-        spu.pointPrice = activity.price;
-        // 赋值活动ID，为了点击跳转详情页
-        spu.activityId = activity.id;
-        // 赋值活动类型
-        spu.activityType = PromotionActivityTypeEnum.POINT.type;
+      // 只有双列布局时需要
+      if (layoutType === LayoutTypeEnum.TWO_COL) {
+        // 分列
+        calculateGoodsColumn();
       }
-    });
-
-    // 只有双列布局时需要
-    if (layoutType === LayoutTypeEnum.TWO_COL) {
-      // 分列
-      calculateGoodsColumn();
+    } catch (error) {
+      console.error('加载积分商城装修组件失败', error);
     }
   });
 </script>
