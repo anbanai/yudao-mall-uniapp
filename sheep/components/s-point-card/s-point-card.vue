@@ -155,6 +155,7 @@
   import sheep from '@/sheep';
   import SpuApi from '@/sheep/api/product/spu';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+  import { normalizePointSpu } from '../s-point-block/point-block.mjs';
   import { isEmpty } from '@/sheep/helper/utils';
 
   // 布局类型
@@ -304,7 +305,7 @@
     }
     // 循环获取活动商品SPU详情并添加到spuList
     for (const activity of list) {
-      state.spuList.push(await getSpuDetail(activity.spuId));
+      state.spuList.push(normalizePointSpu(await getSpuDetail(activity.spuId)));
     }
 
     // 循环活动列表

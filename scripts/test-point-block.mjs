@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 
-import { mergePointActivitiesWithSpus } from '../sheep/components/s-point-block/point-block.mjs';
+import {
+  mergePointActivitiesWithSpus,
+  normalizePointSpu,
+} from '../sheep/components/s-point-block/point-block.mjs';
 
 const activities = [
   { id: 7, spuId: 101, stock: 4, totalStock: 10, point: 300, price: 1200 },
@@ -8,14 +11,15 @@ const activities = [
   { id: 8, spuId: 102, stock: 6, totalStock: 12, point: 400, price: 1600 },
 ];
 const spus = [
-  { id: 102, name: 'Tea B', price: 2200 },
-  { id: 101, name: 'Tea A', price: 1800 },
+  { id: 102, name: 'Tea B', introduction: 'Tea B', price: 2200 },
+  { id: 101, name: 'Tea A', introduction: 'A fresh tea', price: 1800 },
 ];
 
 assert.deepEqual(mergePointActivitiesWithSpus(activities, spus, 4), [
   {
     id: 101,
     name: 'Tea A',
+    introduction: 'A fresh tea',
     price: 1800,
     pointStock: 4,
     pointTotalStock: 10,
@@ -40,11 +44,19 @@ assert.deepEqual(mergePointActivitiesWithSpus(activities, spus, 4), [
 assert.deepEqual(mergePointActivitiesWithSpus(null, spus, 4), []);
 assert.deepEqual(mergePointActivitiesWithSpus(activities, null, 4), []);
 
+assert.deepEqual(normalizePointSpu({ name: 'Tea A', introduction: ' Tea A ' }), {
+  name: 'Tea A',
+});
+assert.deepEqual(normalizePointSpu({ name: 'Tea A', introduction: 'A fresh tea' }), {
+  name: 'Tea A',
+  introduction: 'A fresh tea',
+});
+
 assert.deepEqual(
   spus,
   [
-    { id: 102, name: 'Tea B', price: 2200 },
-    { id: 101, name: 'Tea A', price: 1800 },
+    { id: 102, name: 'Tea B', introduction: 'Tea B', price: 2200 },
+    { id: 101, name: 'Tea A', introduction: 'A fresh tea', price: 1800 },
   ],
   'merging point data must not mutate the shared SPU response',
 );

@@ -165,7 +165,10 @@
           {{ data.title || data.name }}
         </view>
         <view
-          v-if="goodsFields.subtitle?.show || goodsFields.introduction?.show"
+          v-if="
+            (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
+            (data.subtitle || data.introduction)
+          "
           class="md-goods-subtitle ss-m-t-16 ss-line-1"
           :style="[{ color: subTitleColor, background: subTitleBackground }]"
         >
@@ -279,7 +282,10 @@
             {{ data.title || data.name }}
           </view>
           <view
-            v-if="goodsFields.subtitle?.show || goodsFields.introduction?.show"
+            v-if="
+              (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
+              (data.subtitle || data.introduction)
+            "
             class="lg-goods-subtitle ss-m-t-10 ss-line-1"
             :style="[{ color: subTitleColor, background: subTitleBackground }]"
           >
@@ -378,7 +384,10 @@
             {{ data.title || data.name }}
           </view>
           <view
-            v-if="goodsFields.subtitle?.show || goodsFields.introduction?.show"
+            v-if="
+              (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
+              (data.subtitle || data.introduction)
+            "
             class="sl-goods-subtitle ss-m-t-16"
             :style="[{ color: subTitleColor, background: subTitleBackground }]"
           >
