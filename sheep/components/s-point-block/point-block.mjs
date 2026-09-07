@@ -1,6 +1,4 @@
-function getDisplayText(value) {
-  return typeof value === 'string' ? value.trim() : value;
-}
+import { getGoodsSubtitle, getGoodsTitle } from '../s-goods-column/goods-column.mjs';
 
 /**
  * Remove a redundant point-product subtitle without mutating the API response.
@@ -12,17 +10,17 @@ export function normalizePointSpu(spu) {
     return spu;
   }
 
-  const title = getDisplayText(spu.title || spu.name);
-  const subtitle = getDisplayText(spu.subtitle || spu.introduction);
+  const title = getGoodsTitle(spu);
+  const subtitle = getGoodsSubtitle(spu);
   if (!title || !subtitle || title !== subtitle) {
     return spu;
   }
 
   const normalized = { ...spu };
-  if (getDisplayText(normalized.subtitle) === subtitle) {
+  if (getGoodsSubtitle({ subtitle: normalized.subtitle }) === subtitle) {
     delete normalized.subtitle;
   }
-  if (getDisplayText(normalized.introduction) === subtitle) {
+  if (getGoodsSubtitle({ introduction: normalized.introduction }) === subtitle) {
     delete normalized.introduction;
   }
   return normalized;

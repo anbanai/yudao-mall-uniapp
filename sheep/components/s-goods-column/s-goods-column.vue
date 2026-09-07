@@ -167,7 +167,7 @@
         <view
           v-if="
             (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
-            (data.subtitle || data.introduction)
+            shouldShowGoodsSubtitle(data)
           "
           class="md-goods-subtitle ss-m-t-16 ss-line-1"
           :style="[{ color: subTitleColor, background: subTitleBackground }]"
@@ -284,7 +284,7 @@
           <view
             v-if="
               (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
-              (data.subtitle || data.introduction)
+              shouldShowGoodsSubtitle(data)
             "
             class="lg-goods-subtitle ss-m-t-10 ss-line-1"
             :style="[{ color: subTitleColor, background: subTitleBackground }]"
@@ -386,7 +386,7 @@
           <view
             v-if="
               (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
-              (data.subtitle || data.introduction)
+              shouldShowGoodsSubtitle(data)
             "
             class="sl-goods-subtitle ss-m-t-16"
             :style="[{ color: subTitleColor, background: subTitleBackground }]"
@@ -512,6 +512,7 @@
   } from '@/sheep/hooks/useGoods';
   import { isArray } from 'lodash-es';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+  import { shouldShowGoodsSubtitle } from './goods-column.mjs';
 
   // 数据
   let defaultImgWidth = ref(0);
