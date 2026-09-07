@@ -66,6 +66,26 @@ function getTextContent(node) {
   return (node.children || []).map(getTextContent).join('');
 }
 
+function preprocessTemplateForPlatform(source, platform) {
+  const included = [true];
+  const result = [];
+  for (const line of source.split('\n')) {
+    const directive = line.match(/^\s*<!--\s*#(ifdef|ifndef|endif)\s*([\w-]+)?\s*-->/);
+    if (!directive) {
+      if (included.at(-1)) result.push(line);
+      continue;
+    }
+    const [, type, condition] = directive;
+    if (type === 'endif') {
+      included.pop();
+    } else {
+      const matches = condition === platform;
+      included.push(included.at(-1) && (type === 'ifdef' ? matches : !matches));
+    }
+  }
+  return result.join('\n');
+}
+
 function collectLoginTabs(node, tabs = []) {
   if (node.type === NodeTypes.ELEMENT && node.tag === 'button') {
     const tap = node.props.find(
@@ -87,13 +107,24 @@ function collectLoginTabs(node, tabs = []) {
 }
 
 assert.deepEqual(
-  collectLoginTabs(template),
-  [
-    { type: 'wechatLogin', label: '快捷登录' },
-    { type: 'smsLogin', label: '短信登录' },
-    { type: 'accountLogin', label: '账号登录' },
-  ],
-  'mini-program users should get three peer login tabs with quick login first',
+  collectLoginTabs(parse(preprocessTemplateForPlatform(componentSource, 'MP-WEIXIN'))),
+  [],
+  'the mini-program quick-login modal should not expose alternative login tabs',
+);
+
+const loginModeHead = collectElements(template, 'view').find((element) =>
+  element.props.some(
+    (prop) =>
+      prop.type === NodeTypes.ATTRIBUTE &&
+      prop.name === 'class' &&
+      prop.value?.content.includes('login-mode-head'),
+  ),
+);
+assert.ok(loginModeHead, 'mini-program quick-login heading not found');
+assert.match(
+  getTextContent(loginModeHead),
+  /快捷登录/,
+  'the mini-program login modal should keep a clear quick-login heading',
 );
 
 function preprocessForPlatform(source, platform) {
@@ -117,6 +148,21 @@ function preprocessForPlatform(source, platform) {
   }
   return result.join('\n');
 }
+
+assert.match(
+  componentSource,
+  /<!-- #ifndef MP-WEIXIN -->[\s\S]*class="login-mode-head"[\s\S]*class="login-tabs"[\s\S]*短信登录[\s\S]*账号登录[\s\S]*<!-- #endif -->/,
+  'non-mini-program platforms should retain the login method switcher',
+);
+assert.deepEqual(
+  collectLoginTabs(parse(preprocessTemplateForPlatform(componentSource, 'H5'))),
+  [
+    { type: 'wechatLogin', label: '快捷登录' },
+    { type: 'smsLogin', label: '短信登录' },
+    { type: 'accountLogin', label: '账号登录' },
+  ],
+  'H5 should retain all configured login methods',
+);
 
 const modalHookSource = await readFile(resolve(projectRoot, 'sheep/hooks/useModal.js'), 'utf8');
 const modalHookForMp = preprocessForPlatform(modalHookSource, 'MP-WEIXIN');
@@ -623,10 +669,10 @@ const bindingTabs = changeMobileRoot.children
 assert.deepEqual(
   bindingTabs,
   [
-    { label: '微信授权', mode: 'wechat' },
+    { label: '快捷绑定', mode: 'wechat' },
     { label: '短信验证', mode: 'sms' },
   ],
-  'WeChat phone binding should use two peer tabs with authorization first',
+  'mini-program phone binding should use two peer tabs with quick binding first',
 );
 
 const changeMobileFormIndex = changeMobileRoot.children.findIndex(

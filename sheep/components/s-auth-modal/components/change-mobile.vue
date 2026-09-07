@@ -18,7 +18,7 @@
         :disabled="state.isSubmitting"
         @tap="setBindMode('wechat')"
       >
-        微信授权
+        快捷绑定
       </button>
       <button
         class="ss-reset-button bind-tab"
@@ -32,7 +32,7 @@
     <view v-if="'WechatMiniProgram' === sheep.$platform.name" class="bind-mode-subtitle">
       {{
         state.bindMode === 'wechat'
-          ? '使用微信绑定的手机号快速完成绑定'
+          ? '授权当前手机号后快速完成绑定'
           : '使用短信验证码绑定本人手机号'
       }}
     </view>

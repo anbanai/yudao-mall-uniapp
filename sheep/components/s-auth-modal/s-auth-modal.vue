@@ -3,6 +3,13 @@
   <su-popup :show="authType !== ''" round="10" :showClose="true" @close="handlePopupClose">
     <view class="login-wrap">
       <!-- #ifdef MP-WEIXIN -->
+      <view v-if="authType === 'wechatLogin'" class="login-mode-head quick-login-head">
+        <view class="quick-login-title">快捷登录</view>
+        <view class="login-mode-subtitle">授权当前手机号后快速登录</view>
+      </view>
+      <!-- #endif -->
+
+      <!-- #ifndef MP-WEIXIN -->
       <view v-if="loginTypes.includes(authType)" class="login-mode-head">
         <view class="login-tabs">
           <button
@@ -54,7 +61,7 @@
           :disabled="!state.protocol"
           @getphonenumber="getPhoneNumber"
         >
-          手机号快捷登录
+          快捷登录
         </button>
       </view>
       <!-- #endif -->
@@ -162,7 +169,7 @@
   const loginModeSubtitle = computed(
     () =>
       ({
-        wechatLogin: '使用微信绑定手机号快速登录',
+        wechatLogin: '授权当前手机号后快速登录',
         smsLogin: '未注册的手机号，验证后自动注册账号',
         accountLogin: '如果未设置过密码，请点击忘记密码',
       }[authType.value] || ''),
@@ -278,6 +285,14 @@
         transform: translateX(-50%);
       }
     }
+  }
+
+  .quick-login-title {
+    color: #333333;
+    font-size: 36rpx;
+    font-weight: 600;
+    line-height: 72rpx;
+    text-align: center;
   }
 
   .login-mode-subtitle {

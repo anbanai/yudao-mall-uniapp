@@ -13,7 +13,9 @@
     >
       <view class="">
         <view class="num-title">可提现金额（元）</view>
-        <view class="wallet-num">{{ fen2yuan(state.brokerageInfo.brokeragePrice) }}</view>
+        <view class="wallet-num">
+          {{ state.brokerageLoaded ? fen2yuan(state.brokerageInfo.brokeragePrice) : '--' }}
+        </view>
       </view>
       <button
         class="ss-reset-button log-btn"
@@ -44,7 +46,7 @@
           :inputBorder="false"
           class="ss-flex-1 ss-p-l-10"
           v-model="state.accountInfo.price"
-          type="number"
+          type="digit"
           placeholder="请输入提现金额"
         />
       </view>
@@ -137,7 +139,11 @@
           placeholder="请输入开户地址"
         />
       </view>
-      <button class="ss-reset-button save-btn ui-BG-Main-Gradient ui-Shadow-Main" @tap="onConfirm">
+      <button
+        class="ss-reset-button save-btn ui-BG-Main-Gradient ui-Shadow-Main"
+        :disabled="!rulesReady || state.withdrawTypes.length === 0"
+        @tap="onConfirm"
+      >
         确认提现
       </button>
     </view>
@@ -145,10 +151,13 @@
     <!-- 提现说明 -->
     <view class="draw-notice">
       <view class="title ss-m-b-30">提现说明</view>
-      <view class="draw-list"> 最低提现金额 {{ fen2yuan(state.minPrice) }} 元 </view>
-      <view class="draw-list">
-        冻结佣金：<text>￥{{ fen2yuan(state.brokerageInfo.frozenPrice) }}</text>
-        （每笔佣金的冻结期为 {{ state.frozenDays }} 天，到期后可提现）
+      <template v-if="rulesReady">
+        <view v-for="rule in withdrawalRules" :key="rule" class="draw-list">
+          {{ rule }}
+        </view>
+      </template>
+      <view v-else class="draw-list" :class="{ 'rule-error': state.rulesLoadFailed }">
+        {{ state.rulesLoadFailed ? '提现规则加载失败，请稍后再试' : '提现规则加载中...' }}
       </view>
     </view>
 
@@ -173,6 +182,11 @@
   import DictApi from '@/sheep/api/system/dict';
   import SLayout from '@/sheep/components/s-layout/s-layout.vue';
   import { getWeixinPayChannelCode, goBindWeixin } from '@/sheep/platform/pay';
+  import {
+    buildWithdrawalRules,
+    getWithdrawalAmountError,
+    yuanToFen,
+  } from '@/sheep/helper/withdrawal.mjs';
 
   const headerBg = sheep.$url.css('/static/img/shop/user/withdraw_bg.png');
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
@@ -191,10 +205,13 @@
     accountSelect: false,
 
     brokerageInfo: {}, // 分销信息
+    brokerageLoaded: false,
 
     frozenDays: 0, // 冻结天数
     minPrice: 0, // 最低提现金额
     withdrawTypes: [], // 提现方式
+    rulesLoaded: false,
+    rulesLoadFailed: false,
     bankList: [], // 银行字典数据
     bankListSelectedIndex: '', // 选中银行 bankList 的 index
   });
@@ -207,20 +224,47 @@
     return item ? item.label : '';
   });
 
+  const rulesReady = computed(() => state.rulesLoaded && state.brokerageLoaded);
+
+  const withdrawalRules = computed(() =>
+    buildWithdrawalRules({
+      availablePrice: state.brokerageInfo.brokeragePrice,
+      minPrice: state.minPrice,
+      frozenDays: state.frozenDays,
+      withdrawTypes: state.withdrawTypes,
+    }),
+  );
+
   // 打开提现方式的弹窗
   const onAccountSelect = (e) => {
+    if (e && !rulesReady.value) {
+      sheep.$helper.toast(
+        state.rulesLoadFailed ? '提现规则加载失败，请稍后再试' : '提现规则加载中，请稍后',
+      );
+      return;
+    }
     state.accountSelect = e;
   };
 
   // 提交提现
   const onConfirm = async () => {
-    // 参数校验
-    if (
-      !state.accountInfo.price ||
-      state.accountInfo.price > state.brokerageInfo.price ||
-      state.accountInfo.price <= 0
-    ) {
-      sheep.$helper.toast('请输入正确的提现金额');
+    const amountError = getWithdrawalAmountError(state.accountInfo.price, {
+      rulesReady: rulesReady.value,
+      minPrice: state.minPrice,
+      availablePrice: state.brokerageInfo.brokeragePrice,
+    });
+    if (amountError) {
+      const errorMessages = {
+        'rules-unavailable': '提现规则加载失败，请稍后再试',
+        invalid: '请输入正确的提现金额',
+        'below-minimum': `最低提现金额为 ${fen2yuan(state.minPrice)} 元`,
+        'above-available': '提现金额不能超过当前可提现金额',
+      };
+      sheep.$helper.toast(errorMessages[amountError]);
+      return;
+    }
+    if (state.withdrawTypes.length === 0) {
+      sheep.$helper.toast('暂无可用提现方式');
       return;
     }
     if (!state.accountInfo.type) {
@@ -240,7 +284,7 @@
     // 提交请求
     const data = {
       ...state.accountInfo,
-      price: state.accountInfo.price * 100,
+      price: yuanToFen(state.accountInfo.price),
     };
     if (state.accountInfo.type === '5') {
       data.userAccount = openid;
@@ -275,22 +319,25 @@
   // 获得分销配置
   async function getWithdrawRules() {
     let { code, data } = await TradeConfigApi.getTradeConfig();
-    if (code !== 0) {
+    if (code !== 0 || !data || !Array.isArray(data.brokerageWithdrawTypes)) {
+      state.rulesLoadFailed = true;
       return;
     }
-    if (data) {
-      state.minPrice = data.brokerageWithdrawMinPrice || 0;
-      state.frozenDays = data.brokerageFrozenDays || 0;
-      state.withdrawTypes = data.brokerageWithdrawTypes;
-    }
+    state.minPrice = data.brokerageWithdrawMinPrice || 0;
+    state.frozenDays = data.brokerageFrozenDays || 0;
+    state.withdrawTypes = data.brokerageWithdrawTypes;
+    state.rulesLoaded = true;
   }
 
   // 获得分销信息
   async function getBrokerageUser() {
     const { data, code } = await BrokerageApi.getBrokerageUser();
-    if (code === 0) {
-      state.brokerageInfo = data;
+    if (code !== 0 || !data || !Number.isFinite(Number(data.brokeragePrice))) {
+      state.rulesLoadFailed = true;
+      return;
     }
+    state.brokerageInfo = data;
+    state.brokerageLoaded = true;
   }
 
   // 获取提现银行配置字典
@@ -467,6 +514,12 @@
       line-height: 86rpx;
       border-radius: 40rpx;
       margin-top: 80rpx;
+
+      &[disabled] {
+        background: #d8d8d8;
+        color: #999999;
+        opacity: 1;
+      }
     }
   }
 
@@ -490,6 +543,10 @@
       font-size: 24rpx;
       color: #999999;
       line-height: 46rpx;
+    }
+
+    .rule-error {
+      color: #e64340;
     }
   }
 </style>

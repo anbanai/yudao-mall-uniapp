@@ -136,9 +136,11 @@ const user = defineStore('user', {
       $share.getShareInfo();
 
       // 提醒绑定手机号
+      // #ifndef MP-WEIXIN
       if (app().platform.bind_mobile && !this.userInfo.mobile) {
         showAuthModal('changeMobile');
       }
+      // #endif
 
       // 绑定推广员
       $share.bindBrokerageUser();

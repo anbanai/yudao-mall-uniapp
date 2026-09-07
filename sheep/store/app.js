@@ -71,11 +71,11 @@ const app = defineStore('app', {
       // TODO 芋艿：【初始化优化】未来支持管理后台可配；对应 https://api.shopro.sheepjs.com/shop/api/init
       if (true) {
         this.info = {
-          name: '芋道商城',
-          logo: 'https://static.iocoder.cn/ruoyi-vue-pro-logo.png',
+          name: '不忍独享',
+          logo: 'https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png',
           version: '2026.08',
-          copyright: '全部开源，个人与企业可 100% 免费使用',
-          copytime: 'Copyright© 2018-2025',
+          copyright: '好茶不忍独享',
+          copytime: 'Copyright© 2026 不忍独享',
 
           cdnurl: 'https://file.sheepjs.com', // 云存储域名
           filesystem: 'qcloud', // 云存储平台

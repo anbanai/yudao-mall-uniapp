@@ -67,6 +67,22 @@
           </view>
         </uni-forms-item>
 
+        <!-- #ifdef MP-WEIXIN -->
+        <button
+          class="ss-reset-button mobile-auth-row ss-flex ss-col-center"
+          open-type="getPhoneNumber"
+          :disabled="state.isAuthorizing"
+          @getphonenumber="onPhoneAuthorization"
+        >
+          <text class="mobile-auth-label">手机号</text>
+          <text class="mobile-auth-value ss-flex-1">
+            {{ userInfo.mobile || '请绑定手机号' }}
+          </text>
+          <su-radio v-if="userInfo.verification?.mobile" :modelValue="true" />
+          <text v-else class="_icon-forward mobile-auth-forward" />
+        </button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <uni-forms-item name="mobile" label="手机号" @tap="onChangeMobile">
           <uni-easyinput
             v-model="userInfo.mobile"
@@ -87,6 +103,7 @@
             </template>
           </uni-easyinput>
         </uni-forms-item>
+        <!-- #endif -->
 
         <uni-forms-item name="password" label="登录密码" @tap="onSetPassword">
           <uni-easyinput
@@ -128,7 +145,8 @@
       </view>
     </uni-forms>
 
-    <!-- 当前社交平台的绑定关系，只处理 wechat 微信场景 -->
+    <!-- #ifndef MP-WEIXIN -->
+    <!-- 当前社交平台的绑定关系 -->
     <view v-if="sheep.$platform.name !== 'H5'">
       <view class="title-box ss-p-l-30">第三方账号绑定</view>
       <view class="account-list ss-flex ss-row-between">
@@ -171,6 +189,7 @@
         </view>
       </view>
     </view>
+    <!-- #endif -->
 
     <su-fixed bottom placeholder bg="none">
       <view class="footer-box ss-p-20">
@@ -185,6 +204,7 @@
   import sheep from '@/sheep';
   import { clone } from 'lodash-es';
   import { showAuthModal } from '@/sheep/hooks/useModal';
+  import { authorizePhoneNumber } from '@/sheep/hooks/usePhoneAuthorization';
   import UserApi from '@/sheep/api/member/user';
   import {
     chooseAndUploadFile,
@@ -195,6 +215,7 @@
     model: {}, // 个人信息
     rules: {},
     thirdInfo: {}, // 社交用户的信息
+    isAuthorizing: false,
   });
 
   const placeholderStyle = 'color:#BBBBBB;font-size:28rpx;line-height:normal';
@@ -221,6 +242,18 @@
   const onChangeMobile = () => {
     showAuthModal('changeMobile');
   };
+
+  async function onPhoneAuthorization(event) {
+    if (state.isAuthorizing) {
+      return;
+    }
+    state.isAuthorizing = true;
+    try {
+      await authorizePhoneNumber(event.detail);
+    } finally {
+      state.isAuthorizing = false;
+    }
+  }
 
   // 选择微信的头像，进行上传
   async function onChooseAvatar(e) {
@@ -292,10 +325,12 @@
     state.model = clone(userInfo);
 
     // 获得社交用户的信息
+    // #ifndef MP-WEIXIN
     if (sheep.$platform.name !== 'H5') {
       const result = await sheep.$platform.useProvider('wechat').getInfo();
       state.thirdInfo = result || {};
     }
+    // #endif
   };
 
   onBeforeMount(() => {
@@ -341,6 +376,33 @@
     font-weight: 500;
     line-height: normal;
     color: #333333;
+  }
+
+  .mobile-auth-row {
+    width: 100%;
+    height: 100rpx;
+    border-bottom: 1rpx solid #e5e5e5;
+    font-size: 28rpx;
+    text-align: left;
+
+    &[disabled] {
+      opacity: 0.65;
+    }
+  }
+
+  .mobile-auth-label {
+    width: 140rpx;
+    color: #333333;
+    text-align: left;
+  }
+
+  .mobile-auth-value {
+    color: #333333;
+  }
+
+  .mobile-auth-forward {
+    color: #bbbbbb;
+    font-size: 26rpx;
   }
 
   .title-box {
