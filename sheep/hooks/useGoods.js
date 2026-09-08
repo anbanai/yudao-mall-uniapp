@@ -498,6 +498,16 @@ export function getRewardActivityRuleItemDescriptions(activity) {
   return result;
 }
 
+/**
+ * 获取默认选中的 SKU，优先选择有库存的 SKU。
+ *
+ * 单规格商品没有可供选择的属性值，需要直接使用 SKU 本身完成购买。
+ */
+export function getDefaultSku(skus) {
+  const list = Array.isArray(skus) ? skus : [];
+  return list.find((sku) => sku && sku.stock > 0) || list[0];
+}
+
 /** 单规格，要默认选中 */
 export function initDefaultSelect(propertyList, onSelectSku) {
   if (propertyList.length === 0) {

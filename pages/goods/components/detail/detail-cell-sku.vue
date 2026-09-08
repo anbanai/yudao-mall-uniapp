@@ -22,6 +22,9 @@
     if (!props.sku?.id) {
       return '请选择商品规格';
     }
+    if (!props.sku.properties?.length) {
+      return '默认规格';
+    }
     let str = '';
     props.sku.properties.forEach((property) => {
       str += property.propertyName + ':' + property.valueName + ' ';

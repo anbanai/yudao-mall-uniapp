@@ -103,7 +103,7 @@
   // 按钮状态： active,nostock
   import { computed, reactive, watch } from 'vue';
   import sheep from '@/sheep';
-  import { convertProductPropertyList, fen2yuan } from '@/sheep/hooks/useGoods';
+  import { convertProductPropertyList, fen2yuan, getDefaultSku } from '@/sheep/hooks/useGoods';
   import { isEmpty, min } from 'lodash-es';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
 
@@ -141,7 +141,7 @@
   const skuList = computed(() => {
     let skuPrices = state.goodsInfo.skus;
     for (let price of skuPrices) {
-      price.value_id_array = price.properties.map((item) => item.valueId);
+      price.value_id_array = (price.properties || []).map((item) => item.valueId);
     }
     return skuPrices;
   });
@@ -312,6 +312,15 @@
   };
 
   changeDisabled(false);
+  if (propertyList.length === 0) {
+    // 单规格商品没有属性值，直接选中默认 SKU。
+    const defaultSku = getDefaultSku(skuList.value);
+    if (defaultSku) {
+      defaultSku.properties = defaultSku.properties || [];
+      defaultSku.count = defaultSku.count || 1;
+      state.selectedSku = defaultSku;
+    }
+  }
 </script>
 
 <style lang="scss" scoped>

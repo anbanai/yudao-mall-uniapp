@@ -99,6 +99,7 @@
     formatStock,
     convertProductPropertyList,
     fen2yuan,
+    getDefaultSku,
     initDefaultSelect,
   } from '@/sheep/hooks/useGoods';
 
@@ -124,7 +125,7 @@
   const skuList = computed(() => {
     let skuPrices = props.goodsInfo.skus;
     for (let price of skuPrices) {
-      price.value_id_array = price.properties.map((item) => item.valueId);
+      price.value_id_array = (price.properties || []).map((item) => item.valueId);
     }
     return skuPrices;
   });
@@ -310,8 +311,18 @@
   }
 
   changeDisabled(false);
-  // 初始化默认选中规格中的第一个，如果不需要，注释这段代码即可
-  initDefaultSelect(propertyList, onSelectSku);
+  if (propertyList.length === 0) {
+    // 单规格商品没有属性值，直接选中默认 SKU。
+    const defaultSku = getDefaultSku(skuList.value);
+    if (defaultSku) {
+      defaultSku.properties = defaultSku.properties || [];
+      defaultSku.goods_num = defaultSku.goods_num || 1;
+      state.selectedSku = defaultSku;
+    }
+  } else {
+    // 初始化默认选中规格中的第一个，如果不需要，注释这段代码即可
+    initDefaultSelect(propertyList, onSelectSku);
+  }
 </script>
 
 <style lang="scss" scoped>
