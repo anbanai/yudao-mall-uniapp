@@ -6,9 +6,7 @@
       <button
         v-if="!isLogin"
         class="ss-reset-button left-box profile-auth-btn ss-flex ss-col-center ss-m-l-36"
-        open-type="getPhoneNumber"
-        :disabled="isAuthorizing"
-        @getphonenumber="onPhoneAuthorization"
+        @tap="showAuthModal()"
       >
         <view class="avatar-box ss-m-r-24">
           <image
@@ -221,10 +219,6 @@
     min-width: 0;
     padding: 0;
     text-align: left;
-
-    &[disabled] {
-      opacity: 0.65;
-    }
   }
 
   .bind-mobile-box {

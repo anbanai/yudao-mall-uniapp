@@ -34,6 +34,16 @@ function hasDirective(element, name, argument, expression = '') {
   );
 }
 
+function hasExactDirective(element, name, argument, expression) {
+  return element.props.some(
+    (prop) =>
+      prop.type === NodeTypes.DIRECTIVE &&
+      prop.name === name &&
+      prop.arg?.content === argument &&
+      prop.exp?.content === expression,
+  );
+}
+
 function hasAttribute(element, name, value) {
   return element.props.some(
     (prop) =>
@@ -58,10 +68,28 @@ function findPhoneButton(template, label) {
   );
 }
 
+function findLoginTrigger(node) {
+  if (
+    node.type === NodeTypes.ELEMENT &&
+    hasExactDirective(node, 'on', 'tap', 'showAuthModal()') &&
+    textContent(node).includes('请先登录')
+  ) {
+    return node;
+  }
+  for (const child of node.children || []) {
+    const match = findLoginTrigger(child);
+    if (match) return match;
+  }
+}
+
 const userCardTemplate = await loadTemplate('sheep/components/s-user-card/s-user-card.vue');
-assert.ok(
-  findPhoneButton(userCardTemplate, '请先登录'),
-  'the mini-program login entry should directly request the phone number',
+const userCardLoginTrigger = findLoginTrigger(userCardTemplate);
+assert.ok(userCardLoginTrigger, 'the profile login entry should open the shared login modal');
+assert.equal(userCardLoginTrigger.tag, 'button', 'the profile login entry should remain a button');
+assert.equal(
+  hasAttribute(userCardLoginTrigger, 'open-type', 'getPhoneNumber'),
+  false,
+  'the profile login entry should not request a phone number directly',
 );
 assert.ok(
   findPhoneButton(userCardTemplate, '去绑定'),
@@ -205,4 +233,4 @@ const deniedResult = await (async () => {
 assert.equal(deniedResult.result, false);
 assert.deepEqual(deniedResult.calls, []);
 
-console.log('direct phone authorization checks passed');
+console.log('profile login and direct phone authorization checks passed');
