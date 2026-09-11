@@ -1,10 +1,20 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   createAfterSaleSelectionState,
   setAfterSaleConfig,
   toggleAfterSaleWay,
   selectAfterSaleReason,
 } from '../sheep/helper/afterSaleSelection.mjs';
+
+const applySource = fs.readFileSync(
+  new URL('../pages/order/aftersale/apply.vue', import.meta.url),
+  'utf8',
+);
+assert.match(applySource, /:data-way="item\.value"[\s\S]*@tap="onRefundTypeTap"/);
+assert.match(applySource, /:data-reason="item"[\s\S]*@tap="onReasonSelect"/);
+assert.doesNotMatch(applySource, /@tap="onRefundTypeTap\(item\.value\)"/);
+assert.doesNotMatch(applySource, /@tap="onReasonSelect\(item\)"/);
 
 const state = createAfterSaleSelectionState();
 

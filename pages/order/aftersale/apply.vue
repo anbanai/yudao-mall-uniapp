@@ -21,7 +21,8 @@
             v-for="(item, index) in state.wayList"
             :key="index"
             class="ss-flex ss-col-center ss-p-y-10"
-            @tap="onRefundTypeTap(item.value)"
+            :data-way="item.value"
+            @tap="onRefundTypeTap"
           >
             <radio
               :checked="formData.way === item.value"
@@ -98,7 +99,8 @@
             class="radio ss-flex ss-col-center"
             v-for="item in selectionState.reasonList"
             :key="item"
-            @tap="onReasonSelect(item)"
+            :data-reason="item"
+            @tap="onReasonSelect"
           >
             <view class="ss-flex-1 ss-p-20">{{ item }}</view>
             <radio
@@ -182,7 +184,11 @@
   }
 
   // 选择售后类型；原生 radio 不支持取消已选项，因此这里显式处理切换和取消。
-  function onRefundTypeTap(way) {
+  function onRefundTypeTap(event) {
+    const way = event.currentTarget?.dataset?.way;
+    if (!way) {
+      return;
+    }
     toggleAfterSaleWay(selectionState, way);
     formData.way = selectionState.way;
     formData.applyReason = '';
@@ -201,7 +207,11 @@
   }
 
   // 选择申请原因
-  function onReasonSelect(reason) {
+  function onReasonSelect(event) {
+    const reason = event.currentTarget?.dataset?.reason;
+    if (reason == null) {
+      return;
+    }
     selectAfterSaleReason(selectionState, reason);
   }
 
