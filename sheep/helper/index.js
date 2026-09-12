@@ -647,9 +647,15 @@ export function getRootUrl() {
  * copyText 多端复制文本
  */
 export function copyText(text) {
+  const clipboardText = text == null ? '' : String(text);
+  if (!clipboardText) {
+    toast('复制失败!');
+    return;
+  }
+
   // #ifndef H5
   uni.setClipboardData({
-    data: text,
+    data: clipboardText,
     success: function () {
       toast('复制成功!');
     },
@@ -660,7 +666,7 @@ export function copyText(text) {
   // #endif
   // #ifdef H5
   var createInput = document.createElement('textarea');
-  createInput.value = text;
+  createInput.value = clipboardText;
   document.body.appendChild(createInput);
   createInput.select();
   document.execCommand('Copy');
