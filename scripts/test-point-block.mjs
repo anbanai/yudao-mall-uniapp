@@ -76,10 +76,20 @@ assert.equal(
   2,
   'both point columns must opt into the dedicated layout variant',
 );
+assert.equal(
+  (pointBlockSource.match(/goods-md-box goods-md-box--point/g) || []).length,
+  2,
+  'both point columns must expose a root-level marker for parent layout rules',
+);
+assert.match(
+  pointBlockSource,
+  /\.goods-md-box:not\(\.goods-md-box--point\)/,
+  'parent button positioning must exclude point card roots',
+);
 assert.match(
   goodsColumnSource,
-  /&\.goods-card--point\s*\{[\s\S]*padding-bottom:\s*84rpx/,
-  'point cards must reserve vertical space for the purchase button',
+  /&\.goods-card--point\s*\{[\s\S]*padding-bottom:\s*20rpx/,
+  'point cards must keep compact content padding after moving the purchase button into the footer',
 );
 assert.match(
   goodsColumnSource,
@@ -90,6 +100,21 @@ assert.match(
   goodsColumnSource,
   /&\.goods-card--point\s*\{[\s\S]*\.point-text\s*\{[\s\S]*flex-shrink:\s*0/,
   'point prices must not shrink',
+);
+assert.match(
+  goodsColumnSource,
+  /variant === 'point' \? 'md-point-footer' : ''/,
+  'point price and purchase controls must share a footer row',
+);
+assert.match(
+  goodsColumnSource,
+  /<slot name="cart" v-if="variant === 'point'"\s*\/>/,
+  'point purchase control must render inside the footer row',
+);
+assert.match(
+  goodsColumnSource,
+  /\.md-point-footer[\s\S]*\.goods-origin-price[\s\S]*position:\s*absolute/,
+  'point original price must not compete with the main footer row',
 );
 assert.doesNotMatch(
   pointBlockSource,

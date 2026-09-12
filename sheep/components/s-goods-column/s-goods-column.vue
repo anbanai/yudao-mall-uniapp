@@ -201,7 +201,9 @@
             {{ item }}
           </view>
         </view>
-        <view class="ss-flex ss-col-bottom">
+        <view
+          :class="['ss-flex', 'ss-col-bottom', variant === 'point' ? 'md-point-footer' : '']"
+        >
           <view
             v-if="goodsFields.price?.show"
             class="md-goods-price ss-m-t-16 font-OPPOSANS ss-m-r-10"
@@ -244,6 +246,7 @@
             <text class="price-unit ss-font-20">{{ priceUnit }}</text>
             <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
           </view>
+          <slot name="cart" v-if="variant === 'point'" />
         </view>
 
         <view class="ss-m-t-16 ss-flex ss-col-center ss-flex-wrap">
@@ -251,7 +254,7 @@
         </view>
       </view>
 
-      <slot name="cart">
+      <slot name="cart" v-if="variant !== 'point'">
         <view class="cart-box ss-flex ss-col-center ss-row-center">
           <image class="cart-icon" src="/static/img/shop/tabbar/category2.png" mode="" />
         </view>
@@ -924,13 +927,38 @@
 
     &.goods-card--point {
       .md-goods-content {
-        // Keep the absolute purchase button in a dedicated footer area.
-        padding-bottom: 84rpx;
+        padding-bottom: 20rpx;
       }
 
-      .point-text {
+      .md-point-footer {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        gap: 8rpx;
+        padding-top: 32rpx;
+      }
+
+      .md-point-footer .goods-origin-price {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin-top: 0;
+        white-space: nowrap;
+      }
+
+      .md-point-footer .md-goods-price {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .md-point-footer .point-text {
         flex-shrink: 0;
         white-space: nowrap;
+      }
+
+      .md-point-footer .cart-btn {
+        position: static;
+        flex-shrink: 0;
       }
     }
 

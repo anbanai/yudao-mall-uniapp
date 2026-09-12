@@ -81,7 +81,7 @@
           :key="item.id"
         >
           <s-goods-column
-            class="goods-md-box"
+            class="goods-md-box goods-md-box--point"
             variant="point"
             size="md"
             :goodsFields="data.fields"
@@ -112,7 +112,7 @@
           :key="item.id"
         >
           <s-goods-column
-            class="goods-md-box"
+            class="goods-md-box goods-md-box--point"
             variant="point"
             size="md"
             :goodsFields="data.fields"
@@ -305,9 +305,25 @@
     }
   }
 
-  .goods-md-box,
   .goods-sl-box,
   .goods-lg-box {
+    position: relative;
+
+    .cart-btn {
+      position: absolute;
+      bottom: 18rpx;
+      right: 20rpx;
+      z-index: 11;
+      height: 50rpx;
+      line-height: 50rpx;
+      padding: 0 20rpx;
+      border-radius: 25rpx;
+      font-size: 24rpx;
+      color: #fff;
+    }
+  }
+
+  .goods-md-box:not(.goods-md-box--point) {
     position: relative;
 
     .cart-btn {
