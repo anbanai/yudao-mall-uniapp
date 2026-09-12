@@ -66,3 +66,5 @@ assert.equal(h5ClipboardCalls[0].data, 'h5-order-no');
 assert.deepEqual(h5ToastCalls, ['复制成功!']);
 
 console.log('copy text normalization and H5 API checks passed');
+
+await import('./test-order-copy.mjs');

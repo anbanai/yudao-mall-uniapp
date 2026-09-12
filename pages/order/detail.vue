@@ -137,7 +137,7 @@
         <view class="notice-item--center">
           <view class="ss-flex ss-flex-1">
             <text class="title">订单编号：</text>
-            <text class="detail">{{ state.orderInfo.no }}</text>
+            <text class="detail">{{ sheep.$helper.getOrderNo(state.orderInfo) }}</text>
           </view>
           <button class="ss-reset-button copy-btn" @tap="onCopy">复制</button>
         </view>
@@ -285,7 +285,7 @@
 
   // 复制
   const onCopy = () => {
-    sheep.$helper.copyText(state.orderInfo.no);
+    sheep.$helper.copyText(sheep.$helper.getOrderNo(state.orderInfo));
   };
 
   // 去支付
