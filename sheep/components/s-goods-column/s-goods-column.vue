@@ -202,7 +202,7 @@
           </view>
         </view>
         <template v-if="variant === 'point'">
-          <view class="md-point-meta ss-flex ss-col-center ss-row-between">
+          <view class="md-point-meta ss-flex ss-col-center">
             <view
               v-if="goodsFields.price?.show"
               class="md-point-score md-goods-price font-OPPOSANS"
@@ -214,6 +214,23 @@
               ></image>
               <text class="point-text">{{ data.point }}</text>
             </view>
+            <text
+              v-if="goodsFields.price?.show && data.pointPrice > 0"
+              class="md-point-plus md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
+            >
+              +
+            </text>
+            <view
+              v-if="goodsFields.price?.show && data.pointPrice > 0"
+              class="md-point-cash md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
+            >
+              <text class="price-unit ss-font-24">{{ priceUnit }}</text>
+              <text>{{ fen2yuan(data.pointPrice) }}</text>
+            </view>
+          </view>
+          <view class="md-point-action ss-flex ss-col-center ss-row-between">
             <view
               v-if="
                 (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
@@ -224,16 +241,6 @@
             >
               <text class="price-unit ss-font-20">{{ priceUnit }}</text>
               <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
-            </view>
-          </view>
-          <view class="md-point-action ss-flex ss-col-center ss-row-between">
-            <view
-              v-if="goodsFields.price?.show && data.pointPrice > 0"
-              class="md-point-cash md-goods-price font-OPPOSANS"
-              :style="[{ color: goodsFields.price.color }]"
-            >
-              <text class="price-unit ss-font-24">{{ priceUnit }}</text>
-              <text>{{ fen2yuan(data.pointPrice) }}</text>
             </view>
             <slot name="cart" />
           </view>
@@ -966,12 +973,12 @@
       .md-point-action {
         width: 100%;
         box-sizing: border-box;
-        justify-content: space-between;
       }
 
       .md-point-meta {
         min-height: 36rpx;
         margin-top: 16rpx;
+        gap: 8rpx;
       }
 
       .md-point-score {
@@ -987,6 +994,7 @@
       .md-point-action {
         min-height: 50rpx;
         margin-top: 16rpx;
+        justify-content: space-between;
       }
 
       .md-point-cash {
@@ -996,6 +1004,7 @@
       .md-point-action .cart-btn {
         position: static;
         flex-shrink: 0;
+        margin-left: auto;
       }
     }
 

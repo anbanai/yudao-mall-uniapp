@@ -88,18 +88,18 @@ assert.match(
 );
 assert.match(
   goodsColumnSource,
-  /v-if="variant === 'point'"[\s\S]*class="md-point-meta[^"]*"[\s\S]*class="md-point-score[^"]*"[\s\S]*\{\{ data\.point \}\}[\s\S]*class="goods-origin-price/,
-  'point cards must show points and the original price together on the second row',
+  /v-if="variant === 'point'"[\s\S]*class="md-point-meta[^"]*"[\s\S]*class="md-point-score[^"]*"[\s\S]*\{\{ data\.point \}\}[\s\S]*class="md-point-plus[^"]*"[\s\S]*class="md-point-cash[^"]*"[\s\S]*fen2yuan\(data\.pointPrice\)/,
+  'point cards must show points plus the cash price together on the second row',
 );
 assert.match(
   goodsColumnSource,
-  /class="md-point-action[^"]*"[\s\S]*fen2yuan\(data\.pointPrice\)[\s\S]*<slot name="cart"/,
-  'point cards must show the cash price and purchase control together on the third row',
+  /class="md-point-action[^"]*"[\s\S]*class="goods-origin-price[^"]*"[\s\S]*fen2yuan\(data\.marketPrice\)[\s\S]*<slot name="cart"/,
+  'point cards must show the original price and purchase control together on the third row',
 );
 assert.match(
   goodsColumnSource,
-  /\.md-point-meta[\s\S]*justify-content:\s*space-between/,
-  'the point and original-price row must distribute its content without overlap',
+  /\.md-point-meta[\s\S]*gap:\s*8rpx/,
+  'the point and cash price must stay visually grouped',
 );
 assert.match(
   goodsColumnSource,
