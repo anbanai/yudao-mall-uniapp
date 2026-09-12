@@ -27,6 +27,8 @@
 				"enablePullDownRefresh": true
 			},
 			"meta": {
+				"auth": true,
+				"formalAuth": true,
 				"sync": true,
 				"title": "个人中心",
 				"group": "商城"
@@ -49,6 +51,8 @@
 				"navigationBarTitleText": "购物车"
 			},
 			"meta": {
+				"auth": true,
+				"formalAuth": true,
 				"sync": true,
 				"title": "购物车",
 				"group": "商城"
@@ -579,6 +583,10 @@
 					"path": "index",
 					"style": {
 						"navigationBarTitleText": "收银台"
+					},
+					"meta": {
+						"auth": true,
+						"formalAuth": true
 					}
 				},
 				{

@@ -9,6 +9,7 @@ const CartApi = {
       custom: {
         showSuccess: true,
         successMsg: '已添加到购物车~',
+        formalAuth: true,
       },
     });
   },
@@ -17,6 +18,9 @@ const CartApi = {
       url: '/trade/cart/update-count',
       method: 'PUT',
       data: data,
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   updateCartSelected: (data) => {
@@ -24,6 +28,9 @@ const CartApi = {
       url: '/trade/cart/update-selected',
       method: 'PUT',
       data: data,
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   deleteCart: (ids) => {
@@ -32,6 +39,9 @@ const CartApi = {
       method: 'DELETE',
       params: {
         ids,
+      },
+      custom: {
+        formalAuth: true,
       },
     });
   },
@@ -42,6 +52,7 @@ const CartApi = {
       custom: {
         showLoading: false,
         auth: true,
+        formalAuth: true,
       },
     });
   },

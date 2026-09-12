@@ -9,6 +9,7 @@ const PayWalletApi = {
       custom: {
         showLoading: false,
         auth: true,
+        formalAuth: true,
       },
     });
   },
@@ -20,6 +21,7 @@ const PayWalletApi = {
     return request({
       url: `/pay/wallet-transaction/page?${queryString}`,
       method: 'GET',
+      custom: { formalAuth: true },
     });
   },
   // 获得钱包流水统计
@@ -30,6 +32,7 @@ const PayWalletApi = {
       // url: `/pay/wallet-transaction/get-summary`,
       method: 'GET',
       // params: params
+      custom: { formalAuth: true },
     });
   },
   // 获得钱包充值套餐列表
@@ -49,6 +52,7 @@ const PayWalletApi = {
       url: '/pay/wallet-recharge/create',
       method: 'POST',
       data,
+      custom: { formalAuth: true },
     });
   },
   // 获得钱包充值记录分页
@@ -60,6 +64,7 @@ const PayWalletApi = {
       custom: {
         showError: false,
         showLoading: false,
+        formalAuth: true,
       },
     });
   },

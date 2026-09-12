@@ -8,6 +8,7 @@ const KeFuApi = {
       data,
       custom: {
         auth: true,
+        formalAuth: true,
         showLoading: true,
         loadingMsg: '发送中',
         showSuccess: true,
@@ -22,6 +23,7 @@ const KeFuApi = {
       params,
       custom: {
         auth: true,
+        formalAuth: true,
         showLoading: false,
       },
     });

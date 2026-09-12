@@ -53,6 +53,7 @@ const CouponApi = {
       data: { templateId },
       custom: {
         auth: true,
+        formalAuth: true,
         showLoading: true,
         loadingMsg: '领取中',
         showSuccess: true,
@@ -76,6 +77,7 @@ const CouponApi = {
       custom: {
         showLoading: false,
         auth: true,
+        formalAuth: true,
       },
     });
   },

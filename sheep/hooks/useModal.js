@@ -9,7 +9,7 @@ import AuthUtil from '@/sheep/api/member/auth';
 export function showAuthModal(type = '') {
   if (!type) {
     // #ifdef MP-WEIXIN
-    type = 'wechatLogin';
+    type = 'phoneAuthorization';
     // #endif
     // #ifndef MP-WEIXIN
     type = 'smsLogin';

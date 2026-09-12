@@ -29,6 +29,7 @@ const FavoriteApi = {
       },
       custom: {
         auth: true,
+        formalAuth: true,
         showSuccess: true,
         successMsg: '收藏成功',
       },
@@ -44,6 +45,7 @@ const FavoriteApi = {
       },
       custom: {
         auth: true,
+        formalAuth: true,
         showSuccess: true,
         successMsg: '取消成功',
       },

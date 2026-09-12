@@ -56,6 +56,7 @@ const OrderApi = {
       custom: {
         showError: true,
         showLoading: true,
+        formalAuth: true,
       },
     });
   },
@@ -77,6 +78,9 @@ const OrderApi = {
       url: `/trade/order/create`,
       method: 'POST',
       data,
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   // 获得订单详细：sync 是可选参数
@@ -164,6 +168,7 @@ const OrderApi = {
       custom: {
         showLoading: false,
         auth: true,
+        formalAuth: true,
       },
     });
   },

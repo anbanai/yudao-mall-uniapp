@@ -3,9 +3,9 @@
   <su-popup :show="authType !== ''" round="10" :showClose="true" @close="handlePopupClose">
     <view class="login-wrap">
       <!-- #ifdef MP-WEIXIN -->
-      <view v-if="authType === 'wechatLogin'" class="login-mode-head quick-login-head">
+      <view v-if="isPhoneAuthorization" class="login-mode-head quick-login-head">
         <view class="quick-login-title">快捷登录</view>
-        <view class="login-mode-subtitle">授权当前手机号后快速登录</view>
+        <view class="login-mode-subtitle">授权手机号完成正式登录</view>
       </view>
       <!-- #endif -->
 
@@ -54,14 +54,14 @@
 
       <!-- #ifdef MP-WEIXIN -->
       <!-- 3. 微信小程序手机号快捷登录 -->
-      <view v-if="authType === 'wechatLogin'" class="quick-login-box">
+      <view v-if="isPhoneAuthorization" class="quick-login-box">
         <button
           class="ss-reset-button quick-login-btn"
           open-type="getPhoneNumber"
-          :disabled="!state.protocol"
+          :disabled="!state.protocol || state.isSubmitting"
           @getphonenumber="getPhoneNumber"
         >
-          快捷登录
+          {{ state.isSubmitting ? '登录中' : '授权手机号' }}
         </button>
       </view>
       <!-- #endif -->
@@ -161,15 +161,20 @@
   import changePassword from './components/change-password.vue';
   import mpAuthorization from './components/mp-authorization.vue';
   import { closeAuthModal, showAuthModal } from '@/sheep/hooks/useModal';
+  import { authorizePhoneNumber } from '@/sheep/hooks/usePhoneAuthorization';
 
   const modalStore = sheep.$store('modal');
-  const loginTypes = ['wechatLogin', 'smsLogin', 'accountLogin'];
+  const loginTypes = ['wechatLogin', 'phoneAuthorization', 'smsLogin', 'accountLogin'];
   // 授权弹窗类型
   const authType = computed(() => modalStore.auth);
+  const isPhoneAuthorization = computed(() =>
+    ['wechatLogin', 'phoneAuthorization'].includes(authType.value),
+  );
   const loginModeSubtitle = computed(
     () =>
       ({
         wechatLogin: '授权当前手机号后快速登录',
+        phoneAuthorization: '授权手机号完成正式登录',
         smsLogin: '未注册的手机号，验证后自动注册账号',
         accountLogin: '如果未设置过密码，请点击忘记密码',
       }[authType.value] || ''),
@@ -177,6 +182,7 @@
 
   const state = reactive({
     protocol: false,
+    isSubmitting: false,
   });
 
   function toggleAgreement() {
@@ -198,6 +204,9 @@
     ) {
       modalStore.authTransitionCloseId = 0;
       return;
+    }
+    if (typeof sheep !== 'undefined' && sheep.$router?.cancelFormalAuthNavigation) {
+      sheep.$router.cancelFormalAuthNavigation();
     }
     closeAuthModal();
   }
@@ -237,12 +246,21 @@
       return;
     }
     if (e.detail.errMsg !== 'getPhoneNumber:ok') {
-      sheep.$helper.toast('快捷登录失败');
+      sheep.$helper.toast('手机号授权失败');
       return;
     }
-    let result = await sheep.$platform.useProvider().mobileLogin(e.detail);
-    if (result) {
-      closeAuthModal();
+    if (state.isSubmitting) {
+      return;
+    }
+    state.isSubmitting = true;
+    try {
+      const result = await authorizePhoneNumber(e.detail);
+      if (result) {
+        closeAuthModal();
+        sheep.$router.resumeFormalAuthNavigation();
+      }
+    } finally {
+      state.isSubmitting = false;
     }
   };
 </script>

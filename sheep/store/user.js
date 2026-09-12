@@ -8,6 +8,7 @@ import UserApi from '@/sheep/api/member/user';
 import PayWalletApi from '@/sheep/api/pay/wallet';
 import OrderApi from '@/sheep/api/trade/order';
 import CouponApi from '@/sheep/api/promotion/coupon';
+import { isFormalLogin, isPhoneAuthorized } from '@/sheep/helper/authState.mjs';
 
 // 默认用户信息
 const defaultUserInfo = {
@@ -39,11 +40,19 @@ const defaultNumData = {
 const user = defineStore('user', {
   state: () => ({
     userInfo: clone(defaultUserInfo), // 用户信息
+    userInfoLoaded: false, // 用户信息是否已从服务端加载
     userWallet: clone(defaultUserWallet), // 用户钱包信息
     isLogin: !!uni.getStorageSync('token'), // 登录状态
     numData: cloneDeep(defaultNumData), // 用户其他数据
     lastUpdateTime: 0, // 上次更新时间
   }),
+
+  getters: {
+    // isLogin 表示技术会话；正式登录还必须完成手机号授权
+    isPhoneAuthorized: (state) => isPhoneAuthorized(state.userInfo),
+    isFormalLogin: (state) =>
+      state.userInfoLoaded && isFormalLogin(state.isLogin, state.userInfo),
+  },
 
   actions: {
     // 获取用户信息
@@ -53,7 +62,16 @@ const user = defineStore('user', {
         return;
       }
       this.userInfo = data;
+      this.userInfoLoaded = true;
       return Promise.resolve(data);
+    },
+
+    async ensureUserInfo() {
+      if (!this.isLogin || this.userInfoLoaded) {
+        return this.userInfo;
+      }
+      await this.getInfo();
+      return this.userInfo;
     },
 
     // 获得用户钱包
@@ -87,6 +105,7 @@ const user = defineStore('user', {
         uni.removeStorageSync('refresh-token');
       } else {
         this.isLogin = true;
+        this.userInfoLoaded = false;
         uni.setStorageSync('token', token);
         uni.setStorageSync('refresh-token', refreshToken);
         this.loginAfter();
@@ -109,6 +128,9 @@ const user = defineStore('user', {
 
       // 获取最新信息
       await this.getInfo();
+      if (!this.isFormalLogin) {
+        return this.userInfo;
+      }
       this.getWallet();
       this.getNumData();
       return this.userInfo;
@@ -120,6 +142,7 @@ const user = defineStore('user', {
       this.setToken();
       // 清空用户相关的缓存
       this.userInfo = clone(defaultUserInfo);
+      this.userInfoLoaded = false;
       this.userWallet = clone(defaultUserWallet);
       this.numData = cloneDeep(defaultNumData);
       // 清空购物车的缓存
@@ -128,7 +151,14 @@ const user = defineStore('user', {
 
     // 登录后，加载各种信息
     async loginAfter() {
-      await this.updateUserData();
+      await this.ensureUserInfo();
+
+      if (!this.isFormalLogin) {
+        return this.userInfo;
+      }
+
+      this.getWallet();
+      this.getNumData();
 
       // 加载购物车
       cart().getList();

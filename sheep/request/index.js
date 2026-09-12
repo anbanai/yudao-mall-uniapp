@@ -26,6 +26,8 @@ const options = {
   loadingMsg: '加载中',
   // 需要授权才能请求 默认放开
   auth: false,
+  // 需要手机号授权完成正式登录才能请求
+  formalAuth: false,
   // 是否传递 token
   isToken: true,
 };
@@ -70,11 +72,20 @@ const http = new Request({
  * @description 请求拦截器
  */
 http.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // 自定义处理【auth 授权】：必须登录的接口，则跳出 AuthModal 登录弹窗
     if (config.custom.auth && !$store('user').isLogin) {
       showAuthModal();
-      return Promise.reject();
+      return Promise.reject({ code: 401, msg: '请先登录' });
+    }
+
+    if (config.custom.formalAuth) {
+      const userStore = $store('user');
+      await userStore.ensureUserInfo();
+      if (!userStore.isFormalLogin) {
+        showAuthModal();
+        return Promise.reject({ code: 'PHONE_AUTH_REQUIRED', msg: '请先授权手机号' });
+      }
     }
 
     // 自定义处理【loading 加载中】：如果需要显示 loading，则显示 loading
@@ -156,6 +167,9 @@ http.interceptors.response.use(
   (error) => {
     const userStore = $store('user');
     const isLogin = userStore.isLogin;
+    if (error?.code === 'PHONE_AUTH_REQUIRED' || error?.code === 401) {
+      return Promise.resolve(error);
+    }
     let errorMessage = '网络请求出错';
     if (error !== undefined) {
       switch (error.statusCode) {
@@ -197,9 +211,9 @@ http.interceptors.response.use(
           errorMessage = 'HTTP 版本不受支持';
           break;
       }
-      if (error.errMsg.includes('timeout')) errorMessage = '请求超时';
+      if (error.errMsg?.includes('timeout')) errorMessage = '请求超时';
       // #ifdef H5
-      if (error.errMsg.includes('Network'))
+      if (error.errMsg?.includes('Network'))
         errorMessage = window.navigator.onLine ? '服务器异常' : '请检查您的网络连接';
       // #endif
     }

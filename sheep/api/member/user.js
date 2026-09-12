@@ -21,6 +21,7 @@ const UserApi = {
       custom: {
         auth: true,
         showSuccess: true,
+        formalAuth: true,
         successMsg: '更新成功',
       },
     });
@@ -62,6 +63,7 @@ const UserApi = {
       custom: {
         loadingMsg: '验证中',
         showSuccess: true,
+        formalAuth: true,
         successMsg: '修改成功',
       },
     });

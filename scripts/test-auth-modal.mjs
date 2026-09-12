@@ -185,8 +185,8 @@ const showAuthModal = new Function(
 showAuthModal();
 assert.equal(
   modalState.auth,
-  'wechatLogin',
-  'the mini-program login modal should open on the primary WeChat tab',
+  'phoneAuthorization',
+  'the mini-program login modal should open on phone authorization',
 );
 
 const modalHookForH5 = preprocessForPlatform(modalHookSource, 'H5');
@@ -1105,17 +1105,17 @@ assert.ok(
   'getPhoneNumber source not found',
 );
 
-const protocolState = { protocol: null };
+const protocolState = { protocol: null, isSubmitting: false };
 const toastMessages = [];
-let mobileLoginCalls = 0;
-let quickLoginBindCalls = 0;
-let quickLoginChangeMobileCalls = 0;
+let phoneAuthorizationCalls = 0;
 let closeCalls = 0;
+let resumeCalls = 0;
 const getPhoneNumber = new Function(
   'state',
   'sheep',
   'closeAuthModal',
   'showAuthModal',
+  'authorizePhoneNumber',
   `${setupSource.slice(getPhoneNumberStart, getPhoneNumberEnd)}\nreturn getPhoneNumber;`,
 )(
   protocolState,
@@ -1123,40 +1123,40 @@ const getPhoneNumber = new Function(
     $helper: { toast: (message) => toastMessages.push(message) },
     $platform: {
       useProvider: () => ({
-        mobileLogin: async () => {
-          mobileLoginCalls += 1;
-          return true;
-        },
-        bindUserPhoneNumber: async () => {
-          quickLoginBindCalls += 1;
-          return true;
-        },
+        mobileLogin: async () => true,
+        bindUserPhoneNumber: async () => true,
       }),
+    },
+    $router: {
+      resumeFormalAuthNavigation: () => {
+        resumeCalls += 1;
+      },
     },
   },
   () => {
     closeCalls += 1;
   },
-  (authType) => {
-    if (authType === 'changeMobile') quickLoginChangeMobileCalls += 1;
+  () => {},
+  async () => {
+    phoneAuthorizationCalls += 1;
+    return true;
   },
 );
 
 const phoneNumberEvent = { detail: { errMsg: 'getPhoneNumber:ok', code: 'phone-code' } };
 await getPhoneNumber(phoneNumberEvent);
-assert.equal(mobileLoginCalls, 0, 'quick login must not submit before the agreement is accepted');
+assert.equal(
+  phoneAuthorizationCalls,
+  0,
+  'phone authorization must not submit before the agreement is accepted',
+);
 assert.equal(closeCalls, 0, 'the login modal must remain open before the agreement is accepted');
 
 protocolState.protocol = true;
 await getPhoneNumber(phoneNumberEvent);
-assert.equal(mobileLoginCalls, 1, 'accepted users should be able to submit quick login');
-assert.equal(quickLoginBindCalls, 0, 'quick login should not make a second phone binding request');
-assert.equal(
-  quickLoginChangeMobileCalls,
-  0,
-  'successful quick login should not require a second phone binding step',
-);
-assert.equal(closeCalls, 1, 'a successful quick login should close the modal');
+assert.equal(phoneAuthorizationCalls, 1, 'accepted users should be able to authorize their phone');
+assert.equal(closeCalls, 1, 'successful phone authorization should close the modal');
+assert.equal(resumeCalls, 1, 'successful phone authorization should resume pending navigation once');
 
 function findWechatLoginButton(node) {
   if (node.type === NodeTypes.ELEMENT && node.tag === 'button') {

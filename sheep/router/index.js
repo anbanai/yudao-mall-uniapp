@@ -3,7 +3,9 @@ import { showAuthModal, showShareModal } from '@/sheep/hooks/useModal';
 import { isNumber, isString, isEmpty, startsWith, isObject, isNil, clone } from 'lodash-es';
 import throttle from '@/sheep/helper/throttle';
 
-const _go = (
+let pendingFormalAuthNavigation = null;
+
+const _go = async (
   path,
   params = {},
   options = {
@@ -59,8 +61,20 @@ const _go = (
 
   // 页面登录拦截
   if (nextRoute.meta?.auth && !$store('user').isLogin) {
+    pendingFormalAuthNavigation = { path, params, options };
     showAuthModal();
     return;
+  }
+
+  // 正式登录拦截：技术 token 之外还必须完成手机号授权
+  if (nextRoute.meta?.formalAuth || nextRoute.meta?.auth) {
+    const userStore = $store('user');
+    await userStore.ensureUserInfo();
+    if (!userStore.isFormalLogin) {
+      pendingFormalAuthNavigation = { path, params, options };
+      showAuthModal();
+      return;
+    }
   }
 
   url = page;
@@ -97,8 +111,20 @@ const _go = (
 // 限流 防止重复点击跳转
 function go(...args) {
   throttle(() => {
-    _go(...args);
+    void _go(...args);
   });
+}
+
+function resumeFormalAuthNavigation() {
+  const pending = pendingFormalAuthNavigation;
+  pendingFormalAuthNavigation = null;
+  if (pending) {
+    void _go(pending.path, pending.params, pending.options);
+  }
+}
+
+function cancelFormalAuthNavigation() {
+  pendingFormalAuthNavigation = null;
 }
 
 function paramsToQuery(params) {
@@ -199,5 +225,7 @@ export default {
   redirect,
   getCurrentPage,
   getCurrentRoute,
+  resumeFormalAuthNavigation,
+  cancelFormalAuthNavigation,
   error,
 };
