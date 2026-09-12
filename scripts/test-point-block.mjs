@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   mergePointActivitiesWithSpus,
   normalizePointSpu,
 } from '../sheep/components/s-point-block/point-block.mjs';
+
+const pointBlockSource = readFileSync(
+  new URL('../sheep/components/s-point-block/s-point-block.vue', import.meta.url),
+  'utf8',
+);
+const goodsColumnSource = readFileSync(
+  new URL('../sheep/components/s-goods-column/s-goods-column.vue', import.meta.url),
+  'utf8',
+);
 
 const activities = [
   { id: 7, spuId: 101, stock: 4, totalStock: 10, point: 300, price: 1200 },
@@ -59,6 +69,42 @@ assert.deepEqual(
     { id: 101, name: 'Tea A', introduction: 'A fresh tea', price: 1800 },
   ],
   'merging point data must not mutate the shared SPU response',
+);
+
+assert.equal(
+  (pointBlockSource.match(/variant="point"/g) || []).length,
+  2,
+  'both point columns must opt into the dedicated layout variant',
+);
+assert.match(
+  goodsColumnSource,
+  /&\.goods-card--point\s*\{[\s\S]*padding-bottom:\s*84rpx/,
+  'point cards must reserve vertical space for the purchase button',
+);
+assert.match(
+  goodsColumnSource,
+  /&\.goods-card--point\s*\{[\s\S]*\.point-text\s*\{[\s\S]*white-space:\s*nowrap/,
+  'point prices must stay on one line',
+);
+assert.match(
+  goodsColumnSource,
+  /&\.goods-card--point\s*\{[\s\S]*\.point-text\s*\{[\s\S]*flex-shrink:\s*0/,
+  'point prices must not shrink',
+);
+assert.doesNotMatch(
+  pointBlockSource,
+  /paddingRight: data\.space \+ 'rpx', marginBottom: data\.space \+ 'px'/,
+  'left point column spacing must not use the non-responsive px unit',
+);
+assert.doesNotMatch(
+  pointBlockSource,
+  /paddingLeft: data\.space \+ 'rpx', marginBottom: data\.space \+ 'px'/,
+  'right point column spacing must not use the non-responsive px unit',
+);
+assert.equal(
+  (pointBlockSource.match(/marginBottom: data\.space \+ 'rpx'/g) || []).length,
+  2,
+  'both point columns must use the responsive rpx unit',
 );
 
 console.log('point block data checks passed');

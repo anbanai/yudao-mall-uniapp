@@ -136,7 +136,12 @@
     </view>
 
     <!-- md卡片：竖向，一行放两个，图上内容下 -->
-    <view v-if="size === 'md'" class="md-goods-card ss-flex-col" :style="[elStyles]" @tap="onClick">
+    <view
+      v-if="size === 'md'"
+      :class="['md-goods-card', variant && `goods-card--${variant}`, 'ss-flex-col']"
+      :style="[elStyles]"
+      @tap="onClick"
+    >
       <view v-if="tagStyle.show" class="tag-icon-box">
         <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" />
       </view>
@@ -915,6 +920,18 @@
       font-size: 30rpx;
       color: $red;
       line-height: 36rpx;
+    }
+
+    &.goods-card--point {
+      .md-goods-content {
+        // Keep the absolute purchase button in a dedicated footer area.
+        padding-bottom: 84rpx;
+      }
+
+      .point-text {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
     }
 
     .cart-box {

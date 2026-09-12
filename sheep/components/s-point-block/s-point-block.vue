@@ -76,12 +76,13 @@
       <view class="goods-list-box">
         <view
           class="left-list"
-          :style="[{ paddingRight: data.space + 'rpx', marginBottom: data.space + 'px' }]"
+          :style="[{ paddingRight: data.space + 'rpx', marginBottom: data.space + 'rpx' }]"
           v-for="item in state.leftSpuList"
           :key="item.id"
         >
           <s-goods-column
             class="goods-md-box"
+            variant="point"
             size="md"
             :goodsFields="data.fields"
             :tagStyle="data.badge"
@@ -106,12 +107,13 @@
       <view class="goods-list-box">
         <view
           class="right-list"
-          :style="[{ paddingLeft: data.space + 'rpx', marginBottom: data.space + 'px' }]"
+          :style="[{ paddingLeft: data.space + 'rpx', marginBottom: data.space + 'rpx' }]"
           v-for="item in state.rightSpuList"
           :key="item.id"
         >
           <s-goods-column
             class="goods-md-box"
+            variant="point"
             size="md"
             :goodsFields="data.fields"
             :tagStyle="data.badge"
