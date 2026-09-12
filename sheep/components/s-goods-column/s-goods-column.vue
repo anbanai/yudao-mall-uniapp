@@ -201,53 +201,89 @@
             {{ item }}
           </view>
         </view>
-        <view
-          :class="['ss-flex', 'ss-col-bottom', variant === 'point' ? 'md-point-footer' : '']"
-        >
-          <view
-            v-if="goodsFields.price?.show"
-            class="md-goods-price ss-m-t-16 font-OPPOSANS ss-m-r-10"
-            :style="[{ color: goodsFields.price.color }]"
-          >
-            <!-- 活动价格 -->
+        <template v-if="variant === 'point'">
+          <view class="md-point-meta ss-flex ss-col-center ss-row-between">
             <view
-              class="ss-flex"
-              v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+              v-if="goodsFields.price?.show"
+              class="md-point-score md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
             >
               <image
                 :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
                 class="point-img"
               ></image>
-              <text class="point-text ss-m-r-16">
-                {{ data.point }}
-                {{
-                  !data.pointPrice || data.pointPrice === 0
-                    ? ''
-                    : `+${priceUnit}${fen2yuan(data.pointPrice)}`
-                }}
-              </text>
+              <text class="point-text">{{ data.point }}</text>
             </view>
-            <template v-else>
+            <view
+              v-if="
+                (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
+                (data.original_price > 0 || data.marketPrice > 0)
+              "
+              class="goods-origin-price font-OPPOSANS ss-flex"
+              :style="[{ color: originPriceColor }]"
+            >
+              <text class="price-unit ss-font-20">{{ priceUnit }}</text>
+              <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
+            </view>
+          </view>
+          <view class="md-point-action ss-flex ss-col-center ss-row-between">
+            <view
+              v-if="goodsFields.price?.show && data.pointPrice > 0"
+              class="md-point-cash md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
+            >
               <text class="price-unit ss-font-24">{{ priceUnit }}</text>
-              <text v-if="data.promotionPrice > 0">{{ fen2yuan(data.promotionPrice) }}</text>
-              <text v-else>
-                {{ isArray(data.price) ? fen2yuan(data.price[0]) : fen2yuan(data.price) }}
-              </text>
-            </template>
+              <text>{{ fen2yuan(data.pointPrice) }}</text>
+            </view>
+            <slot name="cart" />
           </view>
-          <view
-            v-if="
-              (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
-              (data.original_price > 0 || data.marketPrice > 0)
-            "
-            class="goods-origin-price ss-m-t-16 font-OPPOSANS ss-flex"
-            :style="[{ color: originPriceColor }]"
-          >
-            <text class="price-unit ss-font-20">{{ priceUnit }}</text>
-            <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
+        </template>
+        <template v-else>
+          <view class="ss-flex ss-col-bottom">
+            <view
+              v-if="goodsFields.price?.show"
+              class="md-goods-price ss-m-t-16 font-OPPOSANS ss-m-r-10"
+              :style="[{ color: goodsFields.price.color }]"
+            >
+              <!-- 活动价格 -->
+              <view
+                class="ss-flex"
+                v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+              >
+                <image
+                  :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
+                  class="point-img"
+                ></image>
+                <text class="point-text ss-m-r-16">
+                  {{ data.point }}
+                  {{
+                    !data.pointPrice || data.pointPrice === 0
+                      ? ''
+                      : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+                  }}
+                </text>
+              </view>
+              <template v-else>
+                <text class="price-unit ss-font-24">{{ priceUnit }}</text>
+                <text v-if="data.promotionPrice > 0">{{ fen2yuan(data.promotionPrice) }}</text>
+                <text v-else>
+                  {{ isArray(data.price) ? fen2yuan(data.price[0]) : fen2yuan(data.price) }}
+                </text>
+              </template>
+            </view>
+            <view
+              v-if="
+                (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
+                (data.original_price > 0 || data.marketPrice > 0)
+              "
+              class="goods-origin-price ss-m-t-16 font-OPPOSANS ss-flex"
+              :style="[{ color: originPriceColor }]"
+            >
+              <text class="price-unit ss-font-20">{{ priceUnit }}</text>
+              <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
+            </view>
           </view>
-          <slot name="cart" v-if="variant === 'point'" />
-        </view>
+        </template>
 
         <view class="ss-m-t-16 ss-flex ss-col-center ss-flex-wrap">
           <view class="sales-text">{{ salesAndStock }}</view>
@@ -926,37 +962,38 @@
     }
 
     &.goods-card--point {
-      .md-goods-content {
-        padding-bottom: 20rpx;
+      .md-point-meta,
+      .md-point-action {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: space-between;
       }
 
-      .md-point-footer {
-        position: relative;
+      .md-point-meta {
+        min-height: 36rpx;
+        margin-top: 16rpx;
+      }
+
+      .md-point-score {
         display: flex;
-        align-items: flex-end;
-        gap: 8rpx;
-        padding-top: 32rpx;
-      }
-
-      .md-point-footer .goods-origin-price {
-        position: absolute;
-        top: 0;
-        right: 0;
-        margin-top: 0;
-        white-space: nowrap;
-      }
-
-      .md-point-footer .md-goods-price {
+        align-items: center;
         min-width: 0;
-        flex: 1;
       }
 
-      .md-point-footer .point-text {
-        flex-shrink: 0;
+      .md-point-score .point-text {
         white-space: nowrap;
       }
 
-      .md-point-footer .cart-btn {
+      .md-point-action {
+        min-height: 50rpx;
+        margin-top: 16rpx;
+      }
+
+      .md-point-cash {
+        line-height: 36rpx;
+      }
+
+      .md-point-action .cart-btn {
         position: static;
         flex-shrink: 0;
       }

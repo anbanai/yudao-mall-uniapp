@@ -88,33 +88,28 @@ assert.match(
 );
 assert.match(
   goodsColumnSource,
-  /&\.goods-card--point\s*\{[\s\S]*padding-bottom:\s*20rpx/,
-  'point cards must keep compact content padding after moving the purchase button into the footer',
+  /v-if="variant === 'point'"[\s\S]*class="md-point-meta[^"]*"[\s\S]*class="md-point-score[^"]*"[\s\S]*\{\{ data\.point \}\}[\s\S]*class="goods-origin-price/,
+  'point cards must show points and the original price together on the second row',
 );
 assert.match(
   goodsColumnSource,
-  /&\.goods-card--point\s*\{[\s\S]*\.point-text\s*\{[\s\S]*white-space:\s*nowrap/,
-  'point prices must stay on one line',
+  /class="md-point-action[^"]*"[\s\S]*fen2yuan\(data\.pointPrice\)[\s\S]*<slot name="cart"/,
+  'point cards must show the cash price and purchase control together on the third row',
 );
 assert.match(
   goodsColumnSource,
-  /&\.goods-card--point\s*\{[\s\S]*\.point-text\s*\{[\s\S]*flex-shrink:\s*0/,
-  'point prices must not shrink',
+  /\.md-point-meta[\s\S]*justify-content:\s*space-between/,
+  'the point and original-price row must distribute its content without overlap',
 );
 assert.match(
   goodsColumnSource,
-  /variant === 'point' \? 'md-point-footer' : ''/,
-  'point price and purchase controls must share a footer row',
+  /\.md-point-action[\s\S]*justify-content:\s*space-between/,
+  'the cash price and purchase-control row must distribute its content without overlap',
 );
 assert.match(
-  goodsColumnSource,
-  /<slot name="cart" v-if="variant === 'point'"\s*\/>/,
-  'point purchase control must render inside the footer row',
-);
-assert.match(
-  goodsColumnSource,
-  /\.md-point-footer[\s\S]*\.goods-origin-price[\s\S]*position:\s*absolute/,
-  'point original price must not compete with the main footer row',
+  pointBlockSource,
+  /\.goods-md-box,[\s\S]*\.cart-btn\s*\{[\s\S]*height:\s*50rpx[\s\S]*\.goods-md-box:not\(\.goods-md-box--point\)[\s\S]*position:\s*absolute/,
+  'point buttons must keep their visual style while only non-point buttons use absolute positioning',
 );
 assert.doesNotMatch(
   pointBlockSource,

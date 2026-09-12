@@ -305,14 +305,12 @@
     }
   }
 
+  .goods-md-box,
   .goods-sl-box,
   .goods-lg-box {
     position: relative;
 
     .cart-btn {
-      position: absolute;
-      bottom: 18rpx;
-      right: 20rpx;
       z-index: 11;
       height: 50rpx;
       line-height: 50rpx;
@@ -323,9 +321,9 @@
     }
   }
 
-  .goods-md-box:not(.goods-md-box--point) {
-    position: relative;
-
+  .goods-md-box:not(.goods-md-box--point),
+  .goods-sl-box,
+  .goods-lg-box {
     .cart-btn {
       position: absolute;
       bottom: 18rpx;
