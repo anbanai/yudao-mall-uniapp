@@ -667,7 +667,12 @@ export function copyText(text) {
     return;
   }
 
-  uni.setClipboardData({
+  const setClipboardData =
+    typeof wx !== 'undefined' && typeof wx.setClipboardData === 'function'
+      ? wx.setClipboardData.bind(wx)
+      : uni.setClipboardData;
+
+  setClipboardData({
     data: clipboardText,
     success: function () {
       toast('复制成功!');

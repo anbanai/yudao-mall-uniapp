@@ -278,14 +278,22 @@
 
   const state = reactive({
     orderInfo: {},
+    orderId: 0,
   });
 
   // ========== 门店自提（核销） ==========
   const systemStore = ref({}); // 门店信息
 
   // 复制
-  const onCopy = () => {
-    sheep.$helper.copyText(sheep.$helper.getOrderNo(state.orderInfo));
+  const onCopy = async () => {
+    let orderNo = sheep.$helper.getOrderNo(state.orderInfo);
+    if (state.orderId) {
+      const res = await OrderApi.getOrderDetail(state.orderId);
+      if (res?.code === 0) {
+        orderNo = sheep.$helper.getOrderNo(res.data);
+      }
+    }
+    sheep.$helper.copyText(orderNo);
   };
 
   // 去支付
@@ -449,6 +457,7 @@
       }
     }
     state.orderInfo.id = id;
+    state.orderId = id;
     // 完成 state.orderInfo.id 赋值后加载一次detail，但有几率与 onShow 重复可能导致 detail 会加载两次。
     await getOrderDetail(state.orderInfo.id);
   });

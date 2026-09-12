@@ -41,7 +41,8 @@ assert.equal(getOrderNo({}), '');
 assert.equal(getOrderNo(null), '');
 
 assert.match(detailSource, /getOrderNo\(state\.orderInfo\)/);
-assert.match(detailSource, /copyText\(sheep\.\$helper\.getOrderNo\(state\.orderInfo\)\)/);
+assert.match(detailSource, /copyText\(orderNo\)/);
+assert.match(detailSource, /OrderApi\.getOrderDetail\(state\.orderId\)/);
 assert.match(helperSource.slice(helperSource.indexOf('export default')), /\n\s+getOrderNo,/);
 
 copyText(getOrderNo({ orderNo: 'fallback-order-no' }));

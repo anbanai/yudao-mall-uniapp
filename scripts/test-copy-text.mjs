@@ -65,6 +65,31 @@ assert.equal(h5ClipboardCalls.length, 1);
 assert.equal(h5ClipboardCalls[0].data, 'h5-order-no');
 assert.deepEqual(h5ToastCalls, ['复制成功!']);
 
+const wxClipboardCalls = [];
+const wxCopyText = new Function(
+  'uni',
+  'wx',
+  'toast',
+  `${copyTextSource}\nreturn copyText;`,
+)(
+  {
+    setClipboardData() {
+      throw new Error('mini-program copy should use wx.setClipboardData');
+    },
+  },
+  {
+    setClipboardData(options) {
+      wxClipboardCalls.push(options);
+      options.success();
+    },
+  },
+  () => {},
+);
+
+wxCopyText('wechat-order-no');
+assert.equal(wxClipboardCalls.length, 1);
+assert.equal(wxClipboardCalls[0].data, 'wechat-order-no');
+
 console.log('copy text normalization and H5 API checks passed');
 
 await import('./test-order-copy.mjs');
