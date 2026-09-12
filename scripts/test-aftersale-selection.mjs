@@ -15,6 +15,12 @@ assert.match(applySource, /:data-way="item\.value"[\s\S]*@tap="onRefundTypeTap"/
 assert.match(applySource, /:data-reason="item"[\s\S]*@tap="onReasonSelect"/);
 assert.doesNotMatch(applySource, /@tap="onRefundTypeTap\(item\.value\)"/);
 assert.doesNotMatch(applySource, /@tap="onReasonSelect\(item\)"/);
+assert.doesNotMatch(
+  applySource,
+  /<uni-forms[^>]*v-model="formData"/,
+  'uni-forms must not generate an assignment to const formData',
+);
+assert.match(applySource, /<uni-forms[^>]*:modelValue="formData"/);
 assert.match(applySource, /if \(!formData\.applyReason\)/);
 
 const state = createAfterSaleSelectionState();

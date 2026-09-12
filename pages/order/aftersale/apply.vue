@@ -12,7 +12,7 @@
       />
     </view>
 
-    <uni-forms ref="form" v-model="formData" :rules="rules" label-position="top">
+    <uni-forms ref="form" :modelValue="formData" :rules="rules" label-position="top">
       <!-- 售后类型 -->
       <view class="refund-item">
         <view class="item-title ss-m-b-20">售后类型</view>
