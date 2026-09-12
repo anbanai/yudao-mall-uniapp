@@ -644,20 +644,6 @@ export function getRootUrl() {
 }
 
 /**
- * Resolve the order number returned by different order APIs.
- */
-export function getOrderNo(order) {
-  if (!order || typeof order !== 'object') {
-    return '';
-  }
-
-  const orderNo = [order.no, order.orderNo, order.sn, order.order_sn].find(
-    (value) => value !== null && value !== undefined && String(value).trim() !== '',
-  );
-  return orderNo ?? order.id ?? '';
-}
-
-/**
  * copyText 多端复制文本
  */
 export function copyText(text) {
@@ -709,6 +695,5 @@ export default {
   pages,
   test,
   getRootUrl,
-  getOrderNo,
   copyText,
 };

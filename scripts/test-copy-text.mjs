@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const helperSource = await readFile(new URL('../sheep/helper/index.js', import.meta.url), 'utf8');
+const detailSource = await readFile(new URL('../pages/order/detail.vue', import.meta.url), 'utf8');
 const copyTextStart = helperSource.indexOf('export function copyText');
 const copyTextEnd = helperSource.indexOf('\n\nexport default', copyTextStart);
 const copyTextSource = helperSource
@@ -122,6 +123,9 @@ assert.deepEqual(errorLogs, [
 ]);
 assert.equal(toastCalls.at(-1), '复制失败: setClipboardData:fail system denied');
 
-console.log('copy text normalization and H5 API checks passed');
+assert.match(detailSource, /\{\{ state\.orderInfo\.no \}\}/);
+assert.match(detailSource, /copyText\(state\.orderInfo\.no\)/);
+assert.doesNotMatch(detailSource, /orderId:\s*0/);
+assert.doesNotMatch(helperSource, /export function getOrderNo/);
 
-await import('./test-order-copy.mjs');
+console.log('copy text normalization and H5 API checks passed');
