@@ -169,6 +169,10 @@
       sheep.$helper.toast('请选择售后类型');
       return;
     }
+    if (!formData.applyReason) {
+      sheep.$helper.toast('请选择申请原因');
+      return;
+    }
     let data = {
       orderItemId: state.itemId,
       refundPrice: state.item.payPrice,
