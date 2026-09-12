@@ -13,14 +13,24 @@ const nativeCopyTextSource = copyTextSource
 
 const clipboardCalls = [];
 const toastCalls = [];
-const copyText = new Function('uni', 'toast', `${nativeCopyTextSource}\nreturn copyText;`)(
+const successLogs = [];
+const errorLogs = [];
+const copyText = new Function('uni', 'toast', 'console', `${nativeCopyTextSource}\nreturn copyText;`)(
   {
     setClipboardData(options) {
       clipboardCalls.push(options);
-      options.success();
+      options.success({ errMsg: 'setClipboardData:ok' });
     },
   },
   (message) => toastCalls.push(message),
+  {
+    log(...args) {
+      successLogs.push(args);
+    },
+    error(...args) {
+      errorLogs.push(args);
+    },
+  },
 );
 
 copyText(202609110001);
@@ -29,6 +39,10 @@ copyText(null);
 assert.equal(clipboardCalls.length, 1);
 assert.equal(clipboardCalls[0].data, '202609110001');
 assert.deepEqual(toastCalls, ['复制成功!', '复制失败!']);
+assert.deepEqual(successLogs, [
+  ['[copyText] setClipboardData success:', { errMsg: 'setClipboardData:ok' }],
+]);
+assert.deepEqual(errorLogs, []);
 
 const h5ClipboardCalls = [];
 const h5ToastCalls = [];
@@ -39,6 +53,7 @@ const h5CopyText = new Function(
   'uni',
   'toast',
   'document',
+  'console',
   `${h5CopyTextSource}\nreturn copyText;`,
 )(
   {
@@ -57,6 +72,7 @@ const h5CopyText = new Function(
       return true;
     },
   },
+  console,
 );
 
 h5CopyText('h5-order-no');
@@ -65,30 +81,46 @@ assert.equal(h5ClipboardCalls.length, 1);
 assert.equal(h5ClipboardCalls[0].data, 'h5-order-no');
 assert.deepEqual(h5ToastCalls, ['复制成功!']);
 
-const wxClipboardCalls = [];
-const wxCopyText = new Function(
+const miniProgramClipboardCalls = [];
+const miniProgramCopyText = new Function(
   'uni',
   'wx',
   'toast',
+  'console',
   `${copyTextSource}\nreturn copyText;`,
 )(
   {
-    setClipboardData() {
-      throw new Error('mini-program copy should use wx.setClipboardData');
+    setClipboardData(options) {
+      miniProgramClipboardCalls.push(options);
+      options.fail({ errMsg: 'setClipboardData:fail system denied' });
     },
   },
   {
-    setClipboardData(options) {
-      wxClipboardCalls.push(options);
-      options.success();
+    setClipboardData() {
+      throw new Error('copyText must call uni.setClipboardData');
     },
   },
-  () => {},
+  (message) => toastCalls.push(message),
+  {
+    log(...args) {
+      successLogs.push(args);
+    },
+    error(...args) {
+      errorLogs.push(args);
+    },
+  },
 );
 
-wxCopyText('wechat-order-no');
-assert.equal(wxClipboardCalls.length, 1);
-assert.equal(wxClipboardCalls[0].data, 'wechat-order-no');
+miniProgramCopyText('wechat-order-no');
+assert.equal(miniProgramClipboardCalls.length, 1);
+assert.equal(miniProgramClipboardCalls[0].data, 'wechat-order-no');
+assert.deepEqual(errorLogs, [
+  [
+    '[copyText] setClipboardData fail:',
+    { errMsg: 'setClipboardData:fail system denied' },
+  ],
+]);
+assert.equal(toastCalls.at(-1), '复制失败: setClipboardData:fail system denied');
 
 console.log('copy text normalization and H5 API checks passed');
 

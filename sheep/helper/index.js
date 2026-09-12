@@ -667,18 +667,15 @@ export function copyText(text) {
     return;
   }
 
-  const setClipboardData =
-    typeof wx !== 'undefined' && typeof wx.setClipboardData === 'function'
-      ? wx.setClipboardData.bind(wx)
-      : uni.setClipboardData;
-
-  setClipboardData({
+  uni.setClipboardData({
     data: clipboardText,
-    success: function () {
+    success: function (res) {
+      console.log('[copyText] setClipboardData success:', res);
       toast('复制成功!');
     },
-    fail: function () {
-      toast('复制失败!');
+    fail: function (err) {
+      console.error('[copyText] setClipboardData fail:', err);
+      toast(`复制失败: ${err?.errMsg || '未知错误'}`);
     },
   });
 }
