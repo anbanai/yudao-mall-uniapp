@@ -146,6 +146,9 @@
           </view>
         </view>
       </view>
+      <view v-if="loginTypes.includes(authType)" class="auth-cancel-box">
+        <button class="ss-reset-button auth-cancel-btn" @tap="handlePopupClose">取消登录</button>
+      </view>
       <view class="safe-box" />
     </view>
   </su-popup>

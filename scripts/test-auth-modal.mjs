@@ -154,6 +154,24 @@ assert.match(
   /<!-- #ifndef MP-WEIXIN -->[\s\S]*class="login-mode-head"[\s\S]*class="login-tabs"[\s\S]*短信登录[\s\S]*账号登录[\s\S]*<!-- #endif -->/,
   'non-mini-program platforms should retain the login method switcher',
 );
+
+const cancelLoginButton = findButtonByEvent(template, 'tap', 'handlePopupClose');
+assert.ok(cancelLoginButton, 'login modal should expose a cancel action');
+assert.ok(
+  cancelLoginButton.props.some(
+    (prop) =>
+      prop.type === NodeTypes.ATTRIBUTE &&
+      prop.name === 'class' &&
+      prop.value?.content.includes('auth-cancel-btn'),
+  ),
+  'login modal cancel action should use the dedicated text-button style',
+);
+assert.match(
+  getTextContent(cancelLoginButton),
+  /取消登录|取消/,
+  'login modal cancel action should clearly communicate cancellation',
+);
+
 assert.deepEqual(
   collectLoginTabs(parse(preprocessTemplateForPlatform(componentSource, 'H5'))),
   [

@@ -143,6 +143,21 @@
   }
 }
 
+.auth-cancel-box {
+  display: flex;
+  justify-content: center;
+  margin-top: 24rpx;
+}
+
+.auth-cancel-btn {
+  min-width: 180rpx;
+  min-height: 72rpx;
+  padding: 16rpx 24rpx;
+  color: #666666;
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+
 // 修改密码
 .editPwd-btn-box {
   .save-btn {
