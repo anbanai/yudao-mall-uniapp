@@ -195,6 +195,7 @@
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import { resetPagination } from '@/sheep/helper/utils';
   import PayTransferApi from '@/sheep/api/pay/transfer';
+  import uniDatetimePicker from './components/uni-datetime-picker/uni-datetime-picker.vue';
 
   const headerBg = sheep.$url.css('/static/img/shop/user/wallet_card_bg.png');
 

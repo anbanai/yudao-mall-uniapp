@@ -40,7 +40,11 @@
           v-else-if="state.trackStatus === 'empty'"
           class="track-state ss-flex-col ss-col-center ss-row-center"
         >
-          <image class="track-state-image" src="/static/data-empty.png" mode="widthFix" />
+          <image
+            class="track-state-image"
+            :src="sheep.$url.static('/static/data-empty.png')"
+            mode="widthFix"
+          />
           <text class="track-state-title">暂无物流轨迹</text>
           <text class="track-state-text">快递揽收后，物流信息会同步显示在这里</text>
         </view>
@@ -48,7 +52,11 @@
           v-else-if="state.trackStatus === 'error'"
           class="track-state ss-flex-col ss-col-center ss-row-center"
         >
-          <image class="track-state-image" src="/static/internet-empty.png" mode="widthFix" />
+          <image
+            class="track-state-image"
+            :src="sheep.$url.static('/static/internet-empty.png')"
+            mode="widthFix"
+          />
           <text class="track-state-title">物流查询失败</text>
           <text class="track-state-text">{{ state.trackError }}</text>
           <button

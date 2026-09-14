@@ -8,7 +8,9 @@
 </template>
 
 <script>
+	// #ifdef APP-NVUE
 	import icons from './icons.js';
+	// #endif
 	const getVal = (val) => {
 		const reg = /^[0-9]*$/g
 		return (typeof val === 'number' ||　reg.test(val) )? val + 'px' : val;
@@ -55,10 +57,13 @@
 		},
 		data() {
 			return {
+				// #ifdef APP-NVUE
 				icons: icons.glyphs
+				// #endif
 			}
 		},
 		computed:{
+			// #ifdef APP-NVUE
 			unicode(){
 				let code = this.icons.find(v=>v.font_class === this.type)
 				if(code){
@@ -66,6 +71,7 @@
 				}
 				return ''
 			},
+			// #endif
 			iconSize(){
 				return getVal(this.size)
 			}
@@ -81,10 +87,19 @@
 <style lang="scss">
 	/* #ifndef APP-NVUE */
 	@import './uniicons.css';
+	/* #ifdef MP-WEIXIN */
+	// Subset: arrows, calendar, clear/close, eye, plus, search, sound, and star icons.
+	@font-face {
+		font-family: uniicons;
+		src: url('./uniicons-mp.ttf') format('truetype');
+	}
+	/* #endif */
+	/* #ifndef MP-WEIXIN */
 	@font-face {
 		font-family: uniicons;
 		src: url('./uniicons.ttf') format('truetype');
 	}
+	/* #endif */
 
 	/* #endif */
 	.uni-icons {
