@@ -191,10 +191,11 @@
     "optimization": {
       "subPackages": true
     },
-    "plugins": {},
-    "logisticsPlugin": {
-      "version": "2.1.5",
-      "provider": "wx9ad912bf20548d92"
+    "plugins": {
+      "logisticsPlugin": {
+        "version": "2.1.5",
+        "provider": "wx9ad912bf20548d92"
+      }
     },
     "lazyCodeLoading": "requiredComponents",
     "usingComponents": {},

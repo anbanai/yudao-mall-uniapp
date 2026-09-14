@@ -1,6 +1,9 @@
 import sheep from '@/sheep';
 import OrderApi from '@/sheep/api/trade/order';
-import { createOrderLogisticsOpener } from '@/sheep/helper/orderLogistics.mjs';
+import {
+  createOrderLogisticsOpener,
+  getLogisticsFallbackParams,
+} from '@/sheep/helper/orderLogistics.mjs';
 
 export const openOrderLogistics = createOrderLogisticsOpener({
   getPlatformName: () => sheep.$platform.name,
@@ -13,7 +16,10 @@ export const openOrderLogistics = createOrderLogisticsOpener({
     return null;
     // #endif
   },
-  openFallback: (orderId) => {
-    sheep.$router.go('/pages/order/express/log', { id: orderId });
+  openFallback: (orderId, reason) => {
+    if (reason) {
+      console.warn('[order-logistics] WeChat tracking unavailable', { orderId, reason });
+    }
+    sheep.$router.go('/pages/order/express/log', getLogisticsFallbackParams(orderId, reason));
   },
 });
