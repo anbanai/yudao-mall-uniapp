@@ -15,7 +15,8 @@ try {
 
 assert.ok(withdrawal, 'withdrawal rule helpers should exist');
 
-const { buildWithdrawalRules, getWithdrawalAmountError, yuanToFen } = withdrawal;
+const { buildWithdrawalRules, getWithdrawalAmountError, isWithdrawalConfigValid, yuanToFen } =
+  withdrawal;
 
 assert.equal(yuanToFen('0.30'), 30);
 assert.equal(yuanToFen('12.34'), 1234);
@@ -33,6 +34,30 @@ assert.equal(getWithdrawalAmountError('50.01', limits), 'above-available');
 assert.equal(getWithdrawalAmountError('50', limits), '');
 assert.equal(getWithdrawalAmountError('10', { ...limits, rulesReady: false }), 'rules-unavailable');
 
+assert.equal(
+  isWithdrawalConfigValid({
+    brokerageWithdrawMinPrice: 0,
+    brokerageFrozenDays: 0,
+    brokerageWithdrawTypes: [],
+  }),
+  true,
+);
+assert.equal(
+  isWithdrawalConfigValid({
+    brokerageWithdrawMinPrice: '',
+    brokerageFrozenDays: 0,
+    brokerageWithdrawTypes: [],
+  }),
+  false,
+);
+assert.equal(
+  isWithdrawalConfigValid({
+    brokerageWithdrawMinPrice: 0,
+    brokerageWithdrawTypes: [],
+  }),
+  false,
+);
+
 assert.deepEqual(
   buildWithdrawalRules({
     availablePrice: 5000,
@@ -43,13 +68,42 @@ assert.deepEqual(
   [
     { label: '可提现额度', value: '当前可提现 50.00 元' },
     { label: '单笔限额', value: '最低 0.50 元，最高不超过当前可提现金额' },
-    { label: '每日提现次数', value: '不限' },
-    { label: '提现时间', value: '全天均可申请' },
-    { label: '到账时间', value: '提交后预计 1-3 个工作日到账，节假日顺延' },
+    { label: '每日提现次数', value: '不限次数' },
+    { label: '提现时间', value: '每日全天均可提交申请' },
+    {
+      label: '到账时间',
+      value: '申请提交后需平台审核；审核通过后预计 1-3 个工作日到账，节假日顺延',
+    },
     { label: '冻结规则', value: '佣金冻结 2 天，到期后方可提现' },
     { label: '提现方式', value: '钱包余额、银行卡转账、微信零钱' },
   ],
 );
+
+assert.deepEqual(buildWithdrawalRules({}), [
+  { label: '可提现额度', value: '当前可提现 -- 元' },
+  { label: '单笔限额', value: '最低 -- 元，最高不超过当前可提现金额' },
+  { label: '每日提现次数', value: '不限次数' },
+  { label: '提现时间', value: '每日全天均可提交申请' },
+  {
+    label: '到账时间',
+    value: '申请提交后需平台审核；审核通过后预计 1-3 个工作日到账，节假日顺延',
+  },
+  { label: '冻结规则', value: '冻结天数加载中' },
+  { label: '提现方式', value: '提现方式加载中' },
+]);
+
+assert.deepEqual(buildWithdrawalRules({ availablePrice: '', minPrice: '', frozenDays: '' }), [
+  { label: '可提现额度', value: '当前可提现 -- 元' },
+  { label: '单笔限额', value: '最低 -- 元，最高不超过当前可提现金额' },
+  { label: '每日提现次数', value: '不限次数' },
+  { label: '提现时间', value: '每日全天均可提交申请' },
+  {
+    label: '到账时间',
+    value: '申请提交后需平台审核；审核通过后预计 1-3 个工作日到账，节假日顺延',
+  },
+  { label: '冻结规则', value: '冻结天数加载中' },
+  { label: '提现方式', value: '提现方式加载中' },
+]);
 
 const withdrawSource = await readFile(
   new URL('../pages/commission/withdraw.vue', import.meta.url),
@@ -102,11 +156,44 @@ function findNoticeTitle(node) {
 }
 
 const noticeTitle = findNoticeTitle(withdrawTemplate);
-assert.equal(noticeTitle?.children?.[0]?.content, '提现说明');
+assert.equal(noticeTitle?.children?.[0]?.content, '提现规则');
 assert.match(
   descriptor.template.content,
   /rule.label[\s\S]*rule\.value/,
   'withdrawal rules should render labels and values separately for readability',
+);
+
+function findWithdrawalRuleList(node, ancestors = []) {
+  if (
+    node.type === NodeTypes.ELEMENT &&
+    node.props.some(
+      (prop) =>
+        prop.type === NodeTypes.DIRECTIVE &&
+        prop.name === 'for' &&
+        prop.exp?.content.includes('withdrawalRules'),
+    )
+  ) {
+    return { node, ancestors };
+  }
+  for (const child of node.children || []) {
+    const match = findWithdrawalRuleList(child, [...ancestors, node]);
+    if (match) return match;
+  }
+}
+
+const withdrawalRuleList = findWithdrawalRuleList(withdrawTemplate);
+assert.ok(withdrawalRuleList, 'withdrawal rule list should be rendered');
+assert.equal(
+  withdrawalRuleList.ancestors.some((node) =>
+    (node.props || []).some(
+      (prop) =>
+        prop.type === NodeTypes.DIRECTIVE &&
+        prop.name === 'if' &&
+        prop.exp?.content === 'rulesReady',
+    ),
+  ),
+  false,
+  'withdrawal rules should remain visible while account data is loading',
 );
 
 console.log('withdrawal rule checks passed');

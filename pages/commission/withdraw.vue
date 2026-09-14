@@ -148,17 +148,15 @@
       </button>
     </view>
 
-    <!-- 提现说明 -->
+    <!-- 提现规则 -->
     <view class="draw-notice">
-      <view class="title ss-m-b-30">提现说明</view>
-      <template v-if="rulesReady">
-        <view v-for="rule in withdrawalRules" :key="rule.label" class="draw-list">
-          <view class="rule-label">{{ rule.label }}</view>
-          <view class="rule-value">{{ rule.value }}</view>
-        </view>
-      </template>
-      <view v-else class="draw-list" :class="{ 'rule-error': state.rulesLoadFailed }">
-        {{ state.rulesLoadFailed ? '提现规则加载失败，请稍后再试' : '提现规则加载中...' }}
+      <view class="title ss-m-b-30">提现规则</view>
+      <view v-for="rule in withdrawalRules" :key="rule.label" class="draw-list">
+        <view class="rule-label">{{ rule.label }}</view>
+        <view class="rule-value">{{ rule.value }}</view>
+      </view>
+      <view v-if="state.rulesLoadFailed" class="rule-error">
+        实时规则数据更新失败，请刷新页面后重试
       </view>
     </view>
 
@@ -186,6 +184,7 @@
   import {
     buildWithdrawalRules,
     getWithdrawalAmountError,
+    isWithdrawalConfigValid,
     yuanToFen,
   } from '@/sheep/helper/withdrawal.mjs';
 
@@ -208,12 +207,9 @@
     brokerageInfo: {}, // 分销信息
     brokerageLoaded: false,
 
-    frozenDays: 0, // 冻结天数
-    minPrice: 0, // 最低提现金额
-    withdrawTypes: [], // 提现方式
-    dailyLimit: '不限', // 每日提现次数
-    withdrawTime: '全天均可申请', // 提现时间
-    arrivalTime: '提交后预计 1-3 个工作日到账，节假日顺延', // 到账时间
+    frozenDays: undefined, // 冻结天数
+    minPrice: undefined, // 最低提现金额
+    withdrawTypes: undefined, // 提现方式
     rulesLoaded: false,
     rulesLoadFailed: false,
     bankList: [], // 银行字典数据
@@ -236,9 +232,6 @@
       minPrice: state.minPrice,
       frozenDays: state.frozenDays,
       withdrawTypes: state.withdrawTypes,
-      dailyLimit: state.dailyLimit,
-      withdrawTime: state.withdrawTime,
-      arrivalTime: state.arrivalTime,
     }),
   );
 
@@ -326,24 +319,26 @@
   // 获得分销配置
   async function getWithdrawRules() {
     let { code, data } = await TradeConfigApi.getTradeConfig();
-    if (code !== 0 || !data || !Array.isArray(data.brokerageWithdrawTypes)) {
+    if (code !== 0 || !isWithdrawalConfigValid(data)) {
       state.rulesLoadFailed = true;
       return;
     }
-    state.minPrice = data.brokerageWithdrawMinPrice || 0;
-    state.frozenDays = data.brokerageFrozenDays || 0;
+    state.minPrice = data.brokerageWithdrawMinPrice;
+    state.frozenDays = data.brokerageFrozenDays;
     state.withdrawTypes = data.brokerageWithdrawTypes;
-    state.dailyLimit = data.brokerageWithdrawDailyLimit ?? '不限';
-    state.withdrawTime = data.brokerageWithdrawTime ?? '全天均可申请';
-    state.arrivalTime =
-      data.brokerageWithdrawArrivalTime ?? '提交后预计 1-3 个工作日到账，节假日顺延';
     state.rulesLoaded = true;
   }
 
   // 获得分销信息
   async function getBrokerageUser() {
     const { data, code } = await BrokerageApi.getBrokerageUser();
-    if (code !== 0 || !data || !Number.isFinite(Number(data.brokeragePrice))) {
+    if (
+      code !== 0 ||
+      !data ||
+      typeof data.brokeragePrice !== 'number' ||
+      !Number.isFinite(data.brokeragePrice) ||
+      data.brokeragePrice < 0
+    ) {
       state.rulesLoadFailed = true;
       return;
     }
@@ -534,7 +529,7 @@
     }
   }
 
-  // 提现说明
+  // 提现规则
   .draw-notice {
     width: 684rpx;
     background: #ffffff;
@@ -573,7 +568,9 @@
     }
 
     .rule-error {
-      display: block;
+      margin-top: 12rpx;
+      font-size: 24rpx;
+      line-height: 36rpx;
       color: #e64340;
     }
   }
