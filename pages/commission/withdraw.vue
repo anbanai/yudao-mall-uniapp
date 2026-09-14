@@ -152,8 +152,9 @@
     <view class="draw-notice">
       <view class="title ss-m-b-30">提现说明</view>
       <template v-if="rulesReady">
-        <view v-for="rule in withdrawalRules" :key="rule" class="draw-list">
-          {{ rule }}
+        <view v-for="rule in withdrawalRules" :key="rule.label" class="draw-list">
+          <view class="rule-label">{{ rule.label }}</view>
+          <view class="rule-value">{{ rule.value }}</view>
         </view>
       </template>
       <view v-else class="draw-list" :class="{ 'rule-error': state.rulesLoadFailed }">
@@ -210,6 +211,9 @@
     frozenDays: 0, // 冻结天数
     minPrice: 0, // 最低提现金额
     withdrawTypes: [], // 提现方式
+    dailyLimit: '不限', // 每日提现次数
+    withdrawTime: '全天均可申请', // 提现时间
+    arrivalTime: '提交后预计 1-3 个工作日到账，节假日顺延', // 到账时间
     rulesLoaded: false,
     rulesLoadFailed: false,
     bankList: [], // 银行字典数据
@@ -232,6 +236,9 @@
       minPrice: state.minPrice,
       frozenDays: state.frozenDays,
       withdrawTypes: state.withdrawTypes,
+      dailyLimit: state.dailyLimit,
+      withdrawTime: state.withdrawTime,
+      arrivalTime: state.arrivalTime,
     }),
   );
 
@@ -326,6 +333,10 @@
     state.minPrice = data.brokerageWithdrawMinPrice || 0;
     state.frozenDays = data.brokerageFrozenDays || 0;
     state.withdrawTypes = data.brokerageWithdrawTypes;
+    state.dailyLimit = data.brokerageWithdrawDailyLimit ?? '不限';
+    state.withdrawTime = data.brokerageWithdrawTime ?? '全天均可申请';
+    state.arrivalTime =
+      data.brokerageWithdrawArrivalTime ?? '提交后预计 1-3 个工作日到账，节假日顺延';
     state.rulesLoaded = true;
   }
 
@@ -540,12 +551,29 @@
     }
 
     .draw-list {
+      display: flex;
+      align-items: flex-start;
+      gap: 16rpx;
+      min-height: 46rpx;
       font-size: 24rpx;
       color: #999999;
       line-height: 46rpx;
+
+      .rule-label {
+        flex: 0 0 156rpx;
+        color: #666666;
+        font-weight: 500;
+      }
+
+      .rule-value {
+        flex: 1;
+        color: #999999;
+        word-break: break-all;
+      }
     }
 
     .rule-error {
+      display: block;
       color: #e64340;
     }
   }

@@ -43,18 +43,29 @@ export function getWithdrawalAmountError(value, options) {
   return '';
 }
 
-export function buildWithdrawalRules({ availablePrice, minPrice, frozenDays, withdrawTypes }) {
+export function buildWithdrawalRules({
+  availablePrice,
+  minPrice,
+  frozenDays,
+  withdrawTypes,
+  dailyLimit = '不限',
+  withdrawTime = '全天均可申请',
+  arrivalTime = '提交后预计 1-3 个工作日到账，节假日顺延',
+}) {
   const methodNames = [...new Set(withdrawTypes || [])]
     .map((type) => WITHDRAW_TYPE_LABELS[type])
     .filter(Boolean);
 
   return [
-    `可提现额度：当前可提现 ${formatFen(availablePrice)} 元`,
-    `单笔限额：最低 ${formatFen(minPrice)} 元，最高不超过当前可提现金额`,
-    '每日提现次数：不限',
-    '提现时间：全天均可申请',
-    '到账时间：提交后预计 1-3 个工作日到账，节假日顺延',
-    `冻结规则：佣金冻结 ${Number(frozenDays || 0)} 天，到期后方可提现`,
-    `提现方式：${methodNames.length ? methodNames.join('、') : '暂无可用提现方式'}`,
+    { label: '可提现额度', value: `当前可提现 ${formatFen(availablePrice)} 元` },
+    { label: '单笔限额', value: `最低 ${formatFen(minPrice)} 元，最高不超过当前可提现金额` },
+    { label: '每日提现次数', value: dailyLimit },
+    { label: '提现时间', value: withdrawTime },
+    { label: '到账时间', value: arrivalTime },
+    { label: '冻结规则', value: `佣金冻结 ${Number(frozenDays || 0)} 天，到期后方可提现` },
+    {
+      label: '提现方式',
+      value: methodNames.length ? methodNames.join('、') : '暂无可用提现方式',
+    },
   ];
 }

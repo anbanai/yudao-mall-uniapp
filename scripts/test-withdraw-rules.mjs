@@ -41,13 +41,13 @@ assert.deepEqual(
     withdrawTypes: [1, 2, 5],
   }),
   [
-    '可提现额度：当前可提现 50.00 元',
-    '单笔限额：最低 0.50 元，最高不超过当前可提现金额',
-    '每日提现次数：不限',
-    '提现时间：全天均可申请',
-    '到账时间：提交后预计 1-3 个工作日到账，节假日顺延',
-    '冻结规则：佣金冻结 2 天，到期后方可提现',
-    '提现方式：钱包余额、银行卡转账、微信零钱',
+    { label: '可提现额度', value: '当前可提现 50.00 元' },
+    { label: '单笔限额', value: '最低 0.50 元，最高不超过当前可提现金额' },
+    { label: '每日提现次数', value: '不限' },
+    { label: '提现时间', value: '全天均可申请' },
+    { label: '到账时间', value: '提交后预计 1-3 个工作日到账，节假日顺延' },
+    { label: '冻结规则', value: '佣金冻结 2 天，到期后方可提现' },
+    { label: '提现方式', value: '钱包余额、银行卡转账、微信零钱' },
   ],
 );
 
@@ -81,6 +81,32 @@ assert.equal(
   amountInputType?.value?.content,
   'digit',
   'the mini-program withdrawal keyboard should allow decimal amounts',
+);
+
+function findNoticeTitle(node) {
+  if (
+    node.type === NodeTypes.ELEMENT &&
+    node.props.some(
+      (prop) =>
+        prop.type === NodeTypes.ATTRIBUTE &&
+        prop.name === 'class' &&
+        prop.value?.content === 'title ss-m-b-30',
+    )
+  ) {
+    return node;
+  }
+  for (const child of node.children || []) {
+    const match = findNoticeTitle(child);
+    if (match) return match;
+  }
+}
+
+const noticeTitle = findNoticeTitle(withdrawTemplate);
+assert.equal(noticeTitle?.children?.[0]?.content, '提现说明');
+assert.match(
+  descriptor.template.content,
+  /rule.label[\s\S]*rule\.value/,
+  'withdrawal rules should render labels and values separately for readability',
 );
 
 console.log('withdrawal rule checks passed');
