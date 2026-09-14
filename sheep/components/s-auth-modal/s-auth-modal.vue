@@ -39,6 +39,7 @@
       <!-- #endif -->
 
       <!-- 1. 账号密码登录 accountLogin -->
+      <!-- #ifndef MP-WEIXIN -->
       <account-login
         v-if="authType === 'accountLogin'"
         :agreeStatus="state.protocol"
@@ -51,6 +52,7 @@
         :agreeStatus="state.protocol"
         :showHeader="sheep.$platform.name !== 'WechatMiniProgram'"
       />
+      <!-- #endif -->
 
       <!-- #ifdef MP-WEIXIN -->
       <!-- 3. 微信小程序手机号快捷登录 -->
@@ -67,7 +69,9 @@
       <!-- #endif -->
 
       <!-- 4. 忘记密码 resetPassword-->
+      <!-- #ifndef MP-WEIXIN -->
       <reset-password v-if="authType === 'resetPassword'" />
+      <!-- #endif -->
 
       <!-- 5. 绑定手机号 changeMobile -->
       <change-mobile v-if="authType === 'changeMobile'" />
@@ -157,9 +161,11 @@
 <script setup>
   import { computed, reactive, watch } from 'vue';
   import sheep from '@/sheep';
+  // #ifndef MP-WEIXIN
   import accountLogin from './components/account-login.vue';
   import smsLogin from './components/sms-login.vue';
   import resetPassword from './components/reset-password.vue';
+  // #endif
   import changeMobile from './components/change-mobile.vue';
   import changePassword from './components/change-password.vue';
   import mpAuthorization from './components/mp-authorization.vue';

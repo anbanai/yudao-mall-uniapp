@@ -7,6 +7,7 @@ const modal = defineStore('modal', {
     authTransitionId: 0, // 用于取消过期的 H5 登录方式切换
     authTransitionCloseId: 0, // H5 登录方式切换时预期触发的一次性弹窗关闭事件
     share: false, // 分享弹框
+    posterShareInfo: null, // 分包海报页使用的一次性分享信息（不持久化）
     menu: false, // 快捷菜单弹框
     advHistory: [], // 广告弹框记录
     lastTimer: {
@@ -17,6 +18,16 @@ const modal = defineStore('modal', {
       changePassword: 0,
     },
   }),
+  actions: {
+    setPosterShareInfo(shareInfo) {
+      this.posterShareInfo = shareInfo;
+    },
+    consumePosterShareInfo() {
+      const shareInfo = this.posterShareInfo;
+      this.posterShareInfo = null;
+      return shareInfo;
+    },
+  },
   persist: {
     enabled: true,
     strategies: [

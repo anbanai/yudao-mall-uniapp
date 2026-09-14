@@ -486,6 +486,12 @@
 		{
 			"root": "pages/public",
 			"pages": [{
+					"path": "poster",
+					"style": {
+						"navigationBarTitleText": "生成海报"
+					}
+				},
+				{
 					"path": "setting",
 					"style": {
 						"navigationBarTitleText": "系统设置"

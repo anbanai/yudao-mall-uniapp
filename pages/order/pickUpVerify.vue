@@ -58,6 +58,7 @@
 <script setup>
   import sheep from '@/sheep';
   import { reactive, ref } from 'vue';
+  import lPainter from './components/l-painter/l-painter.vue';
 
   const props = defineProps({
     orderInfo: {

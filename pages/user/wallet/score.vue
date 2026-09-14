@@ -58,7 +58,7 @@
           v-for="item in state.pagination.list"
           :key="item.id"
         >
-          <view class="ss-flex-col">
+          <view class="ss-flex-col list-content">
             <view class="name"
               >{{ item.title }}{{ item.description ? ' - ' + item.description : '' }}</view
             >
@@ -247,6 +247,11 @@
       border-bottom: 1rpx solid #dfdfdf;
       padding: 30rpx;
 
+      .list-content {
+        flex: 1;
+        min-width: 0;
+      }
+
       .name {
         font-size: 28rpx;
 
@@ -266,6 +271,8 @@
 
       .add {
         font-size: 30rpx;
+        flex-shrink: 0;
+        white-space: nowrap;
 
         font-weight: 500;
         color: #e6b873;
@@ -273,6 +280,8 @@
 
       .minus {
         font-size: 30rpx;
+        flex-shrink: 0;
+        white-space: nowrap;
 
         font-weight: 500;
         color: $dark-3;

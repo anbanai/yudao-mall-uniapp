@@ -62,13 +62,15 @@
       </view>
     </su-popup>
 
-    <!-- 分享海报，对应操作 ② -->
+    <!-- #ifndef MP-WEIXIN -->
+    <!-- H5/App 保留弹窗海报；微信小程序在 public 分包页中生成。 -->
     <canvas-poster
       ref="SharePosterRef"
       :show="state.showPosterModal"
       :shareInfo="shareInfo"
       @close="state.showPosterModal = false"
     />
+    <!-- #endif -->
   </view>
 </template>
 <script setup>
@@ -77,7 +79,9 @@
    */
   import { ref, unref, reactive, computed } from 'vue';
   import sheep from '@/sheep';
+  // #ifndef MP-WEIXIN
   import canvasPoster from './canvas-poster/index.vue';
+  // #endif
   import { closeShareModal, showAuthModal } from '@/sheep/hooks/useModal';
 
   const show = computed(() => sheep.$store('modal').share);
@@ -103,8 +107,24 @@
       showAuthModal();
       return;
     }
+
+    // #ifdef MP-WEIXIN
+    const modalStore = sheep.$store('modal');
+    modalStore.setPosterShareInfo(props.shareInfo);
+    uni.navigateTo({
+      url: '/pages/public/poster',
+      fail: () => {
+        modalStore.consumePosterShareInfo();
+        sheep.$helper.toast('海报页面打开失败');
+      },
+    });
+    return;
+    // #endif
+
+    // #ifndef MP-WEIXIN
     unref(SharePosterRef).getPoster();
     state.showPosterModal = true;
+    // #endif
   };
 
   // 操作 ①：直接转发分享

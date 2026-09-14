@@ -16,10 +16,10 @@ const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.me
 assert.deepEqual(
   manifest['mp-weixin']?.plugins?.logisticsPlugin,
   {
-    version: '2.1.5',
+    version: '2.3.0',
     provider: 'wx9ad912bf20548d92',
   },
-  'the WeChat logistics plugin must be declared inside mp-weixin.plugins',
+  'the compatible WeChat logistics plugin must be declared inside mp-weixin.plugins',
 );
 assert.equal(
   manifest['mp-weixin']?.logisticsPlugin,

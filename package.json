@@ -7,6 +7,9 @@
   "scripts": {
     "prettier": "prettier --write  \"{pages,sheep}/**/*.{js,json,tsx,css,less,scss,vue,html,md}\"",
     "test:copy-text": "node scripts/test-copy-text.mjs",
+    "test:score-layout": "node scripts/test-score-layout.mjs",
+    "test:mp-package-size": "node scripts/test-mp-package-size.mjs",
+    "test:share-poster-package": "node scripts/test-share-poster-package.mjs",
     "test:pay-methods": "node scripts/test-pay-methods.mjs",
     "test:product-group": "node scripts/test-product-group.mjs",
     "test:order-points": "node scripts/test-order-points.mjs",
