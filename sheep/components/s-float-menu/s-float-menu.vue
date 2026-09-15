@@ -50,6 +50,7 @@
         class="float-popup-img"
         :src="popupItem.popupImgUrl"
         mode="widthFix"
+        show-menu-by-longpress
       />
       <view v-if="popupItem && popupItem.popupTitle" class="float-popup-title">{{
         popupItem.popupTitle
