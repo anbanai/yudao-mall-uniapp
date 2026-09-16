@@ -50,11 +50,31 @@ export function getWithdrawalAmountError(value, options) {
   if (price === undefined || price <= 0) {
     return 'invalid';
   }
-  if (price < options.minPrice) {
+  if (options.minPrice > 0 && price < options.minPrice) {
     return 'below-minimum';
   }
   if (price > options.availablePrice) {
     return 'above-available';
+  }
+  return '';
+}
+
+export function getWithdrawalAmountHint(value, options) {
+  if (!options.rulesReady) {
+    return '';
+  }
+  const price = yuanToFen(value);
+  if (price === undefined || price <= 0) {
+    if (options.minPrice > 0) {
+      return `最低提现金额为 ${formatFen(options.minPrice)} 元`;
+    }
+    return '';
+  }
+  if (options.minPrice > 0 && price < options.minPrice) {
+    return `最低提现金额为 ${formatFen(options.minPrice)} 元`;
+  }
+  if (price > options.availablePrice) {
+    return `最高可提现 ${formatFen(options.availablePrice)} 元`;
   }
   return '';
 }
@@ -72,9 +92,19 @@ export function buildWithdrawalRules({ availablePrice, minPrice, frozenDays, wit
     ? `佣金冻结 ${frozenDays} 天，到期后方可提现`
     : '冻结天数加载中';
 
+  const minPriceText = isNonNegativeNumber(minPrice)
+    ? minPrice > 0
+      ? `最低 ${formatFen(minPrice)} 元`
+      : '无最低提现金额限制'
+    : '最低限额加载中';
+  const maxPriceText = isNonNegativeNumber(availablePrice)
+    ? `最高可提现 ${formatFen(availablePrice)} 元`
+    : '';
+  const limitText = minPriceText + (maxPriceText ? `，${maxPriceText}` : '');
+
   return [
     { label: '可提现额度', value: `当前可提现 ${formatFen(availablePrice)} 元` },
-    { label: '单笔限额', value: `最低 ${formatFen(minPrice)} 元，最高不超过当前可提现金额` },
+    { label: '单笔限额', value: limitText },
     { label: '每日提现次数', value: '不限次数' },
     { label: '提现时间', value: '每日全天均可提交申请' },
     {

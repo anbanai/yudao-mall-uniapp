@@ -49,7 +49,9 @@
           type="digit"
           placeholder="请输入提现金额"
         />
+        <view class="withdraw-all-btn" @tap="withdrawAll"> 全部提现 </view>
       </view>
+      <view v-if="amountHint" class="amount-hint">{{ amountHint }}</view>
       <!-- 提现账号 -->
       <view class="card-title" v-show="['2', '6'].includes(state.accountInfo.type)">
         提现账号
@@ -184,6 +186,7 @@
   import {
     buildWithdrawalRules,
     getWithdrawalAmountError,
+    getWithdrawalAmountHint,
     isWithdrawalConfigValid,
     yuanToFen,
   } from '@/sheep/helper/withdrawal.mjs';
@@ -234,6 +237,24 @@
       withdrawTypes: state.withdrawTypes,
     }),
   );
+
+  const amountHint = computed(() =>
+    getWithdrawalAmountHint(state.accountInfo.price, {
+      rulesReady: rulesReady.value,
+      minPrice: state.minPrice,
+      availablePrice: state.brokerageInfo.brokeragePrice,
+    }),
+  );
+
+  const withdrawAll = () => {
+    if (!rulesReady.value) return;
+    const price = state.brokerageInfo.brokeragePrice;
+    if (!price || price <= 0) {
+      sheep.$helper.toast('当前无可提现金额');
+      return;
+    }
+    state.accountInfo.price = fen2yuan(price);
+  };
 
   // 打开提现方式的弹窗
   const onAccountSelect = (e) => {
@@ -527,6 +548,23 @@
         opacity: 1;
       }
     }
+  }
+
+  .amount-hint {
+    font-size: 24rpx;
+    line-height: 36rpx;
+    color: #e64340;
+    margin-top: -30rpx;
+    margin-bottom: 20rpx;
+  }
+
+  .withdraw-all-btn {
+    flex: 0 0 auto;
+    font-size: 24rpx;
+    color: var(--ui-BG-Main);
+    white-space: nowrap;
+    padding: 8rpx 16rpx;
+    margin-left: 10rpx;
   }
 
   // 提现规则
