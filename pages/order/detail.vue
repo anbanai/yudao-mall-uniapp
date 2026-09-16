@@ -180,6 +180,13 @@
         <text class="title">积分抵扣</text>
         <text class="detail">-¥{{ fen2yuan(state.orderInfo.pointPrice) }}</text>
       </view>
+      <view class="notice-item ss-flex ss-row-between" v-if="state.orderInfo.givePoint > 0">
+        <text class="title">赠送积分</text>
+        <text class="detail">
+          {{ state.orderInfo.pointGiveTiming === 2 ? '收货后到账' : '支付后到账' }}
+          {{ state.orderInfo.givePoint }} 分
+        </text>
+      </view>
       <view class="notice-item ss-flex ss-row-between" v-if="state.orderInfo.discountPrice > 0">
         <text class="title">活动优惠</text>
         <text class="detail">¥{{ fen2yuan(state.orderInfo.discountPrice) }}</text>

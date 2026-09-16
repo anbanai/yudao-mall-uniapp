@@ -62,9 +62,14 @@
             <view class="name"
               >{{ item.title }}{{ item.description ? ' - ' + item.description : '' }}</view
             >
-            <view class="time">{{
-              sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss')
-            }}</view>
+            <view class="time">
+              {{ sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss') }}
+              <text v-if="item.status === 2"> · 待生效</text>
+              <text v-else-if="item.status === 3"> · 已作废</text>
+            </view>
+            <view class="time" v-if="item.effectiveTime">
+              生效于 {{ sheep.$helper.timeFormat(item.effectiveTime, 'yyyy-mm-dd hh:MM:ss') }}
+            </view>
           </view>
           <view class="add" v-if="item.point > 0">+{{ item.point }}</view>
           <view class="minus" v-else>{{ item.point }}</view>
