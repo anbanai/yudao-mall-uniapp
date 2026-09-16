@@ -6,6 +6,7 @@
     :draggable="false"
     :mode="mode"
     :src="sheep.$url.cdn(src)"
+    :lazy-load="lazyLoad"
     @tap="onImgPreview"
     @load="onImgLoad"
     @error="onImgError"
@@ -75,6 +76,10 @@
     radius: {
       type: Number,
       default: 0,
+    },
+    lazyLoad: {
+      type: Boolean,
+      default: false,
     },
   });
 

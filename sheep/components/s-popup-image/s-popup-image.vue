@@ -2,7 +2,7 @@
   <view>
     <view v-for="(item, index) in popupList" :key="index">
       <su-popup
-        v-if="index === currentIndex"
+        v-if="index === currentIndex && item.isShow"
         :show="item.isShow"
         type="center"
         backgroundColor="none"

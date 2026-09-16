@@ -9,9 +9,13 @@
       @tap="onClick"
     >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
+        <image
+          class="tag-icon"
+          :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"
+          lazy-load
+        ></image>
       </view>
-      <image class="xs-img-box" :src="sheep.$url.cdn(data.image || data.picUrl)" mode="aspectFit" />
+      <image class="xs-img-box" :src="goodsImage" mode="aspectFit" lazy-load />
       <view
         v-if="goodsFields.title?.show || goodsFields.name?.show || goodsFields.price?.show"
         class="xs-goods-content ss-flex-col ss-row-around"
@@ -69,15 +73,20 @@
     </view>
 
     <!-- sm卡片：竖向紧凑，一行放三个，图上内容下 -->
-    <view v-if="size === 'sm'" :class="['sm-goods-card', variant && `goods-card--${variant}`, 'ss-flex-col']" :style="[elStyles]" @tap="onClick">
+    <view
+      v-if="size === 'sm'"
+      :class="['sm-goods-card', variant && `goods-card--${variant}`, 'ss-flex-col']"
+      :style="[elStyles]"
+      @tap="onClick"
+    >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
+        <image
+          class="tag-icon"
+          :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"
+          lazy-load
+        ></image>
       </view>
-      <image
-        class="sm-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="aspectFill"
-      ></image>
+      <image class="sm-img-box" :src="goodsImage" mode="aspectFill" lazy-load></image>
 
       <view
         v-if="goodsFields.title?.show || goodsFields.name?.show || goodsFields.price?.show"
@@ -143,20 +152,16 @@
       @tap="onClick"
     >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" />
+        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" lazy-load />
       </view>
-      <image
-        v-if="data.image_wh"
-        class="md-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="widthFix"
-      />
+      <image v-if="data.image_wh" class="md-img-box" :src="goodsImage" mode="widthFix" lazy-load />
       <image
         v-else
         class="md-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
+        :src="goodsImage"
         :style="[{ height: defaultImgWidth * 2 + 'rpx' }]"
         mode="aspectFill"
+        lazy-load
       />
       <view
         class="md-goods-content ss-flex-col ss-row-around ss-p-b-20 ss-p-t-20 ss-p-x-16"
@@ -255,7 +260,9 @@
               <!-- 活动价格 -->
               <view
                 class="ss-flex"
-                v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+                v-if="
+                  data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type
+                "
               >
                 <image
                   :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
@@ -312,17 +319,17 @@
       @tap="onClick"
     >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
+        <image
+          class="tag-icon"
+          :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"
+          lazy-load
+        ></image>
       </view>
       <view v-if="seckillTag" class="seckill-tag ss-flex ss-row-center">秒杀</view>
       <view v-if="grouponTag" class="groupon-tag ss-flex ss-row-center">
         <view class="tag-icon">拼团</view>
       </view>
-      <image
-        class="lg-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="aspectFill"
-      />
+      <image class="lg-img-box" :src="goodsImage" mode="aspectFill" lazy-load />
       <view class="lg-goods-content ss-flex-1 ss-flex-col ss-row-between ss-p-b-10 ss-p-t-20">
         <view>
           <view
@@ -418,13 +425,9 @@
     <!-- sl卡片：竖向型，一行放一个，图片上内容下边 -->
     <view v-if="size === 'sl'" class="sl-goods-card ss-flex-col" :style="[elStyles]" @tap="onClick">
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" />
+        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" lazy-load />
       </view>
-      <image
-        class="sl-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="aspectFill"
-      />
+      <image class="sl-img-box" :src="goodsImage" mode="aspectFill" lazy-load />
       <view class="sl-goods-content">
         <view>
           <view
@@ -674,6 +677,21 @@
       default: false,
     },
   });
+
+  const imageParams = {
+    xs: { width: 360, height: 360, quality: 80, format: 'webp' },
+    sm: { width: 240, height: 240, quality: 80, format: 'webp' },
+    md: { width: 360, height: 360, quality: 80, format: 'webp' },
+    lg: { width: 360, height: 360, quality: 80, format: 'webp' },
+    sl: { width: 750, height: 750, quality: 82, format: 'webp' },
+  };
+
+  const goodsImage = computed(() =>
+    sheep.$url.thumb(
+      props.data.image || props.data.picUrl,
+      imageParams[props.size] || imageParams.sl,
+    ),
+  );
 
   // 优惠文案
   const discountText = computed(() => {

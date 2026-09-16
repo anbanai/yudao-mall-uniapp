@@ -4,45 +4,45 @@
 - 抓取时间：2026/8/23 17:16:47
 - 共计：**32** 个去重后的图片地址，涉及 **4** 个域名
 
-## teaworthshare.oss-cn-chengdu.aliyuncs.com（19 张）
+## static.teaworthshare.com（19 张）
 
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png
+- https://static.teaworthshare.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png
   - 来源：API /product/category/list
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-08.png
+- https://static.teaworthshare.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-08.png
   - 来源：API /product/category/list
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B52.jpg
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B52.jpg
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B52_03.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B52_03.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_05.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_05.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_14.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_14.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_16.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_16.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_20.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_20.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_22.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_22.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_24.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_24.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_26.png
+- https://static.teaworthshare.com/20260820/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E9%A6%96%E9%A1%B53_26.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E7%A7%AF%E5%88%86banner2.jpg
+- https://static.teaworthshare.com/20260820/%E7%A7%AF%E5%88%86banner2.jpg
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/1787218897712.jpg
+- https://static.teaworthshare.com/20260820/1787218897712.jpg
   - 来源：API /product/category/list
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/banner22.jpg
+- https://static.teaworthshare.com/20260820/banner22.jpg
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260821/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png
+- https://static.teaworthshare.com/20260821/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260821/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-08.png
+- https://static.teaworthshare.com/20260821/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-08.png
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260821/1787218897712.jpg
+- https://static.teaworthshare.com/20260821/1787218897712.jpg
   - 来源：API /product/category/list
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260821/1787276788944.jpg
+- https://static.teaworthshare.com/20260821/1787276788944.jpg
   - 来源：API /promotion/diy-template/used
-- https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260821/1787277002841.jpg
+- https://static.teaworthshare.com/20260821/1787277002841.jpg
   - 来源：API /promotion/diy-template/used
 
 ## mall.yudao.iocoder.cn（6 张）

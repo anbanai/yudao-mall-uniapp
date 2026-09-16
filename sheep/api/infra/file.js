@@ -43,13 +43,14 @@ const FileApi = {
   },
 
   // 获取文件预签名地址
-  getFilePresignedUrl: (name, directory) => {
+  getFilePresignedUrl: (name, directory, type) => {
     return request({
       url: '/infra/file/presigned-url',
       method: 'GET',
       params: {
         name,
         directory,
+        type,
       },
     });
   },

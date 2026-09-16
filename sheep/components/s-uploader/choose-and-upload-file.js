@@ -214,7 +214,11 @@ async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, dire
     const uploadPromises = files.map(async (file) => {
       try {
         // 1.1 获取文件预签名地址
-        const { data: presignedInfo } = await FileApi.getFilePresignedUrl(file.name, directory);
+        const { data: presignedInfo } = await FileApi.getFilePresignedUrl(
+          file.name,
+          directory,
+          file.type,
+        );
         // 1.2 获取二进制文件对象
         const fileBuffer = await readFile(file);
 
@@ -224,9 +228,7 @@ async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, dire
           uni.request({
             url: presignedInfo.uploadUrl,
             method: 'PUT',
-            header: {
-              'Content-Type': file.type,
-            },
+            header: presignedInfo.uploadHeaders || (file.type ? { 'Content-Type': file.type } : {}),
             data: fileBuffer,
             success: (res) => {
               // 1.4. 记录文件信息到后端（异步）

@@ -6,7 +6,7 @@ import $platform from '@/sheep/platform';
 import $router from '@/sheep/router';
 import user from './user';
 import sys from './sys';
-import { baseUrl, h5Url } from '@/sheep/config';
+import { baseUrl, h5Url, cdnUrl, ossOrigin, filesystem } from '@/sheep/config';
 
 const app = defineStore('app', {
   state: () => ({
@@ -20,6 +20,7 @@ const app = defineStore('app', {
       copytime: '', // 版权信息 II
 
       cdnurl: '', // 云存储域名
+      ossOrigin: '', // OSS 源站域名
       filesystem: '', // 云存储平台
     },
     platform: {
@@ -72,13 +73,14 @@ const app = defineStore('app', {
       if (true) {
         this.info = {
           name: '不忍独享',
-          logo: 'https://teaworthshare.oss-cn-chengdu.aliyuncs.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png',
+          logo: 'https://static.teaworthshare.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png',
           version: '2026.08',
           copyright: '好茶不忍独享',
           copytime: 'Copyright© 2026 不忍独享',
 
-          cdnurl: 'https://file.sheepjs.com', // 云存储域名
-          filesystem: 'qcloud', // 云存储平台
+          cdnurl: cdnUrl, // CDN/云存储域名
+          ossOrigin,
+          filesystem,
         };
         this.platform = {
           share: {

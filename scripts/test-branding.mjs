@@ -10,8 +10,8 @@ const settingSource = await readFile(resolve(projectRoot, 'pages/public/setting.
 assert.match(appStoreSource, /name: '不忍独享'/);
 assert.match(
   appStoreSource,
-  /logo: 'https:\/\/teaworthshare\.oss-cn-chengdu\.aliyuncs\.com\/20260820\/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06\.png'/,
-  'the settings logo should stay remote so it is not bundled into the mini program',
+  /logo: 'https:\/\/static\.teaworthshare\.com\/[^']+'/,
+  'the settings logo should use the remote CDN so it is not bundled into the mini program',
 );
 assert.match(appStoreSource, /copyright: '好茶不忍独享'/);
 assert.match(appStoreSource, /copytime: 'Copyright© 2026 不忍独享'/);
