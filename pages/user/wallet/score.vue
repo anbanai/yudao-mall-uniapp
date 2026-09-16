@@ -60,12 +60,14 @@
         >
           <view class="ss-flex-col list-content">
             <view class="name"
-              >{{ item.title }}{{ item.description ? ' - ' + item.description : '' }}</view
+              >{{ getPointRecordDisplay(item).title
+              }}{{ item.description ? ' - ' + item.description : '' }}</view
             >
             <view class="time">
               {{ sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss') }}
-              <text v-if="item.status === 2"> · 待生效</text>
-              <text v-else-if="item.status === 3"> · 已作废</text>
+              <text :class="['point-status', getPointRecordDisplay(item).statusClass]">
+                · {{ getPointRecordDisplay(item).statusText }}
+              </text>
             </view>
             <view class="time" v-if="item.effectiveTime">
               生效于 {{ sheep.$helper.timeFormat(item.effectiveTime, 'yyyy-mm-dd hh:MM:ss') }}
@@ -97,6 +99,7 @@
   import dayjs from 'dayjs';
   import PointApi from '@/sheep/api/member/point';
   import { resetPagination } from '@/sheep/helper/utils';
+  import { getPointRecordDisplay } from '@/sheep/helper/pointRecord.mjs';
   import uniDatetimePicker from '../components/uni-datetime-picker/uni-datetime-picker.vue';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
@@ -273,6 +276,24 @@
         font-weight: 500;
         color: rgba(196, 196, 196, 1);
         line-height: 24px;
+
+        .point-status {
+          &.effective {
+            color: #3f8f65;
+          }
+
+          &.pending {
+            color: #b7791f;
+          }
+
+          &.cancelled {
+            color: #999;
+          }
+
+          &.unknown {
+            color: #999;
+          }
+        }
       }
 
       .add {

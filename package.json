@@ -7,6 +7,7 @@
   "scripts": {
     "prettier": "prettier --write  \"{pages,sheep}/**/*.{js,json,tsx,css,less,scss,vue,html,md}\"",
     "test:copy-text": "node scripts/test-copy-text.mjs",
+    "test:point-record-display": "node scripts/test-point-record-display.mjs",
     "test:score-layout": "node scripts/test-score-layout.mjs",
     "test:mp-package-size": "node scripts/test-mp-package-size.mjs",
     "test:datetime-picker-package": "node scripts/test-datetime-picker-package.mjs",
