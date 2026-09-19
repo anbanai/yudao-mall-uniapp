@@ -17,6 +17,7 @@
     "test:pay-methods": "node scripts/test-pay-methods.mjs",
     "test:product-group": "node scripts/test-product-group.mjs",
     "test:order-points": "node scripts/test-order-points.mjs",
+    "test:order-status-sync": "node scripts/test-order-status-sync.mjs",
     "test:point-block": "node scripts/test-point-block.mjs",
     "test:sku-selection": "node scripts/test-sku-selection.mjs",
     "test:branding": "node scripts/test-branding.mjs",

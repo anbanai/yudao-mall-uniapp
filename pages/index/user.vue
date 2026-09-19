@@ -46,11 +46,11 @@
     } else {
       hasShown = true;
     }
-    sheep.$store('user').updateUserData();
+    sheep.$store('user').updateUserData({ force: true });
   });
 
   onPullDownRefresh(() => {
-    sheep.$store('user').updateUserData();
+    sheep.$store('user').updateUserData({ force: true });
     setTimeout(function () {
       uni.stopPullDownRefresh();
     }, 800);

@@ -86,6 +86,7 @@
     if (code !== 0) {
       return;
     }
+    await sheep.$store('user').refreshOrderCount();
     uni.showToast({
       title: '填写退货成功',
     });

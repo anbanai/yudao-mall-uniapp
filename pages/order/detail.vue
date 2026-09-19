@@ -320,6 +320,7 @@
         }
         const { code } = await OrderApi.cancelOrder(orderId);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           await getOrderDetail(orderId);
         }
       },
@@ -358,6 +359,7 @@
         // 正常的确认收货流程
         const { code } = await OrderApi.receiveOrder(orderId);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           await getOrderDetail(orderId);
         }
       },
@@ -414,7 +416,8 @@
         merchant_trade_no: state.merchantTradeNo,
       });
     } else {
-      res = await OrderApi.getOrderDetail(id);
+      // 主动同步服务端可能异步更新的支付、发货状态
+      res = await OrderApi.getOrderDetail(id, true);
     }
     if (res.code === 0) {
       state.orderInfo = res.data;
@@ -437,6 +440,7 @@
     // 有几率在 onLoad 完成 state.orderInfo.id 赋值前进入 onShow
     if (state.orderInfo.id) {
       await getOrderDetail(state.orderInfo.id);
+      await sheep.$store('user').refreshOrderCount();
     }
   });
 

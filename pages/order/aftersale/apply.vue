@@ -180,6 +180,7 @@
     };
     const { code } = await AfterSaleApi.createAfterSale(data);
     if (code === 0) {
+      await sheep.$store('user').refreshOrderCount();
       uni.showToast({
         title: '申请成功',
       });
