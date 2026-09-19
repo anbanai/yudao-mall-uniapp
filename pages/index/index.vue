@@ -110,6 +110,7 @@
 
   // 下拉刷新
   onPullDownRefresh(() => {
+    productGroupRefreshKey.value += 1;
     sheep.$store('app').init();
     setTimeout(function () {
       uni.stopPullDownRefresh();

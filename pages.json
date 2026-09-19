@@ -147,9 +147,22 @@
 					}
 				},
 				{
+					"path": "group-index",
+					"style": {
+						"navigationBarTitleText": "商品分组",
+						"enablePullDownRefresh": true
+					},
+					"meta": {
+						"sync": true,
+						"title": "商品分组",
+						"group": "商品"
+					}
+				},
+				{
 					"path": "group-list",
 					"style": {
-						"navigationBarTitleText": "分组商品"
+						"navigationBarTitleText": "分组商品",
+						"enablePullDownRefresh": true
 					},
 					"meta": {
 						"sync": true,

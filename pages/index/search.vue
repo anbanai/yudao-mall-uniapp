@@ -12,6 +12,13 @@
           @confirm="onSearch($event.value)"
         />
       </view>
+      <button
+        class="group-entry ss-reset-button"
+        @tap="sheep.$router.go('/pages/goods/group-index')"
+      >
+        <text>按商品分组逛逛</text>
+        <text class="sicon-forward" />
+      </button>
       <view class="ss-flex ss-row-between ss-col-center">
         <view class="serach-history">搜索历史</view>
         <button class="clean-history ss-reset-button" @tap="onDelete"> 清除搜索历史 </button>
@@ -84,6 +91,18 @@
 </script>
 
 <style lang="scss" scoped>
+  .group-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 24rpx;
+    margin: 8rpx 0 32rpx;
+    border-radius: 12rpx;
+    background: #f5f6f8;
+    font-size: 28rpx;
+    color: #333;
+  }
   .serach-title {
     font-size: 30rpx;
     font-weight: 500;

@@ -30,31 +30,42 @@ export function getProductGroupMenuHeight(itemCount) {
 }
 
 export function normalizeGroupIds(groupIds = []) {
-  return [...new Set(groupIds.map(Number).filter((id) => Number.isInteger(id) && id > 0))].slice(
+  const ids = Array.isArray(groupIds) ? groupIds : String(groupIds || '').split(',');
+  return [...new Set(ids.map(Number).filter((id) => Number.isSafeInteger(id) && id > 0))].slice(
     0,
     GROUP_LIMIT,
   );
 }
 
+// Old saved metadata has no visibility field; only explicit hidden/disabled values are rejected.
+export function publicProductGroups(groups = []) {
+  if (!Array.isArray(groups)) return [];
+  const seen = new Set();
+  return groups.filter((group) => {
+    const id = Number(group?.id);
+    if (!Number.isSafeInteger(id) || id <= 0 || seen.has(id)) return false;
+    if (group.status != null && Number(group.status) !== 0) return false;
+    if ([false, 0, 'false', '0'].includes(group.storefrontVisible)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 export function orderSelectedGroups(groupIds, groups = []) {
-  const groupMap = new Map(
-    groups
-      .filter((group) => Number.isInteger(Number(group?.id)))
-      .map((group) => [Number(group.id), group]),
-  );
+  const groupMap = new Map(publicProductGroups(groups).map((group) => [Number(group.id), group]));
   return normalizeGroupIds(groupIds)
     .map((id) => groupMap.get(id))
     .filter(Boolean);
 }
 
-function normalizePageSize(pageSize) {
+export function normalizePageSize(pageSize) {
   if (pageSize == null || pageSize === '') return DEFAULT_PAGE_SIZE;
   const value = Number(pageSize);
   if (!Number.isFinite(value)) return DEFAULT_PAGE_SIZE;
   return Math.min(MAX_PAGE_SIZE, Math.max(MIN_PAGE_SIZE, Math.trunc(value)));
 }
 
-function getSortParams(sortType) {
+export function getSortParams(sortType) {
   switch (sortType) {
     case 'latest':
       return { sortField: 'createTime', sortAsc: false };
@@ -67,6 +78,12 @@ function getSortParams(sortType) {
     default:
       return {};
   }
+}
+
+export function normalizeGroupSort(sortType) {
+  return ['default', 'latest', 'sales', 'priceAsc', 'priceDesc'].includes(sortType)
+    ? sortType
+    : 'default';
 }
 
 export function buildProductGroupQuery(source, tab) {
@@ -106,7 +123,10 @@ export function createProductGroupLoader(requestPage) {
     async load(key, query) {
       const requestGeneration = generation;
       if (!cache.has(key)) {
-        cache.set(key, Promise.resolve().then(() => requestPage(query)));
+        cache.set(
+          key,
+          Promise.resolve().then(() => requestPage(query)),
+        );
       }
       const request = cache.get(key);
       let list;

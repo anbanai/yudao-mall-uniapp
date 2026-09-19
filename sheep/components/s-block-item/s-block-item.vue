@@ -33,7 +33,12 @@
     <!-- 商品组件：商品卡片 -->
     <s-goods-card v-if="type === 'ProductCard'" :data="data" :styles="styles" />
     <!-- 商品组件：商品栏 -->
-    <s-goods-shelves v-if="type === 'ProductList'" :data="data" :styles="styles" />
+    <s-product-list
+      v-if="type === 'ProductList'"
+      :data="data"
+      :styles="styles"
+      :refresh-key="refreshKey"
+    />
     <!-- 商品组件：商品分类（兼容历史上使用 ProductGroup ID 的分类配置） -->
     <s-goods-category
       v-if="resolvedProductType === 'ProductCategory'"

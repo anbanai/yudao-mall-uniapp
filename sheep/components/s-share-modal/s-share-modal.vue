@@ -30,7 +30,7 @@
 
           <!-- 操作 ②：生成海报图片 -->
           <button
-            v-if="shareConfig.methods.includes('poster')"
+            v-if="shareConfig.methods.includes('poster') && shareInfo.poster !== false"
             class="share-item share-btn ss-flex-col ss-col-center"
             @tap="onShareByPoster"
           >

@@ -138,6 +138,15 @@
             </view>
             <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
+            <view v-if="state.publicGroups.length" class="public-groups">
+              <button
+                v-for="group in state.publicGroups"
+                :key="group.id"
+                class="public-groups__chip ss-reset-button"
+                @tap="sheep.$router.go('/pages/goods/group-list', { groupIds: group.id })"
+                >{{ group.name }} <text class="sicon-forward"
+              /></button>
+            </view>
           </view>
 
           <!-- 功能卡片 -->
@@ -209,7 +218,7 @@
 
 <script setup>
   import { reactive, computed } from 'vue';
-  import { onLoad, onPageScroll } from '@dcloudio/uni-app';
+  import { onLoad, onPageScroll, onShow, onUnload } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import CouponApi from '@/sheep/api/promotion/coupon';
   import ActivityApi from '@/sheep/api/promotion/activity';
@@ -232,6 +241,11 @@
   import detailActivityTip from './components/detail/detail-activity-tip.vue';
   import { isEmpty } from 'lodash-es';
   import SpuApi from '@/sheep/api/product/spu';
+  import GroupApi from '@/sheep/api/product/group';
+  import {
+    getProductGroupResponseData,
+    publicProductGroups,
+  } from '@/sheep/components/s-goods-group/product-group.mjs';
 
   onPageScroll(() => {});
   import OrderApi from '@/sheep/api/trade/order';
@@ -249,6 +263,7 @@
     goodsId: 0,
     skeletonLoading: true, // SPU 加载中
     goodsInfo: {}, // SPU 信息
+    publicGroups: [],
     showSelectSku: false, // 是否展示 SKU 选择弹窗
     selectedSku: {}, // 选中的 SKU
     settlementSku: {}, // 结算的 SKU：由于 selectedSku 不进行默认选中，所以初始使用结算价格最低的 SKU 作为基础展示
@@ -257,6 +272,23 @@
     showActivityModel: false, // 【满减送/限时折扣】是否展示 Activity 营销活动的弹窗
     rewardActivity: {}, // 【满减送】活动
     activityList: [], // 【秒杀/拼团/砍价】可参与的 Activity 营销活动的列表
+  });
+
+  let groupGeneration = 0;
+  async function refreshPublicGroups() {
+    const token = ++groupGeneration;
+    state.publicGroups = [];
+    if (!state.goodsId) return;
+    try {
+      const groups = getProductGroupResponseData(await GroupApi.getGroupListBySpuId(state.goodsId));
+      if (token === groupGeneration) state.publicGroups = publicProductGroups(groups);
+    } catch {
+      /* Group discovery is optional for the purchase flow. */
+    }
+  }
+  onShow(() => void refreshPublicGroups());
+  onUnload(() => {
+    groupGeneration += 1;
   });
 
   // 规格变更
@@ -428,6 +460,19 @@
 </script>
 
 <style lang="scss" scoped>
+  .public-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+    padding-top: 24rpx;
+  }
+  .public-groups__chip {
+    padding: 8rpx 18rpx;
+    border-radius: 24rpx;
+    background: #f5f6f8;
+    color: #666;
+    font-size: 24rpx;
+  }
   .detail-card {
     background-color: #ffff;
     margin: 14rpx 20rpx;

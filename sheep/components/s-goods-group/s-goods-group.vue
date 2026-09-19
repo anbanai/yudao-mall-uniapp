@@ -189,6 +189,7 @@
     const tab = tabs.value[activeIndex.value];
     if (!tab) {
       goodsList.value = [];
+      isLoading.value = false;
       hasLoaded.value = true;
       return;
     }
@@ -259,13 +260,14 @@
     loader.clear();
     groups.value = [];
     goodsList.value = [];
-    isLoading.value = false;
+    isLoading.value = true;
     hasLoaded.value = false;
     loadError.value = false;
     activeIndex.value = 0;
     try {
       const groupIds = selectedGroupIds.value;
       if (!groupIds.length) {
+        isLoading.value = false;
         hasLoaded.value = true;
         return;
       }
