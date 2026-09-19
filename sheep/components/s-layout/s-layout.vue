@@ -213,7 +213,7 @@
   onShareTimeline(() => {
     return {
       title: shareInfo.value.title,
-      query: shareInfo.value.forward.path,
+      query: shareInfo.value.forward.query ?? shareInfo.value.forward.path,
       imageUrl: shareInfo.value.image,
     };
   });
