@@ -1,0 +1,48 @@
+export const ORDER_MENU = [
+  {
+    title: '待付款',
+    value: 1,
+    icon: '/static/img/shop/order/no_pay.png',
+    path: '/pages/order/list',
+    type: 'unpaid',
+    count: 'unpaidCount',
+  },
+  {
+    title: '待发货',
+    value: 2,
+    icon: '/static/img/shop/order/no_send.png',
+    path: '/pages/order/list',
+    type: 'nosend',
+    count: 'undeliveredCount',
+  },
+  {
+    title: '待收货',
+    value: 3,
+    icon: '/static/img/shop/order/no_take.png',
+    path: '/pages/order/list',
+    type: 'noget',
+    count: 'deliveredCount',
+  },
+  {
+    title: '待评价',
+    value: 4,
+    icon: '/static/img/shop/order/no_comment.png',
+    path: '/pages/order/list',
+    type: 'nocomment',
+    count: 'uncommentedCount',
+  },
+  {
+    title: '售后单',
+    value: 0,
+    icon: '/static/img/shop/order/change_order.png',
+    path: '/pages/order/aftersale/list',
+    type: 'aftersale',
+    count: 'afterSaleCount',
+  },
+  {
+    title: '全部订单',
+    value: 0,
+    icon: '/static/img/shop/order/all_order.png',
+    path: '/pages/order/list',
+  },
+];

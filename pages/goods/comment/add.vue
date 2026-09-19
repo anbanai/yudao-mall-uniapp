@@ -100,6 +100,7 @@
     for (const comment of state.commentList) {
       await OrderApi.createOrderItemComment(comment);
     }
+    await sheep.$store('user').refreshOrderCount();
     // 都评论好，返回
     sheep.$router.back();
   }

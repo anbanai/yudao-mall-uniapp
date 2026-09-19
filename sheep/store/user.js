@@ -9,6 +9,9 @@ import PayWalletApi from '@/sheep/api/pay/wallet';
 import OrderApi from '@/sheep/api/trade/order';
 import CouponApi from '@/sheep/api/promotion/coupon';
 import { isFormalLogin, isPhoneAuthorized } from '@/sheep/helper/authState.mjs';
+import { createDefaultOrderCount, normalizeOrderCount } from '@/sheep/helper/orderStatus.mjs';
+
+let latestOrderCountRequest = 0;
 
 // 默认用户信息
 const defaultUserInfo = {
@@ -28,12 +31,7 @@ const defaultUserWallet = {
 const defaultNumData = {
   unusedCouponCount: 0,
   orderCount: {
-    allCount: 0,
-    unpaidCount: 0,
-    undeliveredCount: 0,
-    deliveredCount: 0,
-    uncommentedCount: 0,
-    afterSaleCount: 0,
+    ...createDefaultOrderCount(),
   },
 };
 
@@ -50,8 +48,7 @@ const user = defineStore('user', {
   getters: {
     // isLogin 表示技术会话；正式登录还必须完成手机号授权
     isPhoneAuthorized: (state) => isPhoneAuthorized(state.userInfo),
-    isFormalLogin: (state) =>
-      state.userInfoLoaded && isFormalLogin(state.isLogin, state.userInfo),
+    isFormalLogin: (state) => state.userInfoLoaded && isFormalLogin(state.isLogin, state.userInfo),
   },
 
   actions: {
@@ -83,13 +80,23 @@ const user = defineStore('user', {
       this.userWallet = data;
     },
 
+    // 刷新订单数量；请求序号保证较早的响应不能覆盖较新的状态
+    async refreshOrderCount() {
+      const requestId = ++latestOrderCountRequest;
+      const res = await OrderApi.getOrderCount();
+      if (requestId !== latestOrderCountRequest) {
+        return { stale: true };
+      }
+      if (res.code !== 0) {
+        return { ok: false };
+      }
+      this.numData.orderCount = normalizeOrderCount(res.data);
+      return { ok: true };
+    },
+
     // 获取订单、优惠券等其他资产信息
     getNumData() {
-      OrderApi.getOrderCount().then((res) => {
-        if (res.code === 0) {
-          this.numData.orderCount = res.data;
-        }
-      });
+      this.refreshOrderCount();
       CouponApi.getUnusedCouponCount().then((res) => {
         if (res.code === 0) {
           this.numData.unusedCouponCount = res.data;
@@ -114,14 +121,14 @@ const user = defineStore('user', {
     },
 
     // 更新用户相关信息 (手动限流，5 秒之内不刷新)
-    async updateUserData() {
+    async updateUserData({ force = false } = {}) {
       if (!this.isLogin) {
         this.resetUserData();
         return;
       }
       // 防抖，5 秒之内不刷新
       const nowTime = new Date().getTime();
-      if (this.lastUpdateTime + 5000 > nowTime) {
+      if (!force && this.lastUpdateTime + 5000 > nowTime) {
         return;
       }
       this.lastUpdateTime = nowTime;
@@ -138,6 +145,8 @@ const user = defineStore('user', {
 
     // 重置用户默认数据
     resetUserData() {
+      // 使退出登录前发出的订单数量请求失效
+      latestOrderCountRequest += 1;
       // 清空 token
       this.setToken();
       // 清空用户相关的缓存

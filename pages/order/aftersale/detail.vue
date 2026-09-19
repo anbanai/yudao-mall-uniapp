@@ -136,7 +136,7 @@
 
 <script setup>
   import sheep from '@/sheep';
-  import { onLoad } from '@dcloudio/uni-app';
+  import { onLoad, onShow } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
   import { isEmpty } from 'lodash-es';
   import {
@@ -165,6 +165,7 @@
       },
     ], // 时间轴
   });
+  let hasShown = false;
 
   function onApply(id) {
     uni.showModal({
@@ -176,6 +177,7 @@
         }
         const { code } = await AfterSaleApi.cancelAfterSale(id);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           await getDetail(id);
         }
       },
@@ -216,6 +218,18 @@
     }
     state.id = options.id;
     getDetail(options.id);
+  });
+
+  onShow(async () => {
+    if (!hasShown) {
+      hasShown = true;
+      return;
+    }
+    if (!state.id) {
+      return;
+    }
+    await getDetail(state.id);
+    await sheep.$store('user').refreshOrderCount();
   });
 </script>
 

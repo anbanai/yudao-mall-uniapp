@@ -62,7 +62,7 @@
 
 <script setup>
   import sheep from '@/sheep';
-  import { onLoad, onReachBottom } from '@dcloudio/uni-app';
+  import { onLoad, onReachBottom, onShow } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
   import { concat } from 'lodash-es';
   import {
@@ -107,6 +107,7 @@
       value: [61, 62, 63],
     },
   ];
+  let hasLoaded = false;
 
   // 切换选项卡
   function onTabsChange(e) {
@@ -142,6 +143,7 @@
         }
         const { code } = await AfterSaleApi.cancelAfterSale(orderId);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           resetPagination(state.pagination);
           await getOrderList();
         }
@@ -153,6 +155,16 @@
     if (options.type) {
       state.currentTab = options.type;
     }
+    await getOrderList();
+    hasLoaded = true;
+  });
+
+  onShow(async () => {
+    if (!hasLoaded) {
+      return;
+    }
+    await sheep.$store('user').refreshOrderCount();
+    resetPagination(state.pagination);
     await getOrderList();
   });
 

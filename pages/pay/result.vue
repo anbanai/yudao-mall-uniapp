@@ -152,6 +152,7 @@
             state.tradeOrder = data;
           }
         }
+        await sheep.$store('user').refreshOrderCount();
         return;
       }
     }
