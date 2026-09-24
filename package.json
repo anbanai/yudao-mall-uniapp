@@ -6,6 +6,7 @@
   "description": "好茶不忍独享",
   "scripts": {
     "prettier": "prettier --write  \"{pages,sheep}/**/*.{js,json,tsx,css,less,scss,vue,html,md}\"",
+    "test:identity": "node --test scripts/test-identity-*.mjs",
     "test:copy-text": "node scripts/test-copy-text.mjs",
     "test:point-record-display": "node scripts/test-point-record-display.mjs",
     "test:score-layout": "node scripts/test-score-layout.mjs",

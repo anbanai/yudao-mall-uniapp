@@ -23,6 +23,7 @@
         :refresh-key="productGroupRefreshKey"
       />
     </s-block>
+    <view class="ss-p-30 bg-white"><button @tap="sheep.$router.go('/pages/user/identity')">统一账户与手机号共享</button></view>
   </s-layout>
 </template>
 

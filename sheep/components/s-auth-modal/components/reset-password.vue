@@ -41,7 +41,7 @@
           placeholder="请输入验证码"
           v-model="state.model.code"
           type="number"
-          maxlength="4"
+          maxlength="6"
           :inputBorder="false"
         />
       </uni-forms-item>

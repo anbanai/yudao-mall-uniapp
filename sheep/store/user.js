@@ -1,3 +1,4 @@
+import { sessionEpoch, isCurrentSession, invalidateSession, isIdentityBlocked } from '@/sheep/helper/identitySession.mjs';
 import { defineStore } from 'pinia';
 import $share from '@/sheep/platform/share';
 import { clone, cloneDeep } from 'lodash-es';
@@ -5,6 +6,7 @@ import cart from './cart';
 import app from './app';
 import { showAuthModal } from '@/sheep/hooks/useModal';
 import UserApi from '@/sheep/api/member/user';
+import SocialApi from '@/sheep/api/member/social';
 import PayWalletApi from '@/sheep/api/pay/wallet';
 import OrderApi from '@/sheep/api/trade/order';
 import CouponApi from '@/sheep/api/promotion/coupon';
@@ -12,6 +14,8 @@ import { isFormalLogin, isPhoneAuthorized } from '@/sheep/helper/authState.mjs';
 import { createDefaultOrderCount, normalizeOrderCount } from '@/sheep/helper/orderStatus.mjs';
 
 let latestOrderCountRequest = 0;
+let latestUserInfoRequest = 0;
+let userInfoPromise;
 
 // 默认用户信息
 const defaultUserInfo = {
@@ -54,26 +58,53 @@ const user = defineStore('user', {
   actions: {
     // 获取用户信息
     async getInfo() {
-      const { code, data } = await UserApi.getUserInfo();
-      if (code !== 0) {
-        return;
+      const epoch = sessionEpoch();
+      const requestId = ++latestUserInfoRequest;
+      const promise = UserApi.getUserInfo().then(({ code, data }) => {
+        if (!isCurrentSession(epoch) || requestId !== latestUserInfoRequest || code !== 0) return;
+        this.userInfo = data;
+        this.userInfoLoaded = true;
+        return data;
+      });
+      userInfoPromise = { epoch, requestId, promise };
+      try {
+        return await promise;
+      } finally {
+        if (userInfoPromise?.requestId === requestId) userInfoPromise = undefined;
       }
-      this.userInfo = data;
-      this.userInfoLoaded = true;
-      return Promise.resolve(data);
+    },
+
+    invalidateUserInfo() {
+      latestUserInfoRequest += 1;
+      userInfoPromise = undefined;
+      this.userInfoLoaded = false;
+      this.userInfo = { ...this.userInfo, mobile: '', phoneVerified: false };
     },
 
     async ensureUserInfo() {
-      if (!this.isLogin || this.userInfoLoaded) {
-        return this.userInfo;
+      const epoch = sessionEpoch();
+      while (isCurrentSession(epoch) && this.isLogin && !this.userInfoLoaded) {
+        const promise = userInfoPromise?.epoch === epoch ? userInfoPromise.promise : this.getInfo();
+        const requestId = latestUserInfoRequest;
+        try {
+          await promise;
+        } catch (error) {
+          if (!isCurrentSession(epoch)) return;
+          // A superseded read cannot decide whether the current profile is available.
+          if (requestId === latestUserInfoRequest) throw error;
+        }
+        if (!isCurrentSession(epoch)) return;
+        // A completed current read (including an API failure) must not cause an endless retry.
+        if (requestId === latestUserInfoRequest) return this.userInfo;
       }
-      await this.getInfo();
-      return this.userInfo;
+      if (isCurrentSession(epoch)) return this.userInfo;
     },
 
     // 获得用户钱包
     async getWallet() {
+      const epoch = sessionEpoch();
       const { code, data } = await PayWalletApi.getPayWallet();
+      if (!isCurrentSession(epoch)) return;
       if (code !== 0) {
         return;
       }
@@ -96,32 +127,59 @@ const user = defineStore('user', {
 
     // 获取订单、优惠券等其他资产信息
     getNumData() {
+      const epoch = sessionEpoch();
       this.refreshOrderCount();
       CouponApi.getUnusedCouponCount().then((res) => {
-        if (res.code === 0) {
+        if (isCurrentSession(epoch) && res.code === 0) {
           this.numData.unusedCouponCount = res.data;
         }
       });
     },
 
     // 设置 token
-    setToken(token = '', refreshToken = '') {
+    setToken(token = '', refreshToken = '', { load = true, preserveInfo = false } = {}) {
       if (token === '') {
         this.isLogin = false;
         uni.removeStorageSync('token');
         uni.removeStorageSync('refresh-token');
       } else {
         this.isLogin = true;
-        this.userInfoLoaded = false;
+        if (!preserveInfo) this.userInfoLoaded = false;
         uni.setStorageSync('token', token);
         uni.setStorageSync('refresh-token', refreshToken);
-        this.loginAfter();
+        if (load) void this.loginAfter();
       }
       return this.isLogin;
     },
 
+    // A successful ordinary login creates a new account epoch, unlike token refresh.
+    installLoginSession(session) {
+      this.resetUserData();
+      if (session.openid) uni.setStorageSync('openid', session.openid);
+      this.setToken(session.accessToken, session.refreshToken, { load: false });
+      const epoch = sessionEpoch();
+      // #ifdef MP-WEIXIN
+      if (!session.openid) void this.resolveLoginOpenid(epoch);
+      // #endif
+      void this.loginAfter();
+      return epoch;
+    },
+
+    async resolveLoginOpenid(epoch) {
+      try {
+        // Existing app-scoped binding only; this endpoint cannot create/merge a member.
+        const response = await SocialApi.getSocialUser(34, true);
+        if (isCurrentSession(epoch) && response?.code === 0 && response.data?.openid) {
+          uni.setStorageSync('openid', response.data.openid);
+        }
+      } catch {
+        // Keep OpenID absent on failure. Never reuse the prior member's payment identity.
+      }
+    },
+
     // 更新用户相关信息 (手动限流，5 秒之内不刷新)
     async updateUserData({ force = false } = {}) {
+      if (isIdentityBlocked()) return;
       if (!this.isLogin) {
         this.resetUserData();
         return;
@@ -134,7 +192,9 @@ const user = defineStore('user', {
       this.lastUpdateTime = nowTime;
 
       // 获取最新信息
+      const epoch = sessionEpoch();
       await this.getInfo();
+      if (!isCurrentSession(epoch)) return;
       if (!this.isFormalLogin) {
         return this.userInfo;
       }
@@ -145,6 +205,10 @@ const user = defineStore('user', {
 
     // 重置用户默认数据
     resetUserData() {
+      invalidateSession();
+      this.invalidateUserInfo();
+      uni.removeStorageSync('openid');
+      this.lastUpdateTime = 0;
       // 使退出登录前发出的订单数量请求失效
       latestOrderCountRequest += 1;
       // 清空 token
@@ -160,7 +224,9 @@ const user = defineStore('user', {
 
     // 登录后，加载各种信息
     async loginAfter() {
+      const epoch = sessionEpoch();
       await this.ensureUserInfo();
+      if (!isCurrentSession(epoch)) return;
 
       if (!this.isFormalLogin) {
         return this.userInfo;

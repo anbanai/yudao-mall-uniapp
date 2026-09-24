@@ -47,7 +47,7 @@
           v-model="state.model.code"
           :inputBorder="false"
           type="number"
-          maxlength="4"
+          maxlength="6"
         >
           <template v-slot:right>
             <button
@@ -65,6 +65,7 @@
 </template>
 
 <script setup>
+  import { offerPhoneSharing } from '@/sheep/hooks/useIdentityConsent';
   import { ref, reactive, unref } from 'vue';
   import { code, mobile } from '@/sheep/validate/form';
   import { showAuthModal, closeAuthModal, getSmsCode, getSmsTimer } from '@/sheep/hooks/useModal';
@@ -124,6 +125,7 @@
     const { code } = await AuthUtil.smsLogin(state.model);
     if (code === 0) {
       closeAuthModal();
+      void offerPhoneSharing();
     }
   }
 </script>

@@ -105,11 +105,6 @@ const app = defineStore('app', {
         const sysStore = sys();
         sysStore.setTheme();
 
-        // 模拟用户登录
-        const userStore = user();
-        if (userStore.isLogin) {
-          userStore.loginAfter();
-        }
         return Promise.resolve(true);
       } else {
         $router.error('InitError', res.msg || '加载失败');
@@ -170,7 +165,7 @@ const adaptTenant = async () => {
     if (newTenantId && newTenantId != oldTenantId) {
       // 清理掉登录用户的 token
       const userStore = user();
-      userStore.setToken();
+      userStore.resetUserData();
 
       // 设置新的 tenantId 到本地存储
       uni.setStorageSync('tenant-id', newTenantId);

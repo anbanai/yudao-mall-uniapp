@@ -1,18 +1,21 @@
 <script setup>
   import { onLaunch, onShow, onError } from '@dcloudio/uni-app';
   import { ShoproInit } from './sheep';
+  import { startIdentitySession } from '@/sheep/hooks/useIdentityBridge';
 
-  onLaunch(() => {
+  onLaunch((options) => {
+    void startIdentitySession(options, ShoproInit);
     // 隐藏原生导航栏 使用自定义底部导航
     uni.hideTabBar({
       fail: () => {},
     });
 
     // 加载Shopro底层依赖
-    ShoproInit();
+
   });
 
-  onShow(() => {
+  onShow((options) => {
+    void startIdentitySession(options);
     // #ifdef APP-PLUS
     // 获取urlSchemes参数
     const args = plus.runtime.arguments;

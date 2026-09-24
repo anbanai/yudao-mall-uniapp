@@ -288,7 +288,8 @@
 		},
 		{
 			"root": "pages/user",
-			"pages": [{
+			"pages": [
+        { "path": "identity", "style": { "navigationBarTitleText": "统一账户与手机号共享" }, "meta": { "auth": false, "title": "统一账户与手机号共享" } },{
 					"path": "info",
 					"style": {
 						"navigationBarTitleText": "我的信息"

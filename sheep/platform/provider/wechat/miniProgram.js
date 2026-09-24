@@ -1,3 +1,4 @@
+import { sessionEpoch, isCurrentSession, isIdentityBlocked } from '@/sheep/helper/identitySession.mjs';
 import AuthUtil from '@/sheep/api/member/auth';
 import SocialApi from '@/sheep/api/member/social';
 import UserApi from '@/sheep/api/member/user';
@@ -16,15 +17,17 @@ function load() {
 // 微信小程序静默授权登陆
 const login = async (silent = false) => {
   return new Promise(async (resolve, reject) => {
+    const epoch = sessionEpoch();
+    if (isIdentityBlocked()) return resolve(false);
     // 1. 获得微信 code
     const codeResult = await uni.login();
-    if (codeResult.errMsg !== 'login:ok') {
+    if (!isCurrentSession(epoch) || isIdentityBlocked() || codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 
     // 2. 社交登录
     const loginResult = await AuthUtil.socialLogin(socialType, codeResult.code, 'default', silent);
-    if (loginResult.code === 0) {
+    if (isCurrentSession(loginResult.sessionEpoch ?? epoch) && loginResult.code === 0) {
       setOpenid(loginResult.data.openid);
       return resolve(true);
     } else {
@@ -40,15 +43,17 @@ const mobileLogin = async (e) => {
       return resolve(false);
     }
 
+    const epoch = sessionEpoch();
+    if (isIdentityBlocked()) return resolve(false);
     // 1. 获得微信 code
     const codeResult = await uni.login();
-    if (codeResult.errMsg !== 'login:ok') {
+    if (!isCurrentSession(epoch) || isIdentityBlocked() || codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 
     // 2. 一键登录
     const loginResult = await AuthUtil.weixinMiniAppLogin(e.code, codeResult.code, 'default');
-    if (loginResult.code === 0) {
+    if (isCurrentSession(loginResult.sessionEpoch ?? epoch) && loginResult.code === 0) {
       setOpenid(loginResult.data.openid);
       return resolve(true);
     } else {
@@ -60,15 +65,17 @@ const mobileLogin = async (e) => {
 // 微信小程序绑定
 const bind = () => {
   return new Promise(async (resolve, reject) => {
+    const epoch = sessionEpoch();
+    if (isIdentityBlocked()) return resolve(false);
     // 1. 获得微信 code
     const codeResult = await uni.login();
-    if (codeResult.errMsg !== 'login:ok') {
+    if (!isCurrentSession(epoch) || isIdentityBlocked() || codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 
     // 2. 绑定账号
     const bindResult = await SocialApi.socialBind(socialType, codeResult.code, 'default');
-    if (bindResult.code === 0) {
+    if (isCurrentSession(epoch) && bindResult.code === 0) {
       setOpenid(bindResult.data);
       return resolve(true);
     } else {
@@ -101,10 +108,11 @@ function setOpenid(openid) {
 
 // 获得 openid
 async function getOpenid(force = false) {
+  const epoch = sessionEpoch();
   let openid = uni.getStorageSync('openid');
   if (!openid && force) {
     const info = await getInfo();
-    if (info && info.openid) {
+    if (isCurrentSession(epoch) && info && info.openid) {
       openid = info.openid;
       setOpenid(openid);
     }

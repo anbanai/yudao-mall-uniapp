@@ -1,3 +1,4 @@
+import { sessionEpoch, isCurrentSession } from '@/sheep/helper/identitySession.mjs';
 import { defineStore } from 'pinia';
 import CartApi from '@/sheep/api/trade/cart';
 
@@ -13,7 +14,9 @@ const cart = defineStore('cart', {
   actions: {
     // 获取购物车列表
     async getList() {
+      const epoch = sessionEpoch();
       const { data, code } = await CartApi.getCartList();
+      if (!isCurrentSession(epoch)) return;
       if (code === 0) {
         this.list = [...data.validList, ...data.invalidList];
         this.newList = data.validList;
@@ -101,6 +104,8 @@ const cart = defineStore('cart', {
 
     // 清空购物车。注意，仅用于用户退出时，重置数据
     emptyList() {
+      this.newList = [];
+      this.editMode = false;
       this.list = [];
       this.selectedIds = [];
       this.isAllSelected = true;

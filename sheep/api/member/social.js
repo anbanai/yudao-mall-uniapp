@@ -2,7 +2,7 @@ import request from '@/sheep/request';
 
 const SocialApi = {
   // 获得社交用户
-  getSocialUser: (type) => {
+  getSocialUser: (type, quiet = false) => {
     return request({
       url: '/member/social-user/get',
       method: 'GET',
@@ -11,6 +11,8 @@ const SocialApi = {
       },
       custom: {
         showLoading: false,
+        showError: !quiet,
+        noRefresh: quiet,
       },
     });
   },

@@ -84,7 +84,7 @@
           v-model="state.model.code"
           :inputBorder="false"
           type="number"
-          maxlength="4"
+          maxlength="6"
         >
           <template v-slot:right>
             <button
@@ -102,6 +102,7 @@
 </template>
 
 <script setup>
+  import { offerPhoneSharing } from '@/sheep/hooks/useIdentityConsent';
   import { computed, onBeforeUnmount, reactive, ref, unref } from 'vue';
   import sheep from '@/sheep';
   import { code, mobile } from '@/sheep/validate/form';
@@ -159,6 +160,7 @@
       await sheep.$store('user').getInfo();
       if (instanceState.active) {
         closeAuthModal();
+      void offerPhoneSharing();
       }
     } finally {
       state.isSubmitting = false;
@@ -179,6 +181,7 @@
       await sheep.$store('user').getInfo();
       if (instanceState.active) {
         closeAuthModal();
+      void offerPhoneSharing();
       }
     } finally {
       state.isSubmitting = false;

@@ -1,3 +1,5 @@
+// Source-extracted handlers share this optional consent boundary.
+globalThis.offerPhoneSharing = async () => false;
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -191,6 +193,7 @@ assert.ok(showAuthStart >= 0 && showAuthEnd > showAuthStart, 'showAuthModal sour
 const modalState = { auth: '' };
 const showAuthModal = new Function(
   '$store',
+  'isIdentityBlocked',
   `${modalHookForMp
     .slice(showAuthStart, showAuthEnd)
     .replace('export function ', 'function ')}\nreturn showAuthModal;`,
@@ -198,7 +201,7 @@ const showAuthModal = new Function(
   $patch(update) {
     update(modalState);
   },
-}));
+}), () => false);
 
 showAuthModal();
 assert.equal(
@@ -250,6 +253,7 @@ const h5ModalStore = {
 };
 const h5AuthFunctions = new Function(
   '$store',
+  'isIdentityBlocked',
   'setTimeout',
   `${modalHookForH5
     .slice(showAuthForH5Start, showAuthForH5End)
@@ -258,6 +262,7 @@ const h5AuthFunctions = new Function(
     .replace('export function ', 'function ')}\nreturn { showAuthModal, closeAuthModal };`,
 )(
   () => h5ModalStore,
+  () => false,
   (callback) => scheduledCallbacks.push(callback),
 );
 h5AuthFunctions.showAuthModal('accountLogin');
