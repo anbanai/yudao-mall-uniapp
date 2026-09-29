@@ -237,6 +237,9 @@
       }
     }
   },
+  "uniStatistics": {
+    "enable": false
+  },
   "vueVersion": "3",
   "_spaceID": "192b4892-5452-4e1d-9f09-eee1ece40639",
   "locale": "zh-Hans",
