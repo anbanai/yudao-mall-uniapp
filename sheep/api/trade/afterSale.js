@@ -58,6 +58,43 @@ const AfterSaleApi = {
       data,
     });
   },
+  // 预览上门取件信息
+  previewReturnShipment: (id, data = {}) => {
+    return request({
+      url: `/trade/after-sale/${id}/return-shipment/preview`,
+      method: 'POST',
+      data,
+    });
+  },
+  // 创建上门取件单
+  createReturnShipment: (id, data) => {
+    return request({
+      url: `/trade/after-sale/${id}/return-shipment/create`,
+      method: 'POST',
+      data,
+    });
+  },
+  // 查询上门取件单
+  getReturnShipment: (id) => {
+    return request({
+      url: `/trade/after-sale/${id}/return-shipment`,
+      method: 'GET',
+    });
+  },
+  // 取消上门取件单
+  cancelReturnShipment: (id) => {
+    return request({
+      url: `/trade/after-sale/${id}/return-shipment/cancel`,
+      method: 'POST',
+    });
+  },
+  // 查询上门取件轨迹
+  getReturnShipmentTraces: (id) => {
+    return request({
+      url: `/trade/after-sale/${id}/return-shipment/traces`,
+      method: 'GET',
+    });
+  },
 };
 
 export default AfterSaleApi;

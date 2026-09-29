@@ -99,6 +99,25 @@
           <view class="item-content">{{ state.info.applyDescription }}</view>
         </view>
       </view>
+
+      <view v-if="state.returnShipment" class="return-shipment-box ss-m-x-20">
+        <view class="return-shipment-title ss-flex ss-row-between">
+          <text>上门取件</text>
+          <text class="return-shipment-status">{{
+            returnShipmentStatus(state.returnShipment.status)
+          }}</text>
+        </view>
+        <view v-if="state.returnShipment.waybillNo" class="return-shipment-row"
+          >运单号：{{ state.returnShipment.waybillNo }}</view
+        >
+        <view v-if="state.returnShipment.appointmentTime" class="return-shipment-row"
+          >预约时间：{{ state.returnShipment.appointmentTime }}</view
+        >
+        <view class="return-shipment-row"
+          >费用承担：{{ feePayerText(state.returnShipment.feePayer) }}</view
+        >
+        <view class="return-shipment-link" @tap="openReturnShipment">查看取件详情和物流轨迹</view>
+      </view>
     </view>
 
     <!-- 操作区 -->
@@ -121,7 +140,18 @@
           v-if="state.info.buttons?.includes('delivery')"
           @tap="sheep.$router.go('/pages/order/aftersale/return-delivery', { id: state.info.id })"
         >
-          填写退货
+          填写其他物流
+        </button>
+        <button
+          class="ss-reset-button contcat-btn btn pickup-btn"
+          v-if="
+            state.info.status === 20 &&
+            (!state.returnShipment ||
+              ['CREATE_FAILED', 'CANCELLED'].includes(state.returnShipment.status))
+          "
+          @tap="sheep.$router.go('/pages/order/aftersale/return-delivery', { id: state.info.id })"
+        >
+          一键退货/预约取件
         </button>
         <button
           class="ss-reset-button contcat-btn btn"
@@ -153,6 +183,7 @@
     info: {}, // 收货信息
     loading: false,
     active: 0, // 在 list 的激活位置
+    returnShipment: null,
     list: [
       {
         title: '提交申请',
@@ -189,6 +220,42 @@
     sheep.$helper.copyText(state.info.no);
   };
 
+  function returnShipmentStatus(status) {
+    return (
+      {
+        CREATING: '创建中',
+        UNKNOWN: '处理中',
+        PICKUP_PENDING: '待取件',
+        PICKED_UP: '已揽收',
+        IN_TRANSIT: '运输中',
+        DELIVERED: '已签收',
+        CREATE_FAILED: '创建失败',
+        CANCELLED: '已取消',
+        EXCEPTION: '异常',
+      }[status] ||
+      status ||
+      '未知'
+    );
+  }
+
+  function feePayerText(value) {
+    return (
+      {
+        MERCHANT: '商家承担',
+        BUYER_PAY_ON_DELIVERY: '用户到付',
+        BUYER_DEDUCT_REFUND: '从退款扣除',
+        USER_PAY: '用户到付',
+        REFUND_DEDUCT: '从退款扣除',
+      }[value] ||
+      value ||
+      '以实际结算为准'
+    );
+  }
+
+  function openReturnShipment() {
+    sheep.$router.go('/pages/order/aftersale/return-delivery', { id: state.id });
+  }
+
   async function getDetail(id) {
     state.loading = true;
     const { code, data } = await AfterSaleApi.getAfterSale(id);
@@ -198,6 +265,12 @@
     }
     state.info = data;
     handleAfterSaleButtons(state.info);
+    try {
+      const shipmentRes = await AfterSaleApi.getReturnShipment(id);
+      state.returnShipment = shipmentRes.code === 0 ? shipmentRes.data : null;
+    } catch {
+      state.returnShipment = null;
+    }
 
     // 处理时间轴
     if ([10].includes(state.info.status)) {
@@ -367,6 +440,36 @@
         font-size: 28rpx;
       }
     }
+  }
+
+  .return-shipment-box {
+    margin-top: 20rpx;
+    padding: 24rpx;
+    background: #fff;
+    border-radius: 12rpx;
+  }
+
+  .return-shipment-title {
+    font-size: 30rpx;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .return-shipment-status,
+  .return-shipment-link {
+    color: var(--ui-BG-Main);
+  }
+
+  .return-shipment-row,
+  .return-shipment-link {
+    font-size: 26rpx;
+    line-height: 44rpx;
+    margin-top: 8rpx;
+  }
+
+  .pickup-btn {
+    background: linear-gradient(90deg, var(--ui-BG-Main), var(--ui-BG-Main-gradient));
+    color: #fff;
   }
 
   // 底部功能
