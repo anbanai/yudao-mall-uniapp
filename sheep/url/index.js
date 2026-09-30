@@ -1,6 +1,6 @@
 import $store from '@/sheep/store';
 import { staticUrl } from '@/sheep/config';
-import { buildThumbnailUrl, rewriteMediaUrl } from './image.mjs';
+import { buildThumbnailUrl, rewriteMediaUrl, isSignedMediaUrl } from './image.mjs';
 
 const getMediaConfig = () => {
   const info = $store('app').info || {};
@@ -39,6 +39,7 @@ export default {
       imageHosts: [config.cdnUrl, config.ossOrigin],
     });
   },
+  isSigned: isSignedMediaUrl,
   // 静态资源地址
   static: (url = '', staticurl = '') => {
     if (staticurl === '') {
