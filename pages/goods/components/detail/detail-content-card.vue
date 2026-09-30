@@ -5,18 +5,35 @@
       <view class="title ss-m-l-20 ss-m-r-20">详情</view>
     </view>
     <view class="card-content">
-      <mp-html :content="content"></mp-html>
+      <mp-html :content="optimizedContent"></mp-html>
     </view>
   </view>
 </template>
 
 <script setup>
+  import { computed } from 'vue';
+  import sheep from '@/sheep';
+
   const props = defineProps({
     content: {
       type: String,
       default: '',
     },
   });
+
+  // Detail descriptions commonly contain original-size uploaded images.
+  // Rewrite only image sources so the rich-text structure remains unchanged.
+  const optimizedContent = computed(() =>
+    props.content.replace(
+      /(<img\b[^>]*?\bsrc=["'])([^"']+)(["'])/gi,
+      (_, prefix, src, suffix) => {
+        if (!src || /^data:/i.test(src) || sheep.$url.isSigned?.(src)) {
+          return `${prefix}${src}${suffix}`;
+        }
+        return `${prefix}${sheep.$url.thumb(src, { width: 750, quality: 82, format: 'webp' })}${suffix}`;
+      },
+    ),
+  );
 </script>
 
 <style lang="scss" scoped>

@@ -79,7 +79,6 @@
             :topRadius="10"
             :bottomRadius="10"
             @click="sheep.$router.go('/pages/goods/index', { id: item.id })"
-            @getHeight="mountMasonry($event, 'left')"
           >
             <template v-slot:cart>
               <button class="ss-reset-button cart-btn" />
@@ -96,7 +95,6 @@
             :bottomRadius="10"
             :data="item"
             @click="sheep.$router.go('/pages/goods/index', { id: item.id })"
-            @getHeight="mountMasonry($event, 'right')"
           >
             <template v-slot:cart>
               <button class="ss-reset-button cart-btn" />
@@ -178,30 +176,18 @@
     loadStatus: '',
     leftGoodsList: [], // 双列布局 - 左侧商品
     rightGoodsList: [], // 双列布局 - 右侧商品
+    isLoading: false,
   });
 
   // 加载瀑布流
-  let count = 0;
-  let leftHeight = 0;
-  let rightHeight = 0;
+  let requestGeneration = 0;
 
-  // 处理双列布局 leftGoodsList + rightGoodsList
-  function mountMasonry(height = 0, where = 'left') {
-    if (where === 'left') {
-      leftHeight += height;
-    } else {
-      rightHeight += height;
-    }
-    if (!state.pagination.list[count]) {
-      return;
-    }
-
-    if (leftHeight <= rightHeight) {
-      state.leftGoodsList.push(state.pagination.list[count]);
-    } else {
-      state.rightGoodsList.push(state.pagination.list[count]);
-    }
-    count++;
+  function distributeGoods(list) {
+    state.leftGoodsList = [];
+    state.rightGoodsList = [];
+    list.forEach((item, index) => {
+      (index % 2 === 0 ? state.leftGoodsList : state.rightGoodsList).push(item);
+    });
   }
 
   // 清空列表
@@ -209,14 +195,13 @@
     resetPagination(state.pagination);
     state.leftGoodsList = [];
     state.rightGoodsList = [];
-    count = 0;
-    leftHeight = 0;
-    rightHeight = 0;
+    state.loadStatus = '';
   }
 
   // 搜索
   function onSearch(e) {
     state.keyword = e;
+    requestGeneration += 1;
     emptyList();
     getList(state.currentSort, state.currentOrder);
   }
@@ -239,6 +224,7 @@
     state.currentTab = e.index;
     state.currentSort = e.sort;
     state.currentOrder = e.order;
+    requestGeneration += 1;
     emptyList();
     getList(e.sort, e.order);
   }
@@ -262,12 +248,15 @@
     state.currentSort = state.tabList[0].list[val].sort;
     state.currentOrder = state.tabList[0].list[val].order;
     // 清空 + 加载数据
+    requestGeneration += 1;
     emptyList();
     getList();
   };
 
   async function getList() {
+    const generation = requestGeneration;
     state.loadStatus = 'loading';
+    state.isLoading = true;
     const { code, data } = await SpuApi.getSpuPage({
       pageNo: state.pagination.pageNo,
       pageSize: state.pagination.pageSize,
@@ -276,25 +265,29 @@
       categoryId: state.categoryId,
       keyword: state.keyword,
     });
+    if (generation !== requestGeneration) return;
     if (code !== 0) {
+      state.isLoading = false;
+      state.loadStatus = 'more';
       return;
     }
-    // 拼接结算信息（营销）
-    await OrderApi.getSettlementProduct(data.list.map((item) => item.id).join(',')).then((res) => {
-      if (res.code !== 0) {
-        return;
-      }
-      appendSettlementProduct(data.list, res.data);
-    });
     state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
+    distributeGoods(state.pagination.list);
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
-    mountMasonry();
+    state.isLoading = false;
+
+    if (data.list.length) {
+      void OrderApi.getSettlementProduct(data.list.map((item) => item.id).join(',')).then((res) => {
+        if (generation !== requestGeneration || res.code !== 0) return;
+        appendSettlementProduct(state.pagination.list, res.data);
+      });
+    }
   }
 
   // 加载更多
   function loadMore() {
-    if (state.loadStatus === 'noMore') {
+    if (state.loadStatus === 'noMore' || state.loadStatus === 'loading') {
       return;
     }
     state.pagination.pageNo++;
