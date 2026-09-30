@@ -81,13 +81,10 @@ export function formatGoodsSwiper(urlList) {
       .map((url, key) => {
         const isVideo = VIDEO_SUFFIX_LIST.some((suffix) => url.includes(suffix));
         const type = isVideo ? 'video' : 'image';
-        const src = isVideo
-          ? $url.cdn(url)
-          : $url.thumb(url, { width: 750, quality: 82, format: 'webp' });
+        const src = $url.cdn(url);
         return {
           type,
           src,
-          lazyLoad: key !== 0,
         };
       }) || []
   );

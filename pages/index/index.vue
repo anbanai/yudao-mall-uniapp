@@ -1,50 +1,27 @@
 <!-- 首页，支持店铺装修 -->
 <template>
-  <view class="home-page">
+  <view v-if="template">
     <s-layout
       title="首页"
       navbar="custom"
       tabbar="/pages/index/index"
-      :bgStyle="template?.page || {}"
-      :navbarStyle="template?.navigationBar || {}"
+      :bgStyle="template.page"
+      :navbarStyle="template.navigationBar"
       onShareAppMessage
     >
       <s-block
-        v-if="template"
         v-for="(item, index) in template.components"
         :key="index"
         :styles="item.property.style"
-        :allow-overflow="
-          (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
-        "
       >
-        <s-block-item
-          :type="item.id"
-          :data="item.property"
-          :styles="item.property.style"
-          :refresh-key="productGroupRefreshKey"
-        />
+        <s-block-item :type="item.id" :data="item.property" :styles="item.property.style" />
       </s-block>
-      <view v-else class="home-loading" aria-label="首页加载中">
-        <view class="home-loading__search" />
-        <view class="home-loading__banner" />
-        <view class="home-loading__grid">
-          <view v-for="item in 4" :key="item" class="home-loading__tile" />
-        </view>
-        <view class="home-loading__products">
-          <view v-for="item in 4" :key="item" class="home-loading__product">
-            <view class="home-loading__image" />
-            <view class="home-loading__line home-loading__line--long" />
-            <view class="home-loading__line" />
-          </view>
-        </view>
-      </view>
     </s-layout>
   </view>
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue';
+  import { computed } from 'vue';
   import { onLoad, onShow, onPageScroll, onPullDownRefresh } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import $share from '@/sheep/platform/share';
@@ -54,7 +31,6 @@
   });
 
   const template = computed(() => sheep.$store('app').template?.home);
-  const productGroupRefreshKey = ref(0);
   // 在此处拦截改变一下首页轮播图 此处先写死后期复活 放到启动函数里
   // (async function() {
   // console.log('原代码首页定制化数据',template)
@@ -103,7 +79,7 @@
     }
   });
 
-  onShow(async () => {
+  onShow(async() => {
     // #ifdef APP-PLUS
     // ios首次授权网络，需要重新加载一次应用初始化
     // 可能需要考虑上uni.onNetworkStatusChange，uni.offNetworkStatusChange组合拳以及主动主动唤起权限申请
@@ -119,7 +95,6 @@
 
   // 下拉刷新
   onPullDownRefresh(() => {
-    productGroupRefreshKey.value += 1;
     sheep.$store('app').init();
     setTimeout(function () {
       uni.stopPullDownRefresh();
@@ -129,73 +104,4 @@
   onPageScroll(() => {});
 </script>
 
-<style lang="scss" scoped>
-  .home-loading__search {
-    height: 72rpx;
-    margin: 20rpx;
-    border-radius: 36rpx;
-    background: #f1f2f4;
-  }
-
-  .home-loading__banner {
-    height: 300rpx;
-    margin: 0 20rpx 20rpx;
-    border-radius: 12rpx;
-    background: #f1f2f4;
-  }
-
-  .home-loading__grid {
-    display: flex;
-    gap: 16rpx;
-    padding: 0 20rpx 20rpx;
-  }
-
-  .home-loading__tile {
-    flex: 1;
-    height: 120rpx;
-    border-radius: 12rpx;
-    background: #f1f2f4;
-  }
-
-  .home-loading__products {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20rpx;
-    padding: 0 20rpx;
-  }
-
-  .home-loading__product {
-    width: calc(50% - 10rpx);
-  }
-
-  .home-loading__image {
-    height: 330rpx;
-    border-radius: 12rpx;
-    background: #f1f2f4;
-  }
-
-  .home-loading__line {
-    width: 70%;
-    height: 24rpx;
-    margin-top: 16rpx;
-    border-radius: 12rpx;
-    background: #f1f2f4;
-  }
-
-  .home-loading__line--long {
-    width: 90%;
-  }
-
-  @keyframes home-loading-pulse {
-    0%, 100% { opacity: 0.55; }
-    50% { opacity: 1; }
-  }
-
-  .home-loading__search,
-  .home-loading__banner,
-  .home-loading__tile,
-  .home-loading__image,
-  .home-loading__line {
-    animation: home-loading-pulse 1.4s ease-in-out infinite;
-  }
-</style>
+<style></style>
