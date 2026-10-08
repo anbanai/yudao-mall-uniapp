@@ -55,6 +55,11 @@
               :titleWidth="400"
               priceColor="#FF3000"
             >
+              <template #top>
+                <view v-if="item.spu?.merchantName" class="merchant-name ss-font-22 ss-m-b-6">
+                  {{ item.spu.merchantName }}
+                </view>
+              </template>
               <template v-if="!state.editMode" v-slot:tool>
                 <su-number-box
                   v-model="item.count"
