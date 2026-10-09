@@ -5,16 +5,35 @@
 
     <!-- 商品信息 -->
     <view class="order-card-box ss-m-b-14">
-      <s-goods-item
-        v-for="item in state.orderInfo.items"
-        :key="item.skuId"
-        :img="item.picUrl"
-        :title="item.spuName"
-        :skuText="item.properties.map((property) => property.valueName).join(' ')"
-        :price="item.price"
-        :num="item.count"
-        marginBottom="10"
-      />
+      <view
+        v-for="merchant in merchantGroups"
+        :key="merchant.name"
+        class="merchant-group ss-p-x-20 ss-p-t-16"
+      >
+        <view class="merchant-name ss-font-26 ss-m-b-10">{{ merchant.name }}</view>
+        <s-goods-item
+          v-for="item in merchant.items"
+          :key="item.skuId"
+          :img="item.picUrl"
+          :title="item.spuName"
+          :skuText="item.properties.map((property) => property.valueName).join(' ')"
+          :price="item.price"
+          :num="item.count"
+          marginBottom="10"
+        />
+      </view>
+      <template v-if="!merchantGroups.length">
+        <s-goods-item
+          v-for="item in state.orderInfo.items"
+          :key="item.skuId"
+          :img="item.picUrl"
+          :title="item.spuName"
+          :skuText="item.properties.map((property) => property.valueName).join(' ')"
+          :price="item.price"
+          :num="item.count"
+          marginBottom="10"
+        />
+      </template>
       <view class="order-item ss-flex ss-col-center ss-row-between ss-p-x-20 bg-white ss-r-10">
         <view class="item-title">订单备注</view>
         <view class="ss-flex ss-col-center">
@@ -259,6 +278,16 @@
     pointStatus: false, //是否使用积分
     settling: false,
     submitting: false,
+  });
+
+  const merchantGroups = computed(() => {
+    const groups = new Map();
+    (state.orderInfo.items || []).forEach((item) => {
+      const name = item.merchantName || item.spu?.merchantName || '平台自营';
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name).push(item);
+    });
+    return [...groups].map(([name, items]) => ({ name, items }));
   });
 
   const addressState = ref({

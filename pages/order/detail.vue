@@ -65,6 +65,25 @@
       class="detail-goods"
       :style="[{ marginTop: state.orderInfo.receiverAreaId > 0 ? '0' : '-40rpx' }]"
     >
+      <view v-if="state.orderInfo.subOrders?.length" class="merchant-orders ss-m-b-14">
+        <view
+          v-for="subOrder in state.orderInfo.subOrders"
+          :key="subOrder.id"
+          class="merchant-order-card"
+        >
+          <view class="ss-flex ss-row-between ss-p-x-20 ss-p-y-16">
+            <text class="ss-font-28">{{ subOrder.merchantName || '平台自营' }}</text>
+            <text class="ss-font-24">履约单号：{{ subOrder.no }}</text>
+          </view>
+          <view class="ss-flex ss-row-between ss-p-x-20 ss-p-b-16 ss-font-24">
+            <text>状态：{{ formatOrderStatus(subOrder) }}</text>
+            <text>实付：￥{{ fen2yuan(subOrder.payPrice) }}</text>
+          </view>
+          <view v-if="subOrder.logisticsNo" class="ss-p-x-20 ss-p-b-16 ss-font-24">
+            物流单号：{{ subOrder.logisticsNo }}
+          </view>
+        </view>
+      </view>
       <!-- 订单信 -->
       <view class="order-list" v-for="item in state.orderInfo.items" :key="item.goods_id">
         <view class="order-card">

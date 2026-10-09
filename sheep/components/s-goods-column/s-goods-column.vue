@@ -27,6 +27,9 @@
         >
           {{ data.title || data.name }}
         </view>
+        <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+          {{ data.merchantName }}
+        </view>
         <!-- 活动信息 -->
         <view class="iconBox" v-if="data.promotionType > 0 || data.rewardActivity">
           <view class="card" v-if="discountText">{{ discountText }}</view>
@@ -98,6 +101,9 @@
           :class="[titleLines > 1 ? 'ss-line-2' : 'ss-line-1', 'sm-goods-title', 'ss-m-b-16']"
         >
           {{ data.title || data.name }}
+        </view>
+        <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+          {{ data.merchantName }}
         </view>
         <!-- 活动信息 -->
         <view class="iconBox" v-if="data.promotionType > 0 || data.rewardActivity">
@@ -173,6 +179,9 @@
           :style="[{ color: titleColor, width: titleWidth ? titleWidth + 'rpx' : '' }]"
         >
           {{ data.title || data.name }}
+        </view>
+        <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+          {{ data.merchantName }}
         </view>
         <view
           v-if="
@@ -339,6 +348,9 @@
           >
             {{ data.title || data.name }}
           </view>
+          <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+            {{ data.merchantName }}
+          </view>
           <view
             v-if="
               (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
@@ -436,6 +448,9 @@
             :style="[{ color: titleColor }]"
           >
             {{ data.title || data.name }}
+          </view>
+          <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+            {{ data.merchantName }}
           </view>
           <view
             v-if="

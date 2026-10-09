@@ -137,6 +137,9 @@
               </view>
             </view>
             <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
+            <view v-if="state.goodsInfo.merchantName" class="merchant-name ss-font-22 ss-m-b-6">
+              {{ state.goodsInfo.merchantName }}
+            </view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
             <view v-if="state.publicGroups.length" class="public-groups">
               <button
