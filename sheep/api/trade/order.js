@@ -69,6 +69,7 @@ const OrderApi = {
       custom: {
         showLoading: false,
         showError: false,
+        noRefresh: true,
       },
     });
   },

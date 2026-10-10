@@ -10,6 +10,7 @@ const SpuApi = {
       custom: {
         showLoading: false,
         showError: false,
+        noRefresh: true,
       },
     });
   },
@@ -22,6 +23,7 @@ const SpuApi = {
       custom: {
         showLoading: false,
         showError: false,
+        noRefresh: true,
       },
     });
   },

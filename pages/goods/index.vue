@@ -377,11 +377,16 @@
   }
 
   async function getSettlementByIds(ids) {
-    let { data, code } = await OrderApi.getSettlementProduct(ids);
-    if (code !== 0 || data.length !== 1) {
+    const response = await OrderApi.getSettlementProduct(ids);
+    if (
+      !response ||
+      response.code !== 0 ||
+      !Array.isArray(response.data) ||
+      response.data.length !== 1
+    ) {
       return;
     }
-    data = data[0];
+    const data = response.data[0];
 
     // 补充 SKU 的价格信息
     state.goodsInfo.skus.forEach((sku) => {
