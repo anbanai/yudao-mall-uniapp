@@ -289,7 +289,7 @@
 		{
 			"root": "pages/user",
 			"pages": [
-        { "path": "identity", "style": { "navigationBarTitleText": "统一账户与手机号共享" }, "meta": { "auth": false, "title": "统一账户与手机号共享" } },{
+				{
 					"path": "benefits/index",
 					"style": { "navigationBarTitleText": "会员权益中心" },
 					"meta": { "auth": true, "formalAuth": true, "title": "会员权益中心", "group": "用户中心" }

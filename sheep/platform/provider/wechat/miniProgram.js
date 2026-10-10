@@ -1,4 +1,4 @@
-import { sessionEpoch, isCurrentSession, isIdentityBlocked } from '@/sheep/helper/identitySession.mjs';
+import { sessionEpoch, isCurrentSession } from '@/sheep/helper/sessionEpoch.mjs';
 import AuthUtil from '@/sheep/api/member/auth';
 import SocialApi from '@/sheep/api/member/social';
 import UserApi from '@/sheep/api/member/user';
@@ -18,10 +18,9 @@ function load() {
 const login = async (silent = false) => {
   return new Promise(async (resolve, reject) => {
     const epoch = sessionEpoch();
-    if (isIdentityBlocked()) return resolve(false);
     // 1. 获得微信 code
     const codeResult = await uni.login();
-    if (!isCurrentSession(epoch) || isIdentityBlocked() || codeResult.errMsg !== 'login:ok') {
+    if (!isCurrentSession(epoch) || codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 
@@ -44,10 +43,9 @@ const mobileLogin = async (e) => {
     }
 
     const epoch = sessionEpoch();
-    if (isIdentityBlocked()) return resolve(false);
     // 1. 获得微信 code
     const codeResult = await uni.login();
-    if (!isCurrentSession(epoch) || isIdentityBlocked() || codeResult.errMsg !== 'login:ok') {
+    if (!isCurrentSession(epoch) || codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 
@@ -66,10 +64,9 @@ const mobileLogin = async (e) => {
 const bind = () => {
   return new Promise(async (resolve, reject) => {
     const epoch = sessionEpoch();
-    if (isIdentityBlocked()) return resolve(false);
     // 1. 获得微信 code
     const codeResult = await uni.login();
-    if (!isCurrentSession(epoch) || isIdentityBlocked() || codeResult.errMsg !== 'login:ok') {
+    if (!isCurrentSession(epoch) || codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 

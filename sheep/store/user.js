@@ -1,4 +1,4 @@
-import { sessionEpoch, isCurrentSession, invalidateSession, isIdentityBlocked } from '@/sheep/helper/identitySession.mjs';
+import { sessionEpoch, isCurrentSession, invalidateSession } from '@/sheep/helper/sessionEpoch.mjs';
 import { defineStore } from 'pinia';
 import $share from '@/sheep/platform/share';
 import { clone, cloneDeep } from 'lodash-es';
@@ -179,7 +179,6 @@ const user = defineStore('user', {
 
     // 更新用户相关信息 (手动限流，5 秒之内不刷新)
     async updateUserData({ force = false } = {}) {
-      if (isIdentityBlocked()) return;
       if (!this.isLogin) {
         this.resetUserData();
         return;

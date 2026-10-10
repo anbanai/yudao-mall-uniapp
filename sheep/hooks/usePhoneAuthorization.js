@@ -1,4 +1,3 @@
-import { offerPhoneSharing } from '@/sheep/hooks/useIdentityConsent';
 import sheep from '@/sheep';
 
 export async function authorizePhoneNumber(detail) {
@@ -16,6 +15,5 @@ export async function authorizePhoneNumber(detail) {
   }
 
   await userStore.getInfo();
-  void offerPhoneSharing();
   return true;
 }

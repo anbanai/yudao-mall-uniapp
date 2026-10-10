@@ -102,7 +102,6 @@
 </template>
 
 <script setup>
-  import { offerPhoneSharing } from '@/sheep/hooks/useIdentityConsent';
   import { computed, onBeforeUnmount, reactive, ref, unref } from 'vue';
   import sheep from '@/sheep';
   import { code, mobile } from '@/sheep/validate/form';
@@ -160,7 +159,6 @@
       await sheep.$store('user').getInfo();
       if (instanceState.active) {
         closeAuthModal();
-      void offerPhoneSharing();
       }
     } finally {
       state.isSubmitting = false;
@@ -181,7 +179,6 @@
       await sheep.$store('user').getInfo();
       if (instanceState.active) {
         closeAuthModal();
-      void offerPhoneSharing();
       }
     } finally {
       state.isSubmitting = false;

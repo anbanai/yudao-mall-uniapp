@@ -1,4 +1,4 @@
-import { sessionEpoch, isCurrentSession, isIdentityBlocked, staleSessionResult } from '@/sheep/helper/identitySession.mjs';
+import { sessionEpoch, isCurrentSession, staleSessionResult } from '@/sheep/helper/sessionEpoch.mjs';
 /**
  * Shopro-request
  * @description api模块管理，loading配置，请求拦截，错误处理
@@ -76,10 +76,6 @@ http.interceptors.request.use(
   async (config) => {
     config.custom.sessionEpoch ??= sessionEpoch();
     if (!isCurrentSession(config.custom.sessionEpoch)) return Promise.reject(staleSessionResult());
-    if (isIdentityBlocked() && !config.custom.managedSession &&
-        (config.custom.auth || config.custom.formalAuth || /^\/(member|trade|pay|promotion\/coupon)\//.test(config.url))) {
-      return Promise.reject({ code: 'IDENTITY_PENDING', msg: '正在确认账户，请稍后重试' });
-    }
     // 自定义处理【auth 授权】：必须登录的接口，则跳出 AuthModal 登录弹窗
     if (config.custom.auth && !$store('user').isLogin) {
       showAuthModal();
@@ -136,7 +132,7 @@ http.interceptors.response.use(
       return staleSessionResult();
     }
     // 约定：如果是 /auth/ 下的 URL 地址，并且返回了 accessToken 说明是登录相关的接口，则自动设置登陆令牌
-    if (response.data.code === 0 && !response.config.custom.managedSession && response.config.url.indexOf('/member/auth/') >= 0 && response.data?.data?.accessToken) {
+    if (response.data.code === 0 && response.config.url.indexOf('/member/auth/') >= 0 && response.data?.data?.accessToken) {
       const userStore = $store('user');
       if (response.config.url === '/member/auth/refresh-token') {
         // Refresh preserves account identity, pending requests, and its scoped OpenID.
@@ -154,7 +150,7 @@ http.interceptors.response.use(
     // 自定义处理【error 错误提示】：如果需要显示错误提示，则显示错误提示
     if (response.data.code !== 0) {
       // 特殊：如果 401 错误码，则跳转到登录页 or 刷新令牌
-      if (response.data.code === 401 && !response.config.custom.managedSession && !response.config.custom.noRefresh) {
+      if (response.data.code === 401 && !response.config.custom.noRefresh) {
         return refreshToken(response.config);
       }
       // 特殊：处理分销用户绑定失败的提示
@@ -192,7 +188,7 @@ http.interceptors.response.use(
       error.config.custom.showLoading && closeLoading();
       return staleSessionResult();
     }
-    if (['STALE_SESSION', 'IDENTITY_PENDING', 'PHONE_AUTH_REQUIRED', 401].includes(error?.code)) {
+    if (['STALE_SESSION', 'PHONE_AUTH_REQUIRED', 401].includes(error?.code)) {
       return Promise.resolve(error);
     }
     let errorMessage = '网络请求出错';
@@ -262,7 +258,7 @@ http.interceptors.response.use(
 let requestList = []; // 请求队列
 let isRefreshToken = false; // 是否正在刷新中
 const refreshToken = async (config) => {
-  if (!isCurrentSession(config.custom.sessionEpoch) || isIdentityBlocked()) return staleSessionResult();
+  if (!isCurrentSession(config.custom.sessionEpoch)) return staleSessionResult();
   // 如果当前已经是 refresh-token 的 URL 地址，并且还是 401 错误，说明是刷新令牌失败了，直接返回 Promise.reject(error)
   if (config.url.indexOf('/member/auth/refresh-token') >= 0) {
     return Promise.reject('error');
@@ -281,7 +277,7 @@ const refreshToken = async (config) => {
     // 2. 进行刷新访问令牌
     try {
       const refreshTokenResult = await AuthUtil.refreshToken(refreshToken);
-      if (!isCurrentSession(config.custom.sessionEpoch) || isIdentityBlocked()) return staleSessionResult();
+      if (!isCurrentSession(config.custom.sessionEpoch)) return staleSessionResult();
       if (refreshTokenResult.code !== 0) {
         // 如果刷新不成功，直接抛出 e 触发 2.2 的逻辑
         // noinspection ExceptionCaughtLocallyJS
@@ -295,7 +291,7 @@ const refreshToken = async (config) => {
       requestList = [];
       return request(config);
     } catch (e) {
-      if (!isCurrentSession(config.custom.sessionEpoch) || isIdentityBlocked()) return staleSessionResult();
+      if (!isCurrentSession(config.custom.sessionEpoch)) return staleSessionResult();
       // 为什么需要 catch 异常呢？刷新失败时，请求因为 Promise.reject 触发异常。
       // 2.2 刷新失败，只回放队列的请求
       requestList.forEach((cb) => {

@@ -1,4 +1,3 @@
-import { isIdentityBlocked } from '@/sheep/helper/identitySession.mjs';
 import $store from '@/sheep/store';
 import $helper from '@/sheep/helper';
 import dayjs from 'dayjs';
@@ -8,7 +7,6 @@ import AuthUtil from '@/sheep/api/member/auth';
 
 // 打开授权弹框
 export function showAuthModal(type = '') {
-  if (isIdentityBlocked()) return;
   if (!type) {
     // #ifdef MP-WEIXIN
     type = 'phoneAuthorization';

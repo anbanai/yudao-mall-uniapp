@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import * as session from '../sheep/helper/identitySession.mjs';
+import * as session from '../sheep/helper/sessionEpoch.mjs';
 const source=readFileSync(new URL('../sheep/request/index.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/^export const /gm,'const ').replace('export default request;','return { request, http };');
 function setup() {
   let tokens=0,prompts=0,refreshes=0;
@@ -16,7 +16,6 @@ function setup() {
   return {http,config,get counts(){return {tokens,prompts,refreshes}}};
 }
 test('old normal auth, refresh and private responses are discarded before side effects', async()=>{
-  session.setIdentityPhase('ready');
   const f=setup();
   for (const url of ['/member/auth/sms-login','/member/auth/refresh-token','/member/user/get','/trade/order/page']) {
     const config=await f.http.before(f.config(url));
@@ -26,28 +25,12 @@ test('old normal auth, refresh and private responses are discarded before side e
   }
   assert.deepEqual(f.counts,{tokens:0,prompts:0,refreshes:0});
 });
-test('bridge suspension rejects protected operations without opening authorization',async()=>{
-  session.setIdentityPhase('binding');const f=setup();
-  await assert.rejects(f.http.before(f.config('/member/user/get')),e=>e.code==='IDENTITY_PENDING');
-  await f.http.before(f.config('/promotion/diy-template/used'));
-  assert.equal(f.counts.prompts,0);
-});
-test('managed login never auto-installs tokens or refreshes and sends no prior authorization',async()=>{
-  const f=setup(),config=f.config('/member/auth/bridge-login');
-  config.custom.managedSession=true;config.custom.isToken=false;config.header.Authorization='old';
-  await f.http.before(config);
-  assert.equal(config.header.Authorization,undefined);
-  await f.http.after({config,data:{code:0,data:{accessToken:'new'}}});
-  await f.http.after({config,data:{code:401}});
-  assert.deepEqual(f.counts,{tokens:0,prompts:0,refreshes:0});
-});
 test('stale queued request cannot be relabeled with a new epoch',async()=>{
-  session.setIdentityPhase('ready');const f=setup(),config=await f.http.before(f.config('/trade/order/page'));
+  const f=setup(),config=await f.http.before(f.config('/trade/order/page'));
   session.invalidateSession();
   await assert.rejects(f.http.before(config),e=>e.code==='STALE_SESSION');
 });
 test('mini-program provider accepts the installed login epoch but refuses superseded completion', async () => {
-  session.setIdentityPhase('ready');
   const providerSource=readFileSync(new URL('../sheep/platform/provider/wechat/miniProgram.js',import.meta.url),'utf8')
     .replace(/^import .*;\n/gm,'').replace('export default {','return {');
   for (const superseded of [false,true]) {

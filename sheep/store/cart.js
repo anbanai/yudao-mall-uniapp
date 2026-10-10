@@ -1,4 +1,4 @@
-import { sessionEpoch, isCurrentSession } from '@/sheep/helper/identitySession.mjs';
+import { sessionEpoch, isCurrentSession } from '@/sheep/helper/sessionEpoch.mjs';
 import { defineStore } from 'pinia';
 import CartApi from '@/sheep/api/trade/cart';
 

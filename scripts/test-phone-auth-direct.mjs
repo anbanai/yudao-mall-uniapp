@@ -122,7 +122,6 @@ const functionStart = phoneAuthorizationSource.indexOf(
 const functionEnd = phoneAuthorizationSource.indexOf('\n}', functionStart) + 2;
 // Inject test dependencies without replacing the network boundary used by the production function.
 const functionForTest = new Function(
-  'offerPhoneSharing',
   `${phoneAuthorizationSource
     .slice(functionStart, functionEnd)
     .replace(
@@ -134,7 +133,7 @@ const functionForTest = new Function(
       'const provider = sheep.$platform.useProvider();',
       'const provider = injectedProvider;',
     )}\nreturn authorizePhoneNumber;`,
-)(async () => false);
+)();
 
 const acceptedDetail = { errMsg: 'getPhoneNumber:ok', code: 'phone-code' };
 

@@ -1,4 +1,4 @@
-import { isIdentityBlocked, sessionEpoch, isCurrentSession } from '@/sheep/helper/identitySession.mjs';
+import { sessionEpoch, isCurrentSession } from '@/sheep/helper/sessionEpoch.mjs';
 import $store from '@/sheep/store';
 import { showAuthModal, showShareModal } from '@/sheep/hooks/useModal';
 import { isNumber, isString, isEmpty, startsWith, isObject, isNil, clone } from 'lodash-es';
@@ -60,7 +60,6 @@ const _go = async (
     return;
   }
 
-  if ((nextRoute.meta?.auth || nextRoute.meta?.formalAuth) && isIdentityBlocked()) return;
   const epoch = sessionEpoch();
 
   // 页面登录拦截
@@ -74,7 +73,7 @@ const _go = async (
   if (nextRoute.meta?.formalAuth || nextRoute.meta?.auth) {
     const userStore = $store('user');
     await userStore.ensureUserInfo();
-    if (!isCurrentSession(epoch) || isIdentityBlocked()) return;
+    if (!isCurrentSession(epoch)) return;
     if (!userStore.isFormalLogin) {
       pendingFormalAuthNavigation = { path, params, options };
       showAuthModal();

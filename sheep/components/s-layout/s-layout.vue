@@ -39,21 +39,14 @@
         />
 
         <!-- 页面内容插槽 -->
-        <slot v-if="!identityBridgeState.masked" />
-        <view v-else class="identity-status">
-          <text class="identity-title">{{ identityBridgeState.phase === 'failed' ? '账户关联未完成' : '正在确认您的商城账户' }}</text>
-          <text v-if="identityBridgeState.phase === 'failed'">{{ identityBridgeState.failure }}</text>
-          <text v-else>请稍候，确认完成后即可继续。</text>
-          <button v-if="identityBridgeState.phase === 'failed'" @tap="retryIdentityBridge">重新尝试关联</button>
-          <button v-if="identityBridgeState.phase === 'failed'" @tap="browseWithoutIdentityBridge">暂不关联，继续浏览</button>
-        </view>
+        <slot />
 
         <!-- 底部导航 -->
         <s-tabbar v-if="tabbar !== ''" :path="tabbar" />
       </view>
     </view>
 
-    <view v-if="!identityBridgeState.masked" class="page-modal">
+    <view class="page-modal">
       <!-- 全局授权弹窗 -->
       <s-auth-modal />
       <!-- 全局分享弹窗 -->
@@ -69,7 +62,6 @@
    * 模板组件 - 提供页面公共组件，属性，方法
    */
   import { computed, onMounted } from 'vue';
-  import { identityBridgeState, retryIdentityBridge, browseWithoutIdentityBridge } from '@/sheep/hooks/useIdentityBridge';
   import sheep from '@/sheep';
   import { isEmpty } from 'lodash-es';
   // #ifdef MP-WEIXIN
@@ -241,9 +233,6 @@
 </script>
 
 <style lang="scss" scoped>
-  .identity-status { padding: 64rpx 36rpx; display: flex; flex-direction: column; gap: 32rpx; font-size: 32rpx; line-height: 1.7; background: #fff; min-height: 70vh; }
-  .identity-title { font-size: 38rpx; font-weight: 600; }
-  .identity-status button { width: 100%; font-size: 32rpx; min-height: 88rpx; }
   .page-app {
     position: relative;
     color: var(--ui-TC);

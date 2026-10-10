@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import * as session from '../sheep/helper/identitySession.mjs';
+import * as session from '../sheep/helper/sessionEpoch.mjs';
 const defer=()=>{let resolve,reject;const promise=new Promise((r,j)=>{resolve=r;reject=j});return {promise,resolve,reject}};
 function loadStore(file,bindings) {
   const source=readFileSync(new URL(file,import.meta.url),'utf8').replace(/^import [\s\S]*?;\n/gm,'').replace(/export default \w+;/,'return store;');
@@ -56,7 +56,6 @@ function loadInterceptor(store, uni, showAuthModal = () => {}) {
 }
 for (const loginUrl of ['/member/auth/sms-login', '/member/auth/login']) {
   test(`${loginUrl} replaces all private state and only resolves the new member's OpenID`, async () => {
-    session.setIdentityPhase('ready');
     const profile = defer(), boundOpenid = defer();
     const storage = { token: 'member-x', 'refresh-token': 'refresh-x', openid: 'openid-x' };
     const localUni = { getStorageSync: key => storage[key], setStorageSync: (key, value) => { storage[key] = value; }, removeStorageSync: key => { delete storage[key]; } };
@@ -129,7 +128,6 @@ function profileStore(responses) {
 
 for (const oldResult of ['success', 'failure']) {
   test(`formal request waits for the latest profile after a superseded ${oldResult}`, async () => {
-    session.setIdentityPhase('ready');
     const old = defer(), latest = defer();
     const {store, reads} = profileStore([old, latest]);
     const first = store.getInfo().catch(() => {});
