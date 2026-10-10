@@ -193,7 +193,7 @@ function uploadFilesFromPath(path, directory = '') {
   );
 }
 
-async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, directory }) {
+async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, directory, scene }) {
   // 获取选择的文件
   const res = await choosePromise;
   // 处理文件选择回调
@@ -209,7 +209,8 @@ async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, dire
   }
 
   // 如果是前端直连上传
-  if (UPLOAD_TYPE.CLIENT === import.meta.env.SHOPRO_UPLOAD_TYPE) {
+  // 场景化图片必须经过后端校验；直传无法在落库前可靠核验文件内容。
+  if (UPLOAD_TYPE.CLIENT === import.meta.env.SHOPRO_UPLOAD_TYPE && !scene) {
     // 为上传创建一组 Promise
     const uploadPromises = files.map(async (file) => {
       try {
@@ -218,6 +219,7 @@ async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, dire
           file.name,
           directory,
           file.type,
+          scene,
         );
         // 1.2 获取二进制文件对象
         const fileBuffer = await readFile(file);
@@ -253,7 +255,7 @@ async function uploadFiles(choosePromise, { onChooseFile, onUploadProgress, dire
   } else {
     // 后端上传
     for (let file of files) {
-      const { data } = await FileApi.uploadFile(file.path, directory);
+      const { data } = await FileApi.uploadFile(file.path, directory, scene);
       file.url = data;
     }
 

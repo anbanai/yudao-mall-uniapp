@@ -39,8 +39,11 @@
                 <s-uploader
                   v-model:url="state.commentList[index].images"
                   fileMediatype="image"
+                  fileExtname="jpg,jpeg,png,bmp"
                   limit="9"
+                  maxSize="3"
                   mode="grid"
+                  scene="product"
                   :imageStyles="{ width: '168rpx', height: '168rpx' }"
                   @success="(payload) => uploadSuccess(payload, index)"
                 />

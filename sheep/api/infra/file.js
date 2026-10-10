@@ -3,7 +3,7 @@ import request, { getAccessToken } from '@/sheep/request';
 
 const FileApi = {
   // 上传文件
-  uploadFile: (file, directory = '') => {
+  uploadFile: (file, directory = '', scene) => {
     uni.showLoading({
       title: '上传中',
     });
@@ -19,6 +19,7 @@ const FileApi = {
         },
         formData: {
           directory,
+          ...(scene ? { scene } : {}),
         },
         success: (uploadFileRes) => {
           let result = JSON.parse(uploadFileRes.data);
@@ -43,7 +44,7 @@ const FileApi = {
   },
 
   // 获取文件预签名地址
-  getFilePresignedUrl: (name, directory, type) => {
+  getFilePresignedUrl: (name, directory, type, scene) => {
     return request({
       url: '/infra/file/presigned-url',
       method: 'GET',
@@ -51,6 +52,7 @@ const FileApi = {
         name,
         directory,
         type,
+        scene,
       },
     });
   },
