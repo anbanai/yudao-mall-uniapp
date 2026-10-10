@@ -280,7 +280,7 @@
     if (data.list.length) {
       void OrderApi.getSettlementProduct(data.list.map((item) => item.id).join(',')).then((res) => {
         if (generation !== requestGeneration || res.code !== 0) return;
-        appendSettlementProduct(state.pagination.list, res.data);
+        appendSettlementProduct(data.list, res.data);
       });
     }
   }

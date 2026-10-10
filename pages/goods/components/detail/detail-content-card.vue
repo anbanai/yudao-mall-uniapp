@@ -5,7 +5,7 @@
       <view class="title ss-m-l-20 ss-m-r-20">详情</view>
     </view>
     <view class="card-content">
-      <mp-html :content="optimizedContent"></mp-html>
+      <mp-html :content="optimizedContent" lazy-load></mp-html>
     </view>
   </view>
 </template>
@@ -23,17 +23,19 @@
 
   // Detail descriptions commonly contain original-size uploaded images.
   // Rewrite only image sources so the rich-text structure remains unchanged.
-  const optimizedContent = computed(() =>
-    props.content.replace(
-      /(<img\b[^>]*?\bsrc=["'])([^"']+)(["'])/gi,
-      (_, prefix, src, suffix) => {
-        if (!src || /^data:/i.test(src) || sheep.$url.isSigned?.(src)) {
-          return `${prefix}${src}${suffix}`;
-        }
-        return `${prefix}${sheep.$url.thumb(src, { width: 750, quality: 82, format: 'webp' })}${suffix}`;
-      },
-    ),
-  );
+  const optimizedContent = computed(() => {
+    const content = typeof props.content === 'string' ? props.content : '';
+    return content.replace(/(<img\b[^>]*?\bsrc=["'])([^"']+)(["'])/gi, (_, prefix, src, suffix) => {
+      if (!src || /^data:/i.test(src) || sheep.$url.isSigned?.(src)) {
+        return `${prefix}${src}${suffix}`;
+      }
+      return `${prefix}${sheep.$url.thumb(src, {
+        width: 750,
+        quality: 82,
+        format: 'webp',
+      })}${suffix}`;
+    });
+  });
 </script>
 
 <style lang="scss" scoped>

@@ -9,22 +9,23 @@
       :navbarStyle="template?.navigationBar || {}"
       onShareAppMessage
     >
-      <s-block
-        v-if="template"
-        v-for="(item, index) in template.components"
-        :key="index"
-        :styles="item.property.style"
-        :allow-overflow="
-          (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
-        "
-      >
-        <s-block-item
-          :type="item.id"
-          :data="item.property"
+      <template v-if="homeTemplateReady">
+        <s-block
+          v-for="(item, index) in homeComponents"
+          :key="index"
           :styles="item.property.style"
-          :refresh-key="productGroupRefreshKey"
-        />
-      </s-block>
+          :allow-overflow="
+            (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
+          "
+        >
+          <s-block-item
+            :type="item.id"
+            :data="item.property"
+            :styles="item.property.style"
+            :refresh-key="productGroupRefreshKey"
+          />
+        </s-block>
+      </template>
       <view v-else class="home-loading" aria-label="首页加载中">
         <view class="home-loading__search" />
         <view class="home-loading__banner" />
@@ -54,6 +55,11 @@
   });
 
   const template = computed(() => sheep.$store('app').template?.home);
+  // The store starts with a placeholder object. A components array marks a loaded template.
+  const homeComponents = computed(() =>
+    Array.isArray(template.value?.components) ? template.value.components : [],
+  );
+  const homeTemplateReady = computed(() => Array.isArray(template.value?.components));
   const productGroupRefreshKey = ref(0);
   // 在此处拦截改变一下首页轮播图 此处先写死后期复活 放到启动函数里
   // (async function() {
@@ -187,8 +193,13 @@
   }
 
   @keyframes home-loading-pulse {
-    0%, 100% { opacity: 0.55; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 
   .home-loading__search,
