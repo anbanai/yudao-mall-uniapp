@@ -34,6 +34,19 @@ function isTransformable(url, imageHosts = []) {
   return hostname !== '' && imageHosts.some((host) => getHostname(host) === hostname);
 }
 
+function useTransformOrigin(url, transformOrigin) {
+  if (!transformOrigin) return url;
+  try {
+    const source = new URL(url);
+    const target = new URL(transformOrigin);
+    source.protocol = target.protocol;
+    source.host = target.host;
+    return source.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function isSignedMediaUrl(url = '') {
   try {
     const parsed = new URL(url);
@@ -79,6 +92,11 @@ export function buildThumbnailUrl(url = '', options = {}) {
   const config = { ...DEFAULT_OPTIONS, ...options };
   if (config.filesystem === 'public' || !isTransformable(url, config.imageHosts)) {
     return url;
+  }
+  // The public CDN serves the original object for this query; use the OSS
+  // origin for image processing when the deployment explicitly provides one.
+  if (config.filesystem === 'aliyun') {
+    url = useTransformOrigin(url, config.transformOrigin);
   }
 
   let suffix = '';

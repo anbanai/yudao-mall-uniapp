@@ -59,7 +59,8 @@
             :bottomRadius="data.borderRadiusBottom"
             :titleWidth="330 - marginLeft - marginRight"
             @click="sheep.$router.go('/pages/goods/index', { id: item.id })"
-            @getHeight="calculateGoodsColumn($event, 'left')"
+            :fixedImage="true"
+            :imageWidth="345"
           >
             <!-- 购买按钮 -->
             <template v-slot:cart>
@@ -89,7 +90,8 @@
             :bottomRadius="data.borderRadiusBottom"
             :titleWidth="330 - marginLeft - marginRight"
             @click="sheep.$router.go('/pages/goods/index', { id: item.id })"
-            @getHeight="calculateGoodsColumn($event, 'right')"
+            :fixedImage="true"
+            :imageWidth="345"
           >
             <!-- 购买按钮 -->
             <template v-slot:cart>
@@ -146,6 +148,7 @@
   import SpuApi from '@/sheep/api/product/spu';
   import OrderApi from '@/sheep/api/trade/order';
   import { appendSettlementProduct } from '@/sheep/hooks/useGoods';
+  import { appendGoodsToColumns } from '@/sheep/components/s-goods-column/goods-list-render.mjs';
 
   // 布局类型
   const LayoutTypeEnum = {
@@ -195,37 +198,6 @@
     }
   });
 
-  //region 商品瀑布流布局
-  // 下一个要处理的商品索引
-  let count = 0;
-  // 左列的高度
-  let leftHeight = 0;
-  // 右列的高度
-  let rightHeight = 0;
-
-  /**
-   * 计算商品在左列还是右列
-   * @param height 商品的高度
-   * @param where 添加到哪一列
-   */
-  function calculateGoodsColumn(height = 0, where = 'left') {
-    // 处理完
-    if (!state.goodsList[count]) return;
-    // 增加列的高度
-    if (where === 'left') leftHeight += height;
-    if (where === 'right') rightHeight += height;
-    // 添加到矮的一列
-    if (leftHeight <= rightHeight) {
-      state.leftGoodsList.push(state.goodsList[count]);
-    } else {
-      state.rightGoodsList.push(state.goodsList[count]);
-    }
-    // 计数
-    count++;
-  }
-
-  //endregion
-
   /**
    * 根据商品编号列表，获取商品列表
    * @param ids 商品编号列表
@@ -233,26 +205,25 @@
    */
   async function getGoodsListByIds(ids) {
     const { data } = await SpuApi.getSpuListByIds(ids);
-    return data;
+    return Array.isArray(data) ? data : [];
   }
 
   // 初始化
   onMounted(async () => {
-    // 加载商品列表
-    state.goodsList = await getGoodsListByIds(spuIds.join(','));
-    // 拼接结算信息（营销）
-    await OrderApi.getSettlementProduct(state.goodsList.map((item) => item.id).join(',')).then(
-      (res) => {
-        if (res.code !== 0) {
-          return;
-        }
-        appendSettlementProduct(state.goodsList, res.data);
-      },
-    );
-    // 只有双列布局时需要
-    if (layoutType === LayoutTypeEnum.TWO_COL) {
-      // 分列
-      calculateGoodsColumn();
+    try {
+      // 商品核心数据到达后立即渲染，营销信息随后补充。
+      state.goodsList = await getGoodsListByIds(spuIds.join(','));
+      if (layoutType === LayoutTypeEnum.TWO_COL) {
+        appendGoodsToColumns(state.leftGoodsList, state.rightGoodsList, state.goodsList);
+      }
+      if (!state.goodsList.length) return;
+      void OrderApi.getSettlementProduct(state.goodsList.map((item) => item.id).join(','))
+        .then((res) => {
+          if (res?.code === 0) appendSettlementProduct(state.goodsList, res.data);
+        })
+        .catch(() => {});
+    } catch {
+      state.goodsList = [];
     }
   });
 </script>

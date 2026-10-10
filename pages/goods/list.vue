@@ -75,6 +75,8 @@
           <s-goods-column
             class="goods-md-box"
             size="md"
+            :fixedImage="true"
+            :imageWidth="345"
             :data="item"
             :topRadius="10"
             :bottomRadius="10"
@@ -91,6 +93,8 @@
           <s-goods-column
             class="goods-md-box"
             size="md"
+            :fixedImage="true"
+            :imageWidth="345"
             :topRadius="10"
             :bottomRadius="10"
             :data="item"
@@ -116,14 +120,17 @@
 </template>
 
 <script setup>
-  import { reactive, ref } from 'vue';
+  import { reactive } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
-  import { concat } from 'lodash-es';
   import { resetPagination } from '@/sheep/helper/utils';
   import SpuApi from '@/sheep/api/product/spu';
   import OrderApi from '@/sheep/api/trade/order';
   import { appendSettlementProduct } from '@/sheep/hooks/useGoods';
+  import {
+    appendGoodsToColumns,
+    appendUniqueGoods,
+  } from '@/sheep/components/s-goods-column/goods-list-render.mjs';
 
   const sys_navBar = sheep.$platform.navbar;
   const emits = defineEmits(['close', 'change']);
@@ -182,20 +189,13 @@
   // 加载瀑布流
   let requestGeneration = 0;
 
-  function distributeGoods(list) {
-    state.leftGoodsList = [];
-    state.rightGoodsList = [];
-    list.forEach((item, index) => {
-      (index % 2 === 0 ? state.leftGoodsList : state.rightGoodsList).push(item);
-    });
-  }
-
   // 清空列表
   function emptyList() {
     resetPagination(state.pagination);
     state.leftGoodsList = [];
     state.rightGoodsList = [];
     state.loadStatus = '';
+    state.isLoading = false;
   }
 
   // 搜索
@@ -203,7 +203,7 @@
     state.keyword = e;
     requestGeneration += 1;
     emptyList();
-    getList(state.currentSort, state.currentOrder);
+    getList();
   }
 
   // 点击
@@ -226,7 +226,7 @@
     state.currentOrder = e.order;
     requestGeneration += 1;
     emptyList();
-    getList(e.sort, e.order);
+    getList();
   }
 
   // 点击 tab 的 list 筛选项
@@ -253,51 +253,68 @@
     getList();
   };
 
-  async function getList() {
+  async function getList(pageNo = state.pagination.pageNo) {
     const generation = requestGeneration;
     state.loadStatus = 'loading';
     state.isLoading = true;
-    const { code, data } = await SpuApi.getSpuPage({
-      pageNo: state.pagination.pageNo,
-      pageSize: state.pagination.pageSize,
-      sortField: state.currentSort,
-      sortAsc: state.currentOrder,
-      categoryId: state.categoryId,
-      keyword: state.keyword,
-    });
-    if (generation !== requestGeneration) return;
-    if (code !== 0) {
-      state.isLoading = false;
-      state.loadStatus = 'more';
-      return;
-    }
-    state.pagination.list = concat(state.pagination.list, data.list);
-    state.pagination.total = data.total;
-    distributeGoods(state.pagination.list);
-    state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
-    state.isLoading = false;
-
-    if (data.list.length) {
-      void OrderApi.getSettlementProduct(data.list.map((item) => item.id).join(',')).then((res) => {
-        if (generation !== requestGeneration || res.code !== 0) return;
-        appendSettlementProduct(data.list, res.data);
+    try {
+      const { code, data } = await SpuApi.getSpuPage({
+        pageNo,
+        pageSize: state.pagination.pageSize,
+        sortField: state.currentSort,
+        sortAsc: state.currentOrder,
+        categoryId: state.categoryId,
+        keyword: state.keyword,
       });
+      if (generation !== requestGeneration) return;
+      if (code !== 0) {
+        state.loadStatus = 'more';
+        return;
+      }
+      const pageList = appendUniqueGoods(
+        state.pagination.list,
+        Array.isArray(data.list) ? data.list : [],
+      );
+      state.pagination.pageNo = pageNo;
+      state.pagination.total = data.total;
+      appendGoodsToColumns(state.leftGoodsList, state.rightGoodsList, pageList);
+      state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
+
+      if (pageList.length) {
+        const productsById = new Map(state.pagination.list.map((item) => [String(item.id), item]));
+        void OrderApi.getSettlementProduct(pageList.map((item) => item.id).join(','))
+          .then((res) => {
+            if (generation !== requestGeneration || res?.code !== 0) return;
+            const reactivePageList = pageList
+              .map((item) => productsById.get(String(item.id)))
+              .filter(Boolean);
+            appendSettlementProduct(reactivePageList, res.data);
+          })
+          .catch(() => {});
+      }
+    } catch {
+      if (generation !== requestGeneration) return;
+      state.loadStatus = 'more';
+    } finally {
+      if (generation === requestGeneration) state.isLoading = false;
     }
   }
 
   // 加载更多
   function loadMore() {
-    if (state.loadStatus === 'noMore' || state.loadStatus === 'loading') {
+    if (state.isLoading || state.loadStatus === 'noMore') {
       return;
     }
-    state.pagination.pageNo++;
-    getList(state.currentSort, state.currentOrder);
+    const pageNo = state.pagination.list.length
+      ? state.pagination.pageNo + 1
+      : state.pagination.pageNo;
+    void getList(pageNo);
   }
 
   onLoad((options) => {
     state.categoryId = options.categoryId;
     state.keyword = options.keyword;
-    getList(state.currentSort, state.currentOrder);
+    getList();
   });
 
   // 上拉加载更多

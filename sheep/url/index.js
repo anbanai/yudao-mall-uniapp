@@ -37,6 +37,8 @@ export default {
       ...params,
       filesystem: config.filesystem,
       imageHosts: [config.cdnUrl, config.ossOrigin],
+      transformOrigin:
+        params.transformOrigin === true ? config.ossOrigin : params.transformOrigin || '',
     });
   },
   isSigned: isSignedMediaUrl,

@@ -89,7 +89,7 @@
           lazy-load
         ></image>
       </view>
-      <image class="sm-img-box" :src="goodsImage" mode="aspectFill" lazy-load></image>
+      <image class="sm-img-box" :src="goodsImage" mode="aspectFill" :lazy-load="lazyLoad"></image>
 
       <view
         v-if="goodsFields.title?.show || goodsFields.name?.show || goodsFields.price?.show"
@@ -160,14 +160,24 @@
       <view v-if="tagStyle.show" class="tag-icon-box">
         <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" lazy-load />
       </view>
-      <image v-if="data.image_wh" class="md-img-box" :src="goodsImage" mode="widthFix" lazy-load />
+      <image
+        v-if="data.image_wh && !fixedImage"
+        class="md-img-box"
+        :src="goodsImage"
+        mode="widthFix"
+        :lazy-load="lazyLoad"
+      />
       <image
         v-else
         class="md-img-box"
         :src="goodsImage"
-        :style="[{ height: defaultImgWidth * 2 + 'rpx' }]"
+        :style="[
+          {
+            height: fixedImage ? fixedImageHeight : defaultImgWidth * 2 + 'rpx',
+          },
+        ]"
         mode="aspectFill"
-        lazy-load
+        :lazy-load="lazyLoad"
       />
       <view
         class="md-goods-content ss-flex-col ss-row-around ss-p-b-20 ss-p-t-20 ss-p-x-16"
@@ -581,7 +591,7 @@
   } from '@/sheep/hooks/useGoods';
   import { isArray } from 'lodash-es';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
-  import { shouldShowGoodsSubtitle } from './goods-column.mjs';
+  import { getGoodsImageHeight, shouldShowGoodsSubtitle } from './goods-column.mjs';
 
   // 数据
   let defaultImgWidth = ref(0);
@@ -691,14 +701,27 @@
       type: Boolean,
       default: false,
     },
+    fixedImage: {
+      type: Boolean,
+      default: false,
+    },
+    imageWidth: {
+      type: Number,
+      default: 345,
+    },
+    lazyLoad: {
+      type: Boolean,
+      default: true,
+    },
   });
 
+  const goodsImageFormat = process.env.UNI_PLATFORM === 'mp-weixin' ? 'jpg' : 'webp';
   const imageParams = {
-    xs: { width: 360, height: 360, quality: 80, format: 'webp' },
-    sm: { width: 240, height: 240, quality: 80, format: 'webp' },
-    md: { width: 360, height: 360, quality: 80, format: 'webp' },
-    lg: { width: 360, height: 360, quality: 80, format: 'webp' },
-    sl: { width: 750, height: 750, quality: 82, format: 'webp' },
+    xs: { width: 360, height: 360, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    sm: { width: 240, height: 240, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    md: { width: 360, height: 360, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    lg: { width: 360, height: 360, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    sl: { width: 750, height: 750, quality: 82, format: goodsImageFormat, transformOrigin: true },
   };
 
   const goodsImage = computed(() =>
@@ -707,6 +730,12 @@
       imageParams[props.size] || imageParams.sl,
     ),
   );
+
+  const fixedImageHeight = computed(() => {
+    const width = Number(props.imageWidth) > 0 ? Number(props.imageWidth) : 345;
+    const height = getGoodsImageHeight(width, props.data.image_wh);
+    return `${height}rpx`;
+  });
 
   // 优惠文案
   const discountText = computed(() => {
@@ -773,7 +802,7 @@
   const elId = `sheep_${Math.ceil(Math.random() * 10e5).toString(36)}`;
 
   function getGoodsPriceCardWH() {
-    if (props.size === 'md') {
+    if (props.size === 'md' && !props.fixedImage) {
       const view = uni.createSelectorQuery().in(proxy);
       view.select(`#${elId}`).fields({
         size: true,
@@ -925,6 +954,7 @@
       // width: 228rpx;
       width: 100%;
       height: 208rpx;
+      background-color: #f1f2f4;
     }
 
     .sm-goods-content {
@@ -981,6 +1011,7 @@
 
     .md-img-box {
       width: 100%;
+      background-color: #f1f2f4;
     }
 
     .md-goods-title {

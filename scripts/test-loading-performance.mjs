@@ -44,8 +44,20 @@ assert.match(
 assert.match(list, /isLoading|requestGeneration|loading/, 'list loading must have a request guard');
 assert.match(
   list,
-  /state\.pagination\.list = concat\(/,
-  'products must be committed before optional settlement data',
+  /appendUniqueGoods\([\s\S]*?state\.pagination\.list,[\s\S]*?Array\.isArray\(data\.list\)/,
+  'products must append without replacing the list array or losing large IDs',
+);
+assert.doesNotMatch(list, /state\.pagination\.list\s*=\s*concat\(/);
+assert.match(
+  list,
+  /:fixedImage="true"/,
+  'two-column list cards must reserve image space before load',
+);
+assert.match(list, /state\.pagination\.pageNo \+ 1/);
+assert.match(
+  list,
+  /if \(state\.isLoading[\s\S]*?return;/,
+  'pagination must have a single request lock',
 );
 assert.match(
   list,
@@ -64,7 +76,7 @@ assert.doesNotMatch(
 );
 assert.match(
   list,
-  /appendSettlementProduct\(data\.list, res\.data\)/,
+  /appendSettlementProduct\(reactivePageList, res\.data\)/,
   'settlement supplements only the current page results',
 );
 assert.doesNotMatch(
@@ -86,5 +98,10 @@ assert.match(
   'detail content must tolerate empty API values',
 );
 assert.match(detailContent, /isSigned/, 'detail content must preserve signed media URLs');
+assert.doesNotMatch(
+  home,
+  /onPageScroll\(\(\) => \{\}\)/,
+  'home must not bridge unused scroll events',
+);
 
 console.log('loading performance regression checks passed');

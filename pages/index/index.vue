@@ -46,7 +46,7 @@
 
 <script setup>
   import { computed, ref } from 'vue';
-  import { onLoad, onShow, onPageScroll, onPullDownRefresh } from '@dcloudio/uni-app';
+  import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import $share from '@/sheep/platform/share';
   // 隐藏原生tabBar
@@ -131,8 +131,6 @@
       uni.stopPullDownRefresh();
     }, 800);
   });
-
-  onPageScroll(() => {});
 </script>
 
 <style lang="scss" scoped>

@@ -29,6 +29,34 @@ assert.equal(
 );
 
 assert.equal(
+  buildThumbnailUrl(source, {
+    filesystem: 'aliyun',
+    imageHosts: [ossOrigin, cdnUrl],
+    transformOrigin: env.SHOPRO_OSS_ORIGIN,
+    width: 240,
+    height: 240,
+    quality: 80,
+    format: 'webp',
+  }),
+  `${env.SHOPRO_OSS_ORIGIN}/20260914/product.jpg?x-oss-process=image/resize,m_lfit,w_240,h_240/quality,q_80/format,webp`,
+  'CDN image URLs must use the configured OSS origin when CDN processing is unavailable',
+);
+
+assert.equal(
+  buildThumbnailUrl(`${cdnUrl}/20260914/product.jpg`, {
+    filesystem: 'qcloud',
+    imageHosts: [ossOrigin, cdnUrl],
+    transformOrigin: env.SHOPRO_OSS_ORIGIN,
+    width: 240,
+    height: 240,
+    quality: 80,
+    format: 'jpg',
+  }),
+  `${cdnUrl}/20260914/product.jpg?imageMogr2/thumbnail/240x240/rquality/80`,
+  'non-OSS filesystems must not be redirected to the OSS origin',
+);
+
+assert.equal(
   buildThumbnailUrl(`${source}?version=1`, {
     filesystem: 'aliyun',
     imageHosts: [ossOrigin],
