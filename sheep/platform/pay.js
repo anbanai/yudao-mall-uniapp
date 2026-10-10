@@ -14,110 +14,96 @@ import PayOrderApi from '@/sheep/api/pay/order';
  */
 
 export default class SheepPay {
-  constructor(payment, orderType, id) {
+  constructor(payment, orderType, id, channelCode) {
     this.payment = payment;
     this.id = id;
     this.orderType = orderType;
-    this.payAction();
+    this.channelCode = channelCode;
+    this.pending = this.payAction();
   }
 
-  payAction() {
+  async payAction() {
     const payAction = {
       WechatOfficialAccount: {
         wechat: () => {
-          this.wechatOfficialAccountPay();
+          return this.wechatOfficialAccountPay();
         },
         alipay: () => {
-          this.redirectPay(); // 现在公众号可以直接跳转支付宝页面
+          return this.redirectPay(); // 现在公众号可以直接跳转支付宝页面
         },
         wallet: () => {
-          this.walletPay();
+          return this.walletPay();
         },
         mock: () => {
-          this.mockPay();
+          return this.mockPay();
         },
       },
       WechatMiniProgram: {
         wechat: () => {
-          this.wechatMiniProgramPay();
+          return this.wechatMiniProgramPay();
         },
         alipay: () => {
-          this.copyPayLink();
+          return this.copyPayLink();
         },
         wallet: () => {
-          this.walletPay();
+          return this.walletPay();
         },
         mock: () => {
-          this.mockPay();
+          return this.mockPay();
         },
       },
       App: {
         wechat: () => {
-          this.wechatAppPay();
+          return this.wechatAppPay();
         },
         alipay: () => {
-          this.alipay();
+          return this.alipay();
         },
         wallet: () => {
-          this.walletPay();
+          return this.walletPay();
         },
         mock: () => {
-          this.mockPay();
+          return this.mockPay();
         },
       },
       H5: {
         wechat: () => {
-          this.wechatWapPay();
+          return this.wechatWapPay();
         },
         alipay: () => {
-          this.redirectPay();
+          return this.redirectPay();
         },
         wallet: () => {
-          this.walletPay();
+          return this.walletPay();
         },
         mock: () => {
-          this.mockPay();
+          return this.mockPay();
         },
       },
     };
-    return payAction[sheep.$platform.name][this.payment]();
+    try {
+      return await payAction[sheep.$platform.name][this.payment]();
+    } catch {
+      sheep.$helper.toast('支付请求失败，请稍后重试');
+    }
   }
 
   // 预支付
-  prepay(channel) {
-    return new Promise(async (resolve, reject) => {
-      let data = {
-        id: this.id,
-        channelCode: channel,
-        channelExtras: {},
-      };
-      // 特殊逻辑：微信公众号、小程序支付时，必须传入 openid
-      if (['wx_pub', 'wx_lite'].includes(channel)) {
-        const openid = await sheep.$platform.useProvider('wechat').getOpenid(true);
-        // 如果获取不到 openid，微信无法发起支付，此时需要引导
-        if (!openid) {
-          this.bindWeixin();
-          return;
-        }
-        data.channelExtras.openid = openid;
+  async prepay(channel) {
+    const data = { id: this.id, channelCode: channel, channelExtras: {} };
+    if (['wx_pub', 'wx_lite', 'yeepay_wx_lite'].includes(channel)) {
+      const openid = await sheep.$platform.useProvider('wechat').getOpenid(true);
+      if (!openid) {
+        this.bindWeixin();
+        return { code: -1, msg: '请先绑定微信' };
       }
-      // 发起预支付 API 调用
-      PayOrderApi.submitOrder(data).then((res) => {
-        // 成功时
-        res.code === 0 && resolve(res);
-        // 失败时
-        if (res.code !== 0 && res.msg.indexOf('无效的openid') >= 0) {
-          // 特殊逻辑：微信公众号、小程序支付时，必须传入 openid 不正确的情况
-          if (
-            res.msg.indexOf('无效的openid') >= 0 || // 获取的 openid 不正确时，或者随便输入了个 openid
-            res.msg.indexOf('下单账号与支付账号不一致') >= 0
-          ) {
-            // https://developers.weixin.qq.com/community/develop/doc/00008c53c347804beec82aed051c00
-            this.bindWeixin();
-          }
-        }
-      });
-    });
+      data.channelExtras.openid = openid;
+    }
+    const res = await PayOrderApi.submitOrder(data);
+    if (res.code !== 0 && /无效的openid|下单账号与支付账号不一致/.test(res.msg || '')) {
+      this.bindWeixin();
+    }
+    return res;
   }
   // #ifdef H5
   // 微信公众号 JSSDK 支付
@@ -170,8 +156,9 @@ export default class SheepPay {
 
   // 微信小程序支付
   async wechatMiniProgramPay() {
-    // let that = this;
-    let { code, data } = await this.prepay('wx_lite');
+    const channel = this.channelCode || 'wx_lite';
+    if (!['wx_lite', 'yeepay_wx_lite'].includes(channel)) return;
+    const { code, data } = await this.prepay(channel);
     if (code !== 0) {
       return;
     }
@@ -181,7 +168,7 @@ export default class SheepPay {
       provider: 'wxpay',
       timeStamp: payConfig.timeStamp,
       nonceStr: payConfig.nonceStr,
-      package: payConfig.packageValue,
+      package: payConfig.package || payConfig.packageValue,
       signType: payConfig.signType,
       paySign: payConfig.paySign,
       success: (res) => {
@@ -343,10 +330,13 @@ export function getPayMethods(channels) {
   const wechatMethod = payMethods[0];
   if (
     (platform === 'WechatOfficialAccount' && channels.includes('wx_pub')) ||
-    (platform === 'WechatMiniProgram' && channels.includes('wx_lite')) ||
+    (platform === 'WechatMiniProgram' && (channels.includes('wx_lite') || channels.includes('yeepay_wx_lite'))) ||
     (platform === 'App' && channels.includes('wx_app'))
   ) {
     wechatMethod.disabled = false;
+    if (platform === 'WechatMiniProgram') {
+      wechatMethod.channelCode = channels.includes('yeepay_wx_lite') ? 'yeepay_wx_lite' : 'wx_lite';
+    }
   }
 
   // 2. 处理【支付宝支付】

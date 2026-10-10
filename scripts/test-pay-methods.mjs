@@ -54,6 +54,11 @@ assert.deepEqual(
   'mini programs should map both supported channels',
 );
 
+assert.deepEqual(valuesFor(['yeepay_wx_lite']), ['wechat'], 'Yeepay must expose WeChat mini program payment');
+assert.equal(getPayMethods(['yeepay_wx_lite'])[0].channelCode, 'yeepay_wx_lite');
+assert.equal(getPayMethods(['wx_lite', 'yeepay_wx_lite'])[0].channelCode, 'yeepay_wx_lite');
+assert.equal(getPayMethods(['wx_lite'])[0].channelCode, 'wx_lite', 'retain enabled legacy WeChat channel');
+
 platform.name = 'Unknown';
 assert.deepEqual(
   valuesFor(['wx_app', 'alipay_app', 'wallet', 'mock']),
@@ -68,3 +73,28 @@ assert.deepEqual(
 );
 
 console.log('payment method filtering checks passed');
+
+const runtime = { $platform: { name: 'WechatMiniProgram', useProvider: () => ({ getOpenid: async () => 'OPEN-ID' }) }, $helper: { toast: () => {} } };
+let submission;
+let payment;
+let submitFailure = false;
+const toasts = [];
+runtime.$helper.toast = (message) => toasts.push(message);
+const Payment = new Function('sheep', 'PayOrderApi', 'uni',
+  source.replace(/^import .*;$/gm, '').replace('export default class', 'class').replace(/export function /g, 'function ') + '\nreturn SheepPay;'
+)(runtime, { submitOrder: async (data) => { if (submitFailure) throw new Error('synthetic-sensitive-response'); submission = data; return { code: 0, data: { displayContent: JSON.stringify({ timeStamp: '1', nonceStr: 'nonce', package: 'prepay_id=TN', signType: 'RSA', paySign: 'signed' }) } }; } }, { requestPayment: (data) => { payment = data; } });
+const pay = Object.assign(Object.create(Payment.prototype), { payment: 'wechat', id: 42, channelCode: 'yeepay_wx_lite', bindWeixin: () => {} });
+await pay.wechatMiniProgramPay();
+assert.equal(submission.channelCode, 'yeepay_wx_lite');
+assert.equal(submission.channelExtras.openid, 'OPEN-ID');
+assert.equal(payment.package, 'prepay_id=TN', 'use the standard package returned by Yeepay');
+runtime.$platform.useProvider = () => ({ getOpenid: async () => null });
+const missingOpenId = await pay.prepay('yeepay_wx_lite');
+assert.notEqual(missingOpenId.code, 0, 'missing OpenID must settle instead of hanging');
+console.log('Yeepay mini program submission checks passed');
+
+runtime.$platform.useProvider = () => ({ getOpenid: async () => 'OPEN-ID' });
+submitFailure = true;
+await assert.doesNotReject(() => pay.payAction(), 'constructor dispatch must settle failed prepayment');
+assert.deepEqual(toasts, ['支付请求失败，请稍后重试'], 'network failures show a safe retry message');
+console.log('payment dispatch failure checks passed');
