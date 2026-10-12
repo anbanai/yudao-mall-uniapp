@@ -6,7 +6,7 @@ import $platform from '@/sheep/platform';
 import $router from '@/sheep/router';
 import user from './user';
 import sys from './sys';
-import { baseUrl, h5Url, cdnUrl, ossOrigin, filesystem } from '@/sheep/config';
+import { baseUrl, h5Url, cdnUrl, ossOrigin, filesystem, tenantId } from '@/sheep/config';
 
 const app = defineStore('app', {
   state: () => ({
@@ -133,6 +133,7 @@ const adaptTenant = async () => {
   // 1. 获取当前租户 ID
   const oldTenantId = getTenantId();
   let newTenantId = null;
+  let miniProgramFallbackTenantId = null;
 
   try {
     // 2.1 情况一：H5：根据 url 参数、域名来获取新的租户ID
@@ -153,14 +154,15 @@ const adaptTenant = async () => {
 
     // 2.2 情况二：微信小程序：小程序环境下的处理逻辑 - 根据 appId 获取租户
     // #ifdef MP
+    miniProgramFallbackTenantId = tenantId;
     const appId = uni.getAccountInfoSync()?.miniProgram?.appId;
     if (appId) {
       const tenantResult = await getTenantByWebsite(appId);
       if (tenantResult?.code !== 0) {
         throw new Error(tenantResult?.msg || `租户查询失败: ${appId}`);
       }
-      newTenantId = tenantResult.data?.id;
-      if (!newTenantId) {
+      newTenantId = tenantResult.data?.id || miniProgramFallbackTenantId;
+      if (!tenantResult.data?.id) {
         console.warn(`[租户] AppID 未绑定租户，将继续使用默认租户: ${appId}`);
       }
     }
@@ -179,6 +181,8 @@ const adaptTenant = async () => {
     }
   } catch (error) {
     console.error('adaptTenant 执行失败:', error);
+    // 小程序租户查询失败时也回退到配置的默认租户，避免沿用设备上残留的旧租户。
+    if (miniProgramFallbackTenantId) newTenantId = miniProgramFallbackTenantId;
   }
 };
 

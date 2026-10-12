@@ -544,6 +544,8 @@ assert.match(wrapper, /source\.dispose\(\)/);
 const appStore = read('../sheep/store/app.js');
 assert.match(appStore, /AppID 未绑定租户/);
 assert.match(appStore, /tenantResult\?\.code !== 0/);
+assert.match(appStore, /miniProgramFallbackTenantId = tenantId/);
+assert.match(appStore, /避免沿用设备上残留的旧租户/);
 for (const component of ['s-goods-group', 's-goods-category']) {
   assert.match(
     read(`../sheep/components/${component}/${component}.vue`),
