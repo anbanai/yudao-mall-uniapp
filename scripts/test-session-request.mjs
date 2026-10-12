@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as session from '../sheep/helper/sessionEpoch.mjs';
-const source=readFileSync(new URL('../sheep/request/index.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/^export const /gm,'const ').replace('export default request;','return { request, http };');
+const source=readFileSync(new URL('../sheep/request/index.js',import.meta.url),'utf8').replace(/^import[\s\S]*?;\n/gm,'').replace(/^export const /gm,'const ').replace('export default request;','return { request, http };');
 function setup() {
   let tokens=0,prompts=0,refreshes=0;
   const user={isLogin:true,isFormalLogin:true,ensureUserInfo:async()=>{},setToken:()=>tokens++,logout:()=>{}};
@@ -32,7 +32,7 @@ test('stale queued request cannot be relabeled with a new epoch',async()=>{
 });
 test('mini-program provider accepts the installed login epoch but refuses superseded completion', async () => {
   const providerSource=readFileSync(new URL('../sheep/platform/provider/wechat/miniProgram.js',import.meta.url),'utf8')
-    .replace(/^import .*;\n/gm,'').replace('export default {','return {');
+    .replace(/^import[\s\S]*?;\n/gm,'').replace('export default {','return {');
   for (const superseded of [false,true]) {
     const writes=[];
     const uni={login:async()=>({errMsg:'login:ok',code:'wx-code'}),setStorageSync:(key,value)=>writes.push([key,value])};

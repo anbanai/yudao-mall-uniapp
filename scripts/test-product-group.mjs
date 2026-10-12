@@ -575,6 +575,27 @@ assert.match(
   /if \(res\.code !== 0\) \{[\s\S]*?state\.detailLoadError = true;[\s\S]*?state\.skeletonLoading = false;/,
   '商品详情业务错误不能伪装成商品下架',
 );
+for (const page of [
+  '../pages/goods/groupon.vue',
+  '../pages/goods/point.vue',
+  '../pages/goods/seckill.vue',
+  '../pages/activity/groupon/detail.vue',
+]) {
+  const source = read(page);
+  assert.match(
+    source,
+    /SpuApi\.getSpuDetail\([\s\S]*?catch \(error\)/,
+    `${page} 必须处理商品详情加载失败，避免未处理 Promise rejection`,
+  );
+}
+for (const component of ['s-groupon-block', 's-seckill-block', 's-point-card']) {
+  const source = read(`../sheep/components/${component}/${component}.vue`);
+  assert.match(
+    source,
+    /async function getSpuDetail\([\s\S]*?catch \(error\)/,
+    `${component} 必须跳过加载失败的商品，避免未处理 Promise rejection`,
+  );
+}
 const goodsCard = read('../sheep/components/s-goods-card/s-goods-card.vue');
 assert.match(goodsCard, /商品加载失败，请重试/);
 assert.match(goodsCard, /当前首页配置的商品不存在或不可售/);

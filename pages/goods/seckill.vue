@@ -240,7 +240,15 @@
 
   // 查询商品
   const getSpu = async (id) => {
-    const { data } = await SpuApi.getSpuDetail(id);
+    let data;
+    try {
+      ({ data } = await SpuApi.getSpuDetail(id));
+    } catch (error) {
+      console.error('[秒杀商品] 商品详情加载失败', { id, error });
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     if (!data) {
       state.goodsInfo = null;
       state.skeletonLoading = false;

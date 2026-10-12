@@ -50,7 +50,7 @@ function loadInterceptor(store, uni, showAuthModal = () => {}) {
   const bindings = { ...session, Request, apiPath: '/app-api', baseUrl: 'https://test.invalid', tenantId: 1,
     $store: () => store, $platform: {}, showAuthModal, AuthUtil: {}, getTerminal: () => 1, uni };
   const code = readFileSync(new URL('../sheep/request/index.js', import.meta.url), 'utf8')
-    .replace(/^import .*;\n/gm, '').replace(/^export const /gm, 'const ')
+    .replace(/^import[\s\S]*?;\n/gm, '').replace(/^export const /gm, 'const ')
     .replace('export default request;', 'return http;');
   return new Function(...Object.keys(bindings), code)(...Object.values(bindings));
 }

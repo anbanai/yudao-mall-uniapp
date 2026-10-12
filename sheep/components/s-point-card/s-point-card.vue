@@ -295,8 +295,13 @@
    * @return {Promise<undefined>} 商品列表
    */
   async function getSpuDetail(ids) {
-    const { data: spu } = await SpuApi.getSpuDetail(ids);
-    return spu;
+    try {
+      const { data: spu } = await SpuApi.getSpuDetail(ids);
+      return spu;
+    } catch (error) {
+      console.error('[积分商品组件] 商品详情加载失败', { id: ids, error });
+      return null;
+    }
   }
 
   async function concatActivity(list) {
@@ -305,7 +310,8 @@
     }
     // 循环获取活动商品SPU详情并添加到spuList
     for (const activity of list) {
-      state.spuList.push(normalizePointSpu(await getSpuDetail(activity.spuId)));
+      const spu = await getSpuDetail(activity.spuId);
+      if (spu) state.spuList.push(normalizePointSpu(spu));
     }
 
     // 循环活动列表

@@ -31,9 +31,6 @@
       actionText="重新加载"
       @clickAction="refreshUserData"
     />
-    <view class="ss-p-30 bg-white">
-      <button @tap="sheep.$router.go('/pages/user/benefits/index')">会员权益中心</button>
-    </view>
   </s-layout>
 </template>
 

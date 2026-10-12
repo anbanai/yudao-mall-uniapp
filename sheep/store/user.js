@@ -230,7 +230,12 @@ const user = defineStore('user', {
     // 登录后，加载各种信息
     async loginAfter() {
       const epoch = sessionEpoch();
-      await this.ensureUserInfo();
+      try {
+        await this.ensureUserInfo();
+      } catch (error) {
+        console.error('[用户登录] 用户信息加载失败', error);
+        return;
+      }
       if (!isCurrentSession(epoch)) return;
 
       if (!this.isFormalLogin) {

@@ -324,7 +324,22 @@
       state.activity = activity;
       state.grouponNum = activity.userSize;
       // 加载商品信息
-      const { data: spu } = await SpuApi.getSpuDetail(activity.spuId);
+      let spu;
+      try {
+        ({ data: spu } = await SpuApi.getSpuDetail(activity.spuId));
+      } catch (error) {
+        console.error('[拼团详情] 商品详情加载失败', { id: activity.spuId, error });
+        state.data = null;
+        state.goodsInfo = {};
+        state.loading = false;
+        return;
+      }
+      if (!spu) {
+        state.data = null;
+        state.goodsInfo = {};
+        state.loading = false;
+        return;
+      }
       state.goodsId = spu.id;
       // 默认显示最低价
       activity.products.forEach((product) => {

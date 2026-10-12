@@ -30,5 +30,10 @@ assert.match(userPage, /@clickAction="refreshUserData"/);
 assert.match(userInfoPage, /state\.loadError/);
 assert.match(userInfoPage, /@clickAction="getUserInfo"/);
 assert.match(userInfoPage, /console\.error\('\[用户资料\] 用户信息加载失败'/);
+assert.match(
+  userStore,
+  /async loginAfter\(\) \{[\s\S]*?try \{[\s\S]*?await this\.ensureUserInfo\(\);[\s\S]*?catch \(error\) \{[\s\S]*?console\.error\(/,
+  '登录后的后台用户信息加载失败必须被捕获，不能产生未处理 Promise rejection',
+);
 
 console.log('user error visibility checks passed');
