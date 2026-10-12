@@ -168,21 +168,22 @@ const adaptTenant = async () => {
     }
     // #endif
 
-    // 3. 如果是新租户（不相等），则进行切换
-    // noinspection EqualityComparisonWithCoercionJS
-    if (newTenantId && newTenantId != oldTenantId) {
-      // 清理掉登录用户的 token
-      const userStore = user();
-      userStore.resetUserData();
-
-      // 设置新的 tenantId 到本地存储
-      uni.setStorageSync('tenant-id', newTenantId);
-      console.log('租户 ID 已更新:', `${oldTenantId} -> ${newTenantId}`);
-    }
   } catch (error) {
     console.error('adaptTenant 执行失败:', error);
     // 小程序租户查询失败时也回退到配置的默认租户，避免沿用设备上残留的旧租户。
     if (miniProgramFallbackTenantId) newTenantId = miniProgramFallbackTenantId;
+  }
+
+  // 3. 如果是新租户（不相等），则进行切换。放在 try/catch 之后，确保异常回退也会生效。
+  // noinspection EqualityComparisonWithCoercionJS
+  if (newTenantId && newTenantId != oldTenantId) {
+    // 清理掉登录用户的 token
+    const userStore = user();
+    userStore.resetUserData();
+
+    // 设置新的 tenantId 到本地存储
+    uni.setStorageSync('tenant-id', newTenantId);
+    console.log('租户 ID 已更新:', `${oldTenantId} -> ${newTenantId}`);
   }
 };
 
