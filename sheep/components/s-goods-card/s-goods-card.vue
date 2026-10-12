@@ -4,7 +4,10 @@
     v-if="state.loaded && state.error"
     icon="/static/internet-empty.png"
     text="商品加载失败，请重试"
+    showAction
+    actionText="重新加载"
     padding-top="60"
+    @clickAction="retry"
   />
   <s-empty
     v-else-if="state.loaded && !state.goodsList.length"
@@ -225,10 +228,12 @@
     return Array.isArray(response.data) ? response.data : [];
   }
 
-  // 初始化
-  onMounted(async () => {
+  async function loadGoods() {
     state.error = false;
     state.loaded = false;
+    state.goodsList = [];
+    state.leftGoodsList = [];
+    state.rightGoodsList = [];
     try {
       // 商品核心数据到达后立即渲染，营销信息随后补充。
       const ids = Array.isArray(spuIds) ? spuIds : [];
@@ -248,7 +253,14 @@
     } finally {
       state.loaded = true;
     }
-  });
+  }
+
+  function retry() {
+    void loadGoods();
+  }
+
+  // 初始化
+  onMounted(loadGoods);
 </script>
 
 <style lang="scss" scoped>

@@ -556,6 +556,9 @@ const goodsCard = read('../sheep/components/s-goods-card/s-goods-card.vue');
 assert.match(goodsCard, /商品加载失败，请重试/);
 assert.match(goodsCard, /当前首页配置的商品不存在或不可售/);
 assert.match(goodsCard, /state\.error = true/);
+assert.match(goodsCard, /showAction/);
+assert.match(goodsCard, /@clickAction="retry"/);
+assert.match(goodsCard, /function retry\(\)/);
 for (const component of ['s-goods-group', 's-goods-category']) {
   assert.match(
     read(`../sheep/components/${component}/${component}.vue`),
