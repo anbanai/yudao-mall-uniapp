@@ -23,6 +23,14 @@
         :refresh-key="productGroupRefreshKey"
       />
     </s-block>
+    <s-empty
+      v-if="userDataError"
+      icon="/static/internet-empty.png"
+      :text="userDataError"
+      showAction
+      actionText="重新加载"
+      @clickAction="refreshUserData"
+    />
     <view class="ss-p-30 bg-white">
       <button @tap="sheep.$router.go('/pages/user/benefits/index')">会员权益中心</button>
     </view>
@@ -40,8 +48,30 @@
   });
 
   const template = computed(() => sheep.$store('app').template.user);
+  const userStore = sheep.$store('user');
   const productGroupRefreshKey = ref(0);
+  const userDataError = ref('');
   let hasShown = false;
+
+  function getUserDataErrorMessage(error) {
+    return (
+      error?.data?.msg ||
+      error?.response?.data?.msg ||
+      error?.response?.msg ||
+      error?.message ||
+      '用户信息加载失败，请重试'
+    );
+  }
+
+  async function refreshUserData() {
+    try {
+      userDataError.value = '';
+      await userStore.updateUserData({ force: true });
+    } catch (error) {
+      userDataError.value = getUserDataErrorMessage(error);
+      console.error('[用户中心] 用户信息加载失败', error);
+    }
+  }
 
   onShow(() => {
     if (hasShown) {
@@ -49,14 +79,13 @@
     } else {
       hasShown = true;
     }
-    sheep.$store('user').updateUserData({ force: true });
+    void refreshUserData();
   });
 
   onPullDownRefresh(() => {
-    sheep.$store('user').updateUserData({ force: true });
-    setTimeout(function () {
+    void refreshUserData().finally(() => {
       uni.stopPullDownRefresh();
-    }, 800);
+    });
   });
 
   onPageScroll(() => {});

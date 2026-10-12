@@ -33,6 +33,15 @@ function logProductResponse(ids, response) {
   }
 }
 
+function ensureProductResponseOk(response) {
+  if (response?.code !== 0) {
+    const error = new Error(response?.msg || '商品详情加载失败');
+    error.response = response;
+    throw error;
+  }
+  return response;
+}
+
 const SpuApi = {
   // 获得商品 SPU 列表
   getSpuListByIds: async (ids) => {
@@ -75,16 +84,17 @@ const SpuApi = {
     });
   },
   // 查询商品
-  getSpuDetail: (id) => {
-    return request({
+  getSpuDetail: async (id) => {
+    const response = await request({
       url: '/product/spu/get-detail',
       method: 'GET',
       params: { id },
       custom: {
         showLoading: false,
-        showError: false,
+        showError: true,
       },
     });
+    return ensureProductResponseOk(response);
   },
 };
 export default SpuApi;

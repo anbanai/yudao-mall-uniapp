@@ -1,4 +1,8 @@
-import { sessionEpoch, isCurrentSession, staleSessionResult } from '@/sheep/helper/sessionEpoch.mjs';
+import {
+  sessionEpoch,
+  isCurrentSession,
+  staleSessionResult,
+} from '@/sheep/helper/sessionEpoch.mjs';
 /**
  * Shopro-request
  * @description api模块管理，loading配置，请求拦截，错误处理
@@ -85,7 +89,8 @@ http.interceptors.request.use(
     if (config.custom.formalAuth) {
       const userStore = $store('user');
       await userStore.ensureUserInfo();
-      if (!isCurrentSession(config.custom.sessionEpoch)) return Promise.reject(staleSessionResult());
+      if (!isCurrentSession(config.custom.sessionEpoch))
+        return Promise.reject(staleSessionResult());
       if (!userStore.isFormalLogin) {
         showAuthModal();
         return Promise.reject({ code: 'PHONE_AUTH_REQUIRED', msg: '请先授权手机号' });
@@ -132,11 +137,18 @@ http.interceptors.response.use(
       return staleSessionResult();
     }
     // 约定：如果是 /auth/ 下的 URL 地址，并且返回了 accessToken 说明是登录相关的接口，则自动设置登陆令牌
-    if (response.data.code === 0 && response.config.url.indexOf('/member/auth/') >= 0 && response.data?.data?.accessToken) {
+    if (
+      response.data.code === 0 &&
+      response.config.url.indexOf('/member/auth/') >= 0 &&
+      response.data?.data?.accessToken
+    ) {
       const userStore = $store('user');
       if (response.config.url === '/member/auth/refresh-token') {
         // Refresh preserves account identity, pending requests, and its scoped OpenID.
-        userStore.setToken(response.data.data.accessToken, response.data.data.refreshToken, { load: false, preserveInfo: true });
+        userStore.setToken(response.data.data.accessToken, response.data.data.refreshToken, {
+          load: false,
+          preserveInfo: true,
+        });
       } else {
         // Ordinary SMS/password/social login is an account switch even if the old token exists.
         // Mark the installed epoch for provider continuations after this intentional invalidation.
@@ -248,6 +260,9 @@ http.interceptors.response.use(
         });
       }
       error.config.custom.showLoading && closeLoading();
+      if (error.config.custom.showError) {
+        return Promise.reject(error);
+      }
     }
 
     return false;

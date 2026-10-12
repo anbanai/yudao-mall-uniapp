@@ -8,6 +8,7 @@ const UserApi = {
       method: 'GET',
       custom: {
         showLoading: false,
+        showError: true,
         auth: true,
       },
     });

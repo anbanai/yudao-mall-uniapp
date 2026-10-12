@@ -1,7 +1,16 @@
 <!-- 用户信息 -->
 <template>
   <s-layout title="用户信息" class="set-userinfo-wrap">
+    <s-empty
+      v-if="state.loadError"
+      icon="/static/internet-empty.png"
+      :text="state.loadError"
+      showAction
+      actionText="重新加载"
+      @clickAction="getUserInfo"
+    />
     <uni-forms
+      v-else
       :model="state.model"
       :rules="state.rules"
       labelPosition="left"
@@ -147,7 +156,7 @@
 
     <!-- #ifndef MP-WEIXIN -->
     <!-- 当前社交平台的绑定关系 -->
-    <view v-if="sheep.$platform.name !== 'H5'">
+    <view v-if="!state.loadError && sheep.$platform.name !== 'H5'">
       <view class="title-box ss-p-l-30">第三方账号绑定</view>
       <view class="account-list ss-flex ss-row-between">
         <view v-if="'WechatOfficialAccount' === sheep.$platform.name" class="ss-flex ss-col-center">
@@ -191,7 +200,7 @@
     </view>
     <!-- #endif -->
 
-    <su-fixed bottom placeholder bg="none">
+    <su-fixed v-if="!state.loadError" bottom placeholder bg="none">
       <view class="footer-box ss-p-20">
         <button class="ss-rest-button logout-btn ui-Shadow-Main" @tap="onSubmit">保存</button>
       </view>
@@ -216,6 +225,7 @@
     rules: {},
     thirdInfo: {}, // 社交用户的信息
     isAuthorizing: false,
+    loadError: '',
   });
 
   const placeholderStyle = 'color:#BBBBBB;font-size:28rpx;line-height:normal';
@@ -320,21 +330,32 @@
 
   // 获得用户信息
   const getUserInfo = async () => {
-    // 个人信息
-    const userInfo = await sheep.$store('user').getInfo();
-    state.model = clone(userInfo);
+    try {
+      state.loadError = '';
+      // 个人信息
+      const userInfo = await sheep.$store('user').getInfo();
+      state.model = clone(userInfo);
 
-    // 获得社交用户的信息
-    // #ifndef MP-WEIXIN
-    if (sheep.$platform.name !== 'H5') {
-      const result = await sheep.$platform.useProvider('wechat').getInfo();
-      state.thirdInfo = result || {};
+      // 获得社交用户的信息
+      // #ifndef MP-WEIXIN
+      if (sheep.$platform.name !== 'H5') {
+        const result = await sheep.$platform.useProvider('wechat').getInfo();
+        state.thirdInfo = result || {};
+      }
+      // #endif
+    } catch (error) {
+      state.loadError =
+        error?.data?.msg ||
+        error?.response?.data?.msg ||
+        error?.response?.msg ||
+        error?.message ||
+        '用户信息加载失败，请重试';
+      console.error('[用户资料] 用户信息加载失败', error);
     }
-    // #endif
   };
 
   onBeforeMount(() => {
-    getUserInfo();
+    void getUserInfo();
   });
 </script>
 

@@ -8,6 +8,14 @@
       <detailSkeleton v-if="state.skeletonLoading" />
       <!-- 下架/售罄提醒 -->
       <s-empty
+        v-else-if="state.detailLoadError"
+        text="商品加载失败，请重试"
+        icon="/static/internet-empty.png"
+        showAction
+        actionText="重新加载"
+        @clickAction="loadGoodsDetail"
+      />
+      <s-empty
         v-else-if="state.goodsInfo === null"
         text="商品不存在或已下架"
         icon="/static/soldout-empty.png"
@@ -266,6 +274,7 @@
     goodsId: 0,
     skeletonLoading: true, // SPU 加载中
     goodsInfo: {}, // SPU 信息
+    detailLoadError: false, // SPU 请求失败
     publicGroups: [],
     showSelectSku: false, // 是否展示 SKU 选择弹窗
     selectedSku: {}, // 选中的 SKU
@@ -423,6 +432,49 @@
     }
   }
 
+  function loadGoodsDetail() {
+    state.detailLoadError = false;
+    state.skeletonLoading = true;
+    state.goodsInfo = {};
+    return SpuApi.getSpuDetail(state.goodsId)
+      .then((res) => {
+        if (res.code !== 0) {
+          state.detailLoadError = true;
+          state.goodsInfo = null;
+          state.skeletonLoading = false;
+          return;
+        }
+        if (!res.data) {
+          state.goodsInfo = null;
+          state.skeletonLoading = false;
+          return;
+        }
+        // 加载到商品
+        state.skeletonLoading = false;
+        state.goodsInfo = res.data;
+        // 获取结算信息
+        getSettlementByIds(state.goodsId);
+        // 加载是否收藏
+        if (isLogin.value) {
+          FavoriteApi.isFavoriteExists(state.goodsId, 'goods').then((res) => {
+            if (res.code !== 0) {
+              return;
+            }
+            state.goodsInfo.favorite = res.data;
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('[商品详情] 商品加载失败', {
+          id: state.goodsId,
+          error,
+        });
+        state.detailLoadError = true;
+        state.goodsInfo = null;
+        state.skeletonLoading = false;
+      });
+  }
+
   onLoad((options) => {
     // 非法参数
     if (!options.id) {
@@ -432,27 +484,7 @@
     }
     state.goodsId = options.id;
     // 1. 加载商品信息
-    SpuApi.getSpuDetail(state.goodsId).then((res) => {
-      if (res.code !== 0 || !res.data) {
-        state.goodsInfo = null;
-        state.skeletonLoading = false;
-        return;
-      }
-      // 加载到商品
-      state.skeletonLoading = false;
-      state.goodsInfo = res.data;
-      // 获取结算信息
-      getSettlementByIds(state.goodsId);
-      // 加载是否收藏
-      if (isLogin.value) {
-        FavoriteApi.isFavoriteExists(state.goodsId, 'goods').then((res) => {
-          if (res.code !== 0) {
-            return;
-          }
-          state.goodsInfo.favorite = res.data;
-        });
-      }
-    });
+    void loadGoodsDetail();
 
     // 2. 加载优惠劵信息
     getCoupon();

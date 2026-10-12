@@ -552,6 +552,29 @@ assert.match(spuApi, /getTenantId/);
 assert.match(spuApi, /showError: true/);
 assert.match(spuApi, /商品接口失败/);
 assert.match(spuApi, /missingIds/);
+assert.match(spuApi, /url: '\/product\/spu\/get-detail'/);
+assert.match(spuApi, /showError: true/);
+assert.match(
+  spuApi,
+  /function ensureProductResponseOk\(response\)[\s\S]*?error\.response = response;[\s\S]*?throw error;/,
+  '商品详情业务错误必须保留真实响应并进入失败分支',
+);
+const goodsDetailPage = read('../pages/goods/index.vue');
+assert.match(
+  goodsDetailPage,
+  /SpuApi\.getSpuDetail\(state\.goodsId\)[\s\S]*?\.catch\(\(error\) => \{[\s\S]*?state\.goodsInfo = null;[\s\S]*?state\.skeletonLoading = false;/,
+  '商品详情接口异常时必须结束骨架屏并显示不可用状态',
+);
+assert.match(
+  goodsDetailPage,
+  /v-else-if="state\.detailLoadError"[\s\S]*?@clickAction="loadGoodsDetail"/,
+  '商品详情错误态必须提供当前商品重试入口',
+);
+assert.match(
+  goodsDetailPage,
+  /if \(res\.code !== 0\) \{[\s\S]*?state\.detailLoadError = true;[\s\S]*?state\.skeletonLoading = false;/,
+  '商品详情业务错误不能伪装成商品下架',
+);
 const goodsCard = read('../sheep/components/s-goods-card/s-goods-card.vue');
 assert.match(goodsCard, /商品加载失败，请重试/);
 assert.match(goodsCard, /当前首页配置的商品不存在或不可售/);

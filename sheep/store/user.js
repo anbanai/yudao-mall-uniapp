@@ -60,8 +60,14 @@ const user = defineStore('user', {
     async getInfo() {
       const epoch = sessionEpoch();
       const requestId = ++latestUserInfoRequest;
-      const promise = UserApi.getUserInfo().then(({ code, data }) => {
-        if (!isCurrentSession(epoch) || requestId !== latestUserInfoRequest || code !== 0) return;
+      const promise = UserApi.getUserInfo().then((response) => {
+        if (!response || response.code !== 0) {
+          const error = new Error(response?.msg || '用户信息加载失败');
+          error.response = response;
+          throw error;
+        }
+        const { data } = response;
+        if (!isCurrentSession(epoch) || requestId !== latestUserInfoRequest) return;
         this.userInfo = data;
         this.userInfoLoaded = true;
         return data;
