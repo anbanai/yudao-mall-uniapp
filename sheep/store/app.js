@@ -155,8 +155,14 @@ const adaptTenant = async () => {
     // #ifdef MP
     const appId = uni.getAccountInfoSync()?.miniProgram?.appId;
     if (appId) {
-      const { data } = await getTenantByWebsite(appId);
-      newTenantId = data?.id;
+      const tenantResult = await getTenantByWebsite(appId);
+      if (tenantResult?.code !== 0) {
+        throw new Error(tenantResult?.msg || `租户查询失败: ${appId}`);
+      }
+      newTenantId = tenantResult.data?.id;
+      if (!newTenantId) {
+        console.warn(`[租户] AppID 未绑定租户，将继续使用默认租户: ${appId}`);
+      }
     }
     // #endif
 

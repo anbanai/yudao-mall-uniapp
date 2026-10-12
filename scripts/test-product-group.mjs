@@ -474,6 +474,7 @@ assert.equal(sourceState.unavailable, true);
 await shelf.load({ sourceType: 'manual', spuIds: [] });
 assert.equal(sourceState.unavailable, false);
 assert.deepEqual(sourceState.list, []);
+assert.equal(sourceState.loaded, true, 'an empty manual product selection must finish loading');
 
 // Retry revalidates visibility; stale source responses and post-unmount results are ignored.
 let retrySourceCalls = 0;
@@ -536,8 +537,13 @@ const block = read('../sheep/components/s-block-item/s-block-item.vue');
 assert.match(block, /<s-product-list[\s\S]*?:refresh-key="refreshKey"/);
 const wrapper = read('../sheep/components/s-product-list/s-product-list.vue');
 assert.match(wrapper, /:goods-list="state.list"/);
+assert.match(wrapper, /state\.loaded && !state\.list\.length/);
+assert.match(wrapper, /暂无商品/);
 assert.match(wrapper, /props\.refreshKey/);
 assert.match(wrapper, /source\.dispose\(\)/);
+const appStore = read('../sheep/store/app.js');
+assert.match(appStore, /AppID 未绑定租户/);
+assert.match(appStore, /tenantResult\?\.code !== 0/);
 for (const component of ['s-goods-group', 's-goods-category']) {
   assert.match(
     read(`../sheep/components/${component}/${component}.vue`),

@@ -12,9 +12,9 @@
       @clickAction="refresh"
     />
     <s-empty
-      v-else-if="state.loaded && isGroup && !state.list.length"
+      v-else-if="state.loaded && !state.list.length"
       icon="/static/data-empty.png"
-      :text="state.unavailable ? '暂无可用分组' : '该分组暂无商品'"
+      :text="emptyText"
       padding-top="60"
     />
     <s-goods-shelves v-else :data="data" :styles="styles" :goods-list="state.list" />
@@ -45,6 +45,10 @@
   });
   const isGroup = computed(() => props.data.sourceType === 'group');
   const state = reactive(createProductListState());
+  const emptyText = computed(() => {
+    if (!isGroup.value) return '暂无商品';
+    return state.unavailable ? '暂无可用分组' : '该分组暂无商品';
+  });
   const source = createProductListSource(
     {
       getGroups: GroupApi.getGroupListByIds,
