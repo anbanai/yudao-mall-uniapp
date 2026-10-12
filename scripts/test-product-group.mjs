@@ -547,6 +547,15 @@ assert.match(appStore, /tenantResult\?\.code !== 0/);
 assert.match(appStore, /miniProgramFallbackTenantId = tenantId/);
 assert.match(appStore, /避免沿用设备上残留的旧租户/);
 assert.match(appStore, /确保异常回退也会生效/);
+const spuApi = read('../sheep/api/product/spu.js');
+assert.match(spuApi, /getTenantId/);
+assert.match(spuApi, /showError: true/);
+assert.match(spuApi, /商品接口失败/);
+assert.match(spuApi, /missingIds/);
+const goodsCard = read('../sheep/components/s-goods-card/s-goods-card.vue');
+assert.match(goodsCard, /商品加载失败，请重试/);
+assert.match(goodsCard, /当前首页配置的商品不存在或不可售/);
+assert.match(goodsCard, /state\.error = true/);
 for (const component of ['s-goods-group', 's-goods-category']) {
   assert.match(
     read(`../sheep/components/${component}/${component}.vue`),

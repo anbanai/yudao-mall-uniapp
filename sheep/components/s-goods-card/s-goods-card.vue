@@ -1,5 +1,17 @@
 <!-- 装修商品组件：商品卡片 -->
 <template>
+  <s-empty
+    v-if="state.loaded && state.error"
+    icon="/static/internet-empty.png"
+    text="商品加载失败，请重试"
+    padding-top="60"
+  />
+  <s-empty
+    v-else-if="state.loaded && !state.goodsList.length"
+    icon="/static/data-empty.png"
+    text="当前首页配置的商品不存在或不可售"
+    padding-top="60"
+  />
   <!-- 商品卡片 -->
   <view>
     <!-- 布局1. 单列大图（上图，下内容）-->
@@ -164,6 +176,8 @@
     goodsList: [],
     leftGoodsList: [],
     rightGoodsList: [],
+    error: false,
+    loaded: false,
   });
   const props = defineProps({
     data: {
@@ -204,15 +218,21 @@
    * @return {Promise<undefined>} 商品列表
    */
   async function getGoodsListByIds(ids) {
-    const { data } = await SpuApi.getSpuListByIds(ids);
-    return Array.isArray(data) ? data : [];
+    const response = await SpuApi.getSpuListByIds(ids);
+    if (response?.code !== 0) {
+      throw new Error(response?.msg || '商品接口返回失败');
+    }
+    return Array.isArray(response.data) ? response.data : [];
   }
 
   // 初始化
   onMounted(async () => {
+    state.error = false;
+    state.loaded = false;
     try {
       // 商品核心数据到达后立即渲染，营销信息随后补充。
-      state.goodsList = await getGoodsListByIds(spuIds.join(','));
+      const ids = Array.isArray(spuIds) ? spuIds : [];
+      state.goodsList = await getGoodsListByIds(ids.join(','));
       if (layoutType === LayoutTypeEnum.TWO_COL) {
         appendGoodsToColumns(state.leftGoodsList, state.rightGoodsList, state.goodsList);
       }
@@ -224,6 +244,9 @@
         .catch(() => {});
     } catch {
       state.goodsList = [];
+      state.error = true;
+    } finally {
+      state.loaded = true;
     }
   });
 </script>
