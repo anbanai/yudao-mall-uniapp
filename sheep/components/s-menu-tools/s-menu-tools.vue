@@ -31,7 +31,7 @@
   function onClick(item) {
     closeMenuTools();
     if (item.type === 'kefu') {
-      void showKefuModal();
+      void showKefuModal({}, sheep.$router);
       return;
     }
     if (item.url) sheep.$router.go(item.url);

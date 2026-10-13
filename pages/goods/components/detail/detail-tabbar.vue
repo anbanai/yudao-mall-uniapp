@@ -137,7 +137,7 @@
   const onChat = () => {
     void showKefuModal({
       id: props.modelValue.id,
-    });
+    }, sheep.$router);
   };
 </script>
 

@@ -85,7 +85,7 @@ export function closeMenuTools() {
 }
 
 // 打开客服弹框。企微配置缺失或读取失败时回退到在线客服页。
-export async function showKefuModal(options = {}) {
+export async function showKefuModal(options = {}, router) {
   const modal = $store('modal');
   const tradeConfig = $store('tradeConfig');
   const chatOptions = options && typeof options === 'object' ? { ...options } : {};
@@ -98,8 +98,7 @@ export async function showKefuModal(options = {}) {
         state.kefuOptions = chatOptions;
       });
       // keep the existing deep-linkable online chat page as the fallback
-      const sheepRouter = (await import('@/sheep/router')).default;
-      sheepRouter.go('/pages/chat/index', chatOptions);
+      router?.go('/pages/chat/index', chatOptions);
       return false;
     }
     modal.$patch((state) => {
@@ -112,8 +111,7 @@ export async function showKefuModal(options = {}) {
       state.kefu = false;
       state.kefuOptions = chatOptions;
     });
-    const sheepRouter = (await import('@/sheep/router')).default;
-    sheepRouter.go('/pages/chat/index', chatOptions);
+    router?.go('/pages/chat/index', chatOptions);
     return false;
   }
 }

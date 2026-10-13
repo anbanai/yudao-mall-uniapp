@@ -164,7 +164,7 @@
   const rules = reactive({});
 
   function onContactKefu() {
-    void showKefuModal();
+    void showKefuModal({}, sheep.$router);
   }
 
   // 提交表单

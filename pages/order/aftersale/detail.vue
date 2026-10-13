@@ -197,7 +197,7 @@
   let hasShown = false;
 
   function onContactKefu() {
-    void showKefuModal();
+    void showKefuModal({}, sheep.$router);
   }
 
   function onApply(id) {
