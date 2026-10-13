@@ -80,7 +80,7 @@
     <su-fixed bottom placeholder>
       <view class="foot-wrap">
         <view class="foot_box ss-flex ss-col-center ss-row-between ss-p-x-30">
-          <button class="ss-reset-button contcat-btn" @tap="sheep.$router.go('/pages/chat/index')">
+          <button class="ss-reset-button contcat-btn" @tap="onContactKefu">
             联系客服
           </button>
           <button class="ss-reset-button ui-BG-Main-Gradient sub-btn" @tap="submit">提交</button>
@@ -125,9 +125,9 @@
   import { onLoad } from '@dcloudio/uni-app';
   import { reactive, ref } from 'vue';
   import OrderApi from '@/sheep/api/trade/order';
-  import TradeConfigApi from '@/sheep/api/trade/config';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import AfterSaleApi from '@/sheep/api/trade/afterSale';
+  import { showKefuModal } from '@/sheep/hooks/useModal';
   import {
     createAfterSaleSelectionState,
     setAfterSaleConfig,
@@ -162,6 +162,10 @@
     applyPicUrls: [],
   });
   const rules = reactive({});
+
+  function onContactKefu() {
+    void showKefuModal();
+  }
 
   // 提交表单
   async function submit() {
@@ -249,7 +253,12 @@
     }
 
     // 读取配置
-    setAfterSaleConfig(selectionState, (await TradeConfigApi.getTradeConfig()).data);
+    try {
+      setAfterSaleConfig(selectionState, await sheep.$store('tradeConfig').getTradeConfig());
+    } catch {
+      // 售后配置读取失败时保留空选项，客服入口仍可按统一策略回退在线客服。
+      setAfterSaleConfig(selectionState, {});
+    }
   });
 </script>
 

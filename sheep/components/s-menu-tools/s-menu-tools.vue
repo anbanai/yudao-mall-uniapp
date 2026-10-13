@@ -22,14 +22,18 @@
 </template>
 
 <script setup>
-  import { reactive, computed } from 'vue';
+  import { computed } from 'vue';
   import sheep from '@/sheep';
-  import { showMenuTools, closeMenuTools } from '@/sheep/hooks/useModal';
+  import { closeMenuTools, showKefuModal } from '@/sheep/hooks/useModal';
 
   const show = computed(() => sheep.$store('modal').menu);
 
   function onClick(item) {
     closeMenuTools();
+    if (item.type === 'kefu') {
+      void showKefuModal();
+      return;
+    }
     if (item.url) sheep.$router.go(item.url);
   }
 
@@ -65,7 +69,7 @@
       title: '我的收藏',
     },
     {
-      url: '/pages/chat/index',
+      type: 'kefu',
       icon: '/static/img/shop/tools/service.png',
       title: '客服',
     },

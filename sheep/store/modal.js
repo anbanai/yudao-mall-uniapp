@@ -9,6 +9,8 @@ const modal = defineStore('modal', {
     share: false, // 分享弹框
     posterShareInfo: null, // 分包海报页使用的一次性分享信息（不持久化）
     menu: false, // 快捷菜单弹框
+    kefu: false, // 企微客服弹框
+    kefuOptions: {}, // 客服弹框关闭后回退在线客服页时的参数
     advHistory: [], // 广告弹框记录
     lastTimer: {
       // 短信验证码计时器，为了防止刷新请求做了持久化

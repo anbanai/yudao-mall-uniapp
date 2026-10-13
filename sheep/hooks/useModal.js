@@ -84,6 +84,48 @@ export function closeMenuTools() {
   });
 }
 
+// 打开客服弹框。企微配置缺失或读取失败时回退到在线客服页。
+export async function showKefuModal(options = {}) {
+  const modal = $store('modal');
+  const tradeConfig = $store('tradeConfig');
+  const chatOptions = options && typeof options === 'object' ? { ...options } : {};
+
+  try {
+    const config = await tradeConfig.getTradeConfig();
+    if (!config?.kefuWechatQrCodeUrl) {
+      $store('modal').$patch((state) => {
+        state.kefu = false;
+        state.kefuOptions = chatOptions;
+      });
+      // keep the existing deep-linkable online chat page as the fallback
+      const sheepRouter = (await import('@/sheep/router')).default;
+      sheepRouter.go('/pages/chat/index', chatOptions);
+      return false;
+    }
+    modal.$patch((state) => {
+      state.kefuOptions = chatOptions;
+      state.kefu = true;
+    });
+    return true;
+  } catch (error) {
+    modal.$patch((state) => {
+      state.kefu = false;
+      state.kefuOptions = chatOptions;
+    });
+    const sheepRouter = (await import('@/sheep/router')).default;
+    sheepRouter.go('/pages/chat/index', chatOptions);
+    return false;
+  }
+}
+
+// 关闭客服弹框
+export function closeKefuModal() {
+  $store('modal').$patch((state) => {
+    state.kefu = false;
+    state.kefuOptions = {};
+  });
+}
+
 // 发送短信验证码  60秒
 export function getSmsCode(event, mobile) {
   const modalStore = $store('modal');

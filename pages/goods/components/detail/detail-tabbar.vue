@@ -67,7 +67,7 @@
    */
   import { reactive } from 'vue';
   import sheep from '@/sheep';
-  import { showShareModal } from '@/sheep/hooks/useModal';
+  import { showKefuModal, showShareModal } from '@/sheep/hooks/useModal';
   import FavoriteApi from '@/sheep/api/product/favorite';
 
   // 数据
@@ -135,7 +135,7 @@
   }
 
   const onChat = () => {
-    sheep.$router.go('/pages/chat/index', {
+    void showKefuModal({
       id: props.modelValue.id,
     });
   };

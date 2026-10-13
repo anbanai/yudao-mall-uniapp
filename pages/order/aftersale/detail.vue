@@ -153,10 +153,7 @@
         >
           一键退货/预约取件
         </button>
-        <button
-          class="ss-reset-button contcat-btn btn"
-          @tap="sheep.$router.go('/pages/chat/index')"
-        >
+        <button class="ss-reset-button contcat-btn btn" @tap="onContactKefu">
           联系客服
         </button>
       </view>
@@ -175,6 +172,7 @@
     handleAfterSaleButtons,
   } from '@/sheep/hooks/useGoods';
   import AfterSaleApi from '@/sheep/api/trade/afterSale';
+  import { showKefuModal } from '@/sheep/hooks/useModal';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const headerBg = sheep.$url.css('/static/img/shop/order/order_bg.png');
@@ -197,6 +195,10 @@
     ], // 时间轴
   });
   let hasShown = false;
+
+  function onContactKefu() {
+    void showKefuModal();
+  }
 
   function onApply(id) {
     uni.showModal({

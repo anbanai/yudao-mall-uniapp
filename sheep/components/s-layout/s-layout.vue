@@ -51,6 +51,8 @@
       <s-auth-modal />
       <!-- 全局分享弹窗 -->
       <s-share-modal :shareInfo="shareInfo" />
+      <!-- 全局客服弹窗 -->
+      <s-kefu-modal />
       <!-- 全局快捷入口 -->
       <s-menu-tools />
     </view>
