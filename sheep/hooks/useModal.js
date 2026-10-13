@@ -3,6 +3,7 @@ import $helper from '@/sheep/helper';
 import dayjs from 'dayjs';
 import { ref } from 'vue';
 import test from '@/sheep/helper/test.js';
+import { navigateToKefuChat } from '@/sheep/helper/kefu.mjs';
 import AuthUtil from '@/sheep/api/member/auth';
 
 // 打开授权弹框
@@ -114,20 +115,6 @@ export async function showKefuModal(options = {}, router) {
     navigateToKefuChat(router, chatOptions);
     return false;
   }
-}
-
-function navigateToKefuChat(router, options = {}) {
-  if (router?.go) {
-    router.go('/pages/chat/index', options);
-    return;
-  }
-  const query = Object.entries(options)
-    .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&');
-  uni.navigateTo({
-    url: `/pages/chat/index${query ? `?${query}` : ''}`,
-  });
 }
 
 // 关闭客服弹框

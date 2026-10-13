@@ -30,6 +30,7 @@
 <script setup>
   import { computed, ref } from 'vue';
   import sheep from '@/sheep';
+  import { navigateToKefuChat } from '@/sheep/helper/kefu.mjs';
   import { closeKefuModal } from '@/sheep/hooks/useModal';
 
   const modalStore = sheep.$store('modal');
@@ -46,7 +47,7 @@
     handlingError.value = true;
     const options = { ...(modalStore.kefuOptions || {}) };
     closeKefuModal();
-    sheep.$router.go('/pages/chat/index', options);
+    navigateToKefuChat(sheep.$router, options);
     setTimeout(() => {
       handlingError.value = false;
     }, 0);
