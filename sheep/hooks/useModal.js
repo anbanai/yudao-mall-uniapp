@@ -98,7 +98,7 @@ export async function showKefuModal(options = {}, router) {
         state.kefuOptions = chatOptions;
       });
       // keep the existing deep-linkable online chat page as the fallback
-      router?.go('/pages/chat/index', chatOptions);
+      navigateToKefuChat(router, chatOptions);
       return false;
     }
     modal.$patch((state) => {
@@ -111,9 +111,23 @@ export async function showKefuModal(options = {}, router) {
       state.kefu = false;
       state.kefuOptions = chatOptions;
     });
-    router?.go('/pages/chat/index', chatOptions);
+    navigateToKefuChat(router, chatOptions);
     return false;
   }
+}
+
+function navigateToKefuChat(router, options = {}) {
+  if (router?.go) {
+    router.go('/pages/chat/index', options);
+    return;
+  }
+  const query = Object.entries(options)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
+  uni.navigateTo({
+    url: `/pages/chat/index${query ? `?${query}` : ''}`,
+  });
 }
 
 // 关闭客服弹框
