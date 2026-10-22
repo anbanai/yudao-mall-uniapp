@@ -46,7 +46,7 @@
               </text>
             </view>
             <view class="sales-text">
-              {{ formatExchange(state.goodsInfo.sales_show_type, state.goodsInfo.sales) }}
+              {{ formatExchange('exact', (activity.totalStock || 0) - (activity.stock || 0)) }}
             </view>
           </view>
           <view class="origin-price-text ss-m-b-60" v-if="state.goodsInfo.marketPrice">
