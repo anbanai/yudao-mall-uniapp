@@ -88,7 +88,17 @@
       </view>
       <view class="modal-footer">
         <view class="buy-box ss-flex ss-col-center ss-flex ss-col-center ss-row-center">
-          <button class="ss-reset-button buy-btn" @tap="onBuy">确认</button>
+          <button
+            class="ss-reset-button buy-btn"
+            :class="{ 'buy-btn--disabled': isPointExchangeDisabled }"
+            :disabled="isPointExchangeDisabled"
+            @tap="onBuy"
+          >
+            <text v-if="isPointExchangeDisabled">
+              还差 {{ pointExchangeStatus.shortfall }} 积分
+            </text>
+            <text v-else>确认</text>
+          </button>
         </view>
       </view>
     </view>
@@ -106,6 +116,7 @@
   import { convertProductPropertyList, fen2yuan, getDefaultSku } from '@/sheep/hooks/useGoods';
   import { isEmpty, min } from 'lodash-es';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+  import { getPointExchangeStatus } from '@/sheep/helper/pointExchange.mjs';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
   const props = defineProps({
@@ -128,6 +139,20 @@
     selectedSku: {},
     currentPropertyArray: {},
   });
+  const userInfo = computed(() => sheep.$store('user').userInfo);
+  const pointExchangeStatus = computed(() =>
+    getPointExchangeStatus(
+      state.selectedSku.point,
+      userInfo.value.point,
+      state.selectedSku.count || 1,
+    ),
+  );
+  const isPointExchangeDisabled = computed(
+    () =>
+      state.goodsInfo.activity_type === PromotionActivityTypeEnum.POINT.type &&
+      !!state.selectedSku.id &&
+      !pointExchangeStatus.value.canExchange,
+  );
   const getShowPriceText = computed(() => {
     let priceText = `￥${fen2yuan(state.goodsInfo.price)}`;
     if (!isEmpty(state.selectedSku)) {
@@ -158,6 +183,7 @@
   );
 
   const onBuy = () => {
+    if (isPointExchangeDisabled.value) return;
     if (state.selectedSku.id) {
       if (state.selectedSku.stock <= 0) {
         sheep.$helper.toast('库存不足');
@@ -334,6 +360,11 @@
       border-radius: 40rpx;
       background: linear-gradient(90deg, #ff5854, #ff2621);
       color: #fff;
+    }
+
+    .buy-btn--disabled {
+      background: #d8d8d8;
+      color: #777;
     }
   }
 
