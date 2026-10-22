@@ -889,7 +889,7 @@
   }
 
   .price-unit {
-    margin-right: -4px;
+    margin-right: 4rpx;
   }
 
   .sales-text {

@@ -100,7 +100,6 @@
     convertProductPropertyList,
     fen2yuan,
     getDefaultSku,
-    initDefaultSelect,
   } from '@/sheep/hooks/useGoods';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
@@ -319,9 +318,6 @@
       defaultSku.goods_num = defaultSku.goods_num || 1;
       state.selectedSku = defaultSku;
     }
-  } else {
-    // 初始化默认选中规格中的第一个，如果不需要，注释这段代码即可
-    initDefaultSelect(propertyList, onSelectSku);
   }
 </script>
 

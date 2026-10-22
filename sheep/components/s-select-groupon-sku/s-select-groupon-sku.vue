@@ -109,12 +109,7 @@
 <script setup>
   import { computed, reactive, watch } from 'vue';
   import sheep from '@/sheep';
-  import {
-    convertProductPropertyList,
-    fen2yuan,
-    getDefaultSku,
-    initDefaultSelect,
-  } from '@/sheep/hooks/useGoods';
+  import { convertProductPropertyList, fen2yuan, getDefaultSku } from '@/sheep/hooks/useGoods';
 
   const headerBg = sheep.$url.css('/static/img/shop/goods/groupon-btn-long.png');
   const emits = defineEmits(['change', 'addCart', 'buy', 'close', 'ladder']);
@@ -328,9 +323,6 @@
       defaultSku.count = defaultSku.count || 1;
       state.selectedSku = defaultSku;
     }
-  } else {
-    // 初始化默认选中规格中的第一个，如果不需要，注释这段代码即可
-    initDefaultSelect(propertyList, onSelectSku);
   }
 </script>
 

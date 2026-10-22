@@ -1,6 +1,6 @@
 <template>
   <!-- SKU 选择的提示框 -->
-  <detail-cell label="选择" :value="value" />
+  <detail-cell label="规格" :value="value" />
 </template>
 
 <script setup>
@@ -20,10 +20,10 @@
   });
   const value = computed(() => {
     if (!props.sku?.id) {
-      return '请选择商品规格';
+      return '';
     }
     if (!props.sku.properties?.length) {
-      return '默认规格';
+      return '';
     }
     let str = '';
     props.sku.properties.forEach((property) => {
