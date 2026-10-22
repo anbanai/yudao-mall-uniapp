@@ -7,11 +7,11 @@ const uploaderSource = fs.readFileSync(
   'utf8',
 );
 
-assert.match(apiSource, /getFilePresignedUrl: \(name, directory, type\)/);
+assert.match(apiSource, /getFilePresignedUrl: \(name, directory, type(?:, scene)?\)/);
 assert.match(apiSource, /type,/);
 assert.match(
   uploaderSource,
-  /getFilePresignedUrl\(\s*file\.name,\s*directory,\s*file\.type,?\s*\)/,
+  /getFilePresignedUrl\(\s*file\.name,\s*directory,\s*file\.type(?:,\s*scene)?\s*,?\s*\)/,
   'the presign request must include the selected file MIME type',
 );
 assert.match(
