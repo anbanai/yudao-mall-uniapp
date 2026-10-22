@@ -67,22 +67,37 @@ const goods = async (poster) => {
         maxWidth: width * 0.91,
       },
     },
-    {
-      type: 'text',
-      text: '￥' + poster.shareInfo.poster.price,
-      css: {
-        position: 'fixed',
-        left: width * 0.04,
-        top: width * 1.31,
-        fontSize: 20,
-        fontFamily: 'OPPOSANS',
-        color: '#333',
-      },
-    },
+    poster.shareInfo.poster.point != null
+      ? {
+          type: 'text',
+          text: poster.shareInfo.poster.point + ' 积分',
+          css: {
+            position: 'fixed',
+            left: width * 0.04,
+            top: width * 1.31,
+            fontSize: 20,
+            fontFamily: 'OPPOSANS',
+            color: '#333',
+          },
+        }
+      : {
+          type: 'text',
+          text: '￥' + poster.shareInfo.poster.price,
+          css: {
+            position: 'fixed',
+            left: width * 0.04,
+            top: width * 1.31,
+            fontSize: 20,
+            fontFamily: 'OPPOSANS',
+            color: '#333',
+          },
+        },
     {
       type: 'text',
       text:
-        poster.shareInfo.poster.original_price > 0
+        poster.shareInfo.poster.point != null
+          ? ''
+          : poster.shareInfo.poster.original_price > 0
           ? '￥' + poster.shareInfo.poster.original_price
           : '',
       css: {

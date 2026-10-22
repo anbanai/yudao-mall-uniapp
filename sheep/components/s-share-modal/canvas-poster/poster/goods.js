@@ -69,7 +69,10 @@ const goods = async (poster) => {
     },
     {
       type: 'text',
-      text: '￥' + poster.shareInfo.poster.price,
+      text:
+        poster.shareInfo.poster.point != null
+          ? poster.shareInfo.poster.point + ' 积分'
+          : '￥' + poster.shareInfo.poster.price,
       css: {
         position: 'fixed',
         left: width * 0.04,
@@ -82,7 +85,7 @@ const goods = async (poster) => {
     {
       type: 'text',
       text:
-        poster.shareInfo.poster.original_price > 0
+        poster.shareInfo.poster.point == null && poster.shareInfo.poster.original_price > 0
           ? '￥' + poster.shareInfo.poster.original_price
           : '',
       css: {

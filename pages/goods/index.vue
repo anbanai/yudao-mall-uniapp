@@ -35,6 +35,10 @@
             dotCur="bg-mask-40"
             :seizeHeight="750"
           />
+          <view class="goods-summary ss-flex ss-row-between ss-p-x-20 ss-p-y-18">
+            <text>已售数量 {{ state.goodsInfo.salesCount || 0 }} 件</text>
+            <text>剩余库存 {{ state.selectedSku.stock ?? state.goodsInfo.stock ?? 0 }} 件</text>
+          </view>
           <!-- 限时折扣/会员价的优惠信息 -->
           <view
             class="discount"
@@ -144,11 +148,19 @@
                 <text class="cicon-forward"></text>
               </view>
             </view>
-            <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
+            <view class="title-row ss-flex ss-row-between ss-col-start">
+              <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
+              <button class="goods-share ss-reset-button" open-type="share">商品分享</button>
+            </view>
             <view v-if="state.goodsInfo.merchantName" class="merchant-name ss-font-22 ss-m-b-6">
               {{ state.goodsInfo.merchantName }}
             </view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
+            <view class="delivery-info ss-flex ss-col-center ss-row-between">
+              <text>配送地址</text>
+              <text class="delivery-value">全国</text>
+              <text class="delivery-value">快递包邮</text>
+            </view>
             <view v-if="state.publicGroups.length" class="public-groups">
               <button
                 v-for="group in state.publicGroups"
@@ -233,7 +245,6 @@
   import sheep from '@/sheep';
   import CouponApi from '@/sheep/api/promotion/coupon';
   import ActivityApi from '@/sheep/api/promotion/activity';
-  import FavoriteApi from '@/sheep/api/product/favorite';
   import RewardActivityApi from '@/sheep/api/promotion/rewardActivity';
   import {
     formatSales,
@@ -269,7 +280,6 @@
     timeTxtwidth: '16rpx',
     isDay: true,
   };
-  const isLogin = computed(() => sheep.$store('user').isLogin);
   let state = reactive({
     goodsId: 0,
     skeletonLoading: true, // SPU 加载中
@@ -454,15 +464,6 @@
         state.goodsInfo = res.data;
         // 获取结算信息
         getSettlementByIds(state.goodsId);
-        // 加载是否收藏
-        if (isLogin.value) {
-          FavoriteApi.isFavoriteExists(state.goodsId, 'goods').then((res) => {
-            if (res.code !== 0) {
-              return;
-            }
-            state.goodsInfo.favorite = res.data;
-          });
-        }
       })
       .catch((error) => {
         console.error('[商品详情] 商品加载失败', {
@@ -520,8 +521,37 @@
     overflow: hidden;
   }
 
+  .goods-summary {
+    color: $gray-c;
+    font-size: 24rpx;
+    background: #fff;
+  }
+
   // 价格标题卡片
   .title-card {
+    .title-row {
+      gap: 16rpx;
+    }
+
+    .goods-share {
+      flex-shrink: 0;
+      color: var(--ui-BG-Main);
+      font-size: 24rpx;
+      line-height: 42rpx;
+    }
+
+    .delivery-info {
+      gap: 16rpx;
+      margin-top: 18rpx;
+      padding-top: 18rpx;
+      border-top: 1rpx solid $gray-e;
+      color: $gray-c;
+      font-size: 24rpx;
+    }
+
+    .delivery-value {
+      color: $dark-9;
+    }
     .price-box {
       .price-text {
         font-size: 42rpx;

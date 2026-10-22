@@ -29,6 +29,10 @@
           dotCur="bg-mask-40"
           :seizeHeight="750"
         />
+        <view class="goods-summary ss-flex ss-row-between ss-p-x-20 ss-p-y-18">
+          <text>已售数量 {{ (activity.totalStock || 0) - (activity.stock || 0) }} 件</text>
+          <text>剩余库存 {{ state.selectedSku.stock ?? state.goodsInfo.stock ?? 0 }} 件</text>
+        </view>
 
         <!-- 价格+标题 -->
         <view class="title-card detail-card ss-p-y-40 ss-p-x-20">
@@ -52,8 +56,16 @@
           <view class="origin-price-text ss-m-b-60" v-if="state.goodsInfo.marketPrice">
             原价：￥{{ fen2yuan(state.selectedSku.marketPrice || state.goodsInfo.marketPrice) }}
           </view>
-          <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name || '' }}</view>
+          <view class="title-row ss-flex ss-row-between ss-col-start">
+            <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name || '' }}</view>
+            <button class="goods-share ss-reset-button" open-type="share">商品分享</button>
+          </view>
           <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
+          <view class="delivery-info ss-flex ss-col-center ss-row-between">
+            <text>配送地址</text>
+            <text class="delivery-value">全国</text>
+            <text class="delivery-value">快递包邮</text>
+          </view>
         </view>
 
         <!-- 功能卡片 -->
@@ -177,7 +189,7 @@
     if (isEmpty(unref(activity))) return {};
     return sheep.$platform.share.getShareInfo(
       {
-        title: activity.value.name,
+        title: state.goodsInfo.name,
         image: sheep.$url.cdn(state.goodsInfo.picUrl),
         params: {
           page: SharePageEnum.POINT.value,
@@ -186,9 +198,9 @@
       },
       {
         type: 'goods', // 商品海报
-        title: activity.value.name, // 商品标题
+        title: state.goodsInfo.name, // 商品名称
         image: sheep.$url.cdn(state.goodsInfo.picUrl), // 商品主图
-        price: (getShowPrice.value.price || 0) + ` + ${getShowPrice.value.point} 积分`, // 积分价格
+        point: getShowPrice.value.point, // 积分数量
         marketPrice: fen2yuan(state.goodsInfo.marketPrice), // 商品原价
       },
     );
@@ -288,6 +300,12 @@
     overflow: hidden;
   }
 
+  .goods-summary {
+    color: $gray-c;
+    font-size: 24rpx;
+    background: $white;
+  }
+
   // 价格标题卡片
   .title-card {
     width: 710rpx;
@@ -296,6 +314,30 @@
     border-radius: 10rpx;
     background-image: v-bind(headerBg);
     background-repeat: no-repeat;
+
+    .title-row {
+      gap: 16rpx;
+    }
+
+    .goods-share {
+      flex-shrink: 0;
+      color: var(--ui-BG-Main);
+      font-size: 24rpx;
+      line-height: 42rpx;
+    }
+
+    .delivery-info {
+      gap: 16rpx;
+      margin-top: 18rpx;
+      padding-top: 18rpx;
+      border-top: 1rpx solid $gray-e;
+      color: $gray-c;
+      font-size: 24rpx;
+    }
+
+    .delivery-value {
+      color: $dark-9;
+    }
 
     .price-box {
       .point-img {
