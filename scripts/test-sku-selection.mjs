@@ -10,6 +10,10 @@ const grouponSelectorSource = await readFile(
   new URL('../sheep/components/s-select-groupon-sku/s-select-groupon-sku.vue', import.meta.url),
   'utf8',
 );
+const seckillSelectorSource = await readFile(
+  new URL('../sheep/components/s-select-seckill-sku/s-select-seckill-sku.vue', import.meta.url),
+  'utf8',
+);
 const detailSkuSource = await readFile(
   new URL('../pages/goods/components/detail/detail-cell-sku.vue', import.meta.url),
   'utf8',
@@ -48,6 +52,22 @@ assert.doesNotMatch(
   /initDefaultSelect\s*\(/,
   'the groupon detail SKU picker must wait for the user before selecting a property value',
 );
+for (const [name, source] of [
+  ['standard', selectorSource],
+  ['groupon', grouponSelectorSource],
+  ['seckill', seckillSelectorSource],
+]) {
+  assert.doesNotMatch(
+    source,
+    /currentPropertyArray\.splice\s*\(/,
+    `${name} SKU picker must not call array methods on the property map`,
+  );
+  assert.match(
+    source,
+    /state\.currentPropertyArray\[propertyId\]\s*=\s*'';/,
+    `${name} SKU picker should clear a deselected property in the property map`,
+  );
+}
 assert.match(
   detailSkuSource,
   /<detail-cell label="规格" :value="value" \/>/,
