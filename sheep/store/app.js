@@ -167,7 +167,6 @@ const adaptTenant = async () => {
       }
     }
     // #endif
-
   } catch (error) {
     console.error('adaptTenant 执行失败:', error);
     // 小程序租户查询失败时也回退到配置的默认租户，避免沿用设备上残留的旧租户。

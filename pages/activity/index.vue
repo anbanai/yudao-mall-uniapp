@@ -10,10 +10,7 @@
             {{ item.description }}
           </view>
         </view>
-        <image
-          class="activity-left-image"
-          :src="sheep.$url.static('/static/activity-left.png')"
-        />
+        <image class="activity-left-image" :src="sheep.$url.static('/static/activity-left.png')" />
         <image
           class="activity-right-image"
           :src="sheep.$url.static('/static/activity-right.png')"

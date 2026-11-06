@@ -105,14 +105,22 @@
         content: '确定要支付吗?',
         success: function (res) {
           if (res.confirm) {
-            sheep.$platform.pay(state.payment, state.orderType, state.orderInfo.id,
-              state.payMethods.find((method) => method.value === state.payment)?.channelCode);
+            sheep.$platform.pay(
+              state.payment,
+              state.orderType,
+              state.orderInfo.id,
+              state.payMethods.find((method) => method.value === state.payment)?.channelCode,
+            );
           }
         },
       });
     } else {
-      sheep.$platform.pay(state.payment, state.orderType, state.orderInfo.id,
-              state.payMethods.find((method) => method.value === state.payment)?.channelCode);
+      sheep.$platform.pay(
+        state.payment,
+        state.orderType,
+        state.orderInfo.id,
+        state.payMethods.find((method) => method.value === state.payment)?.channelCode,
+      );
     }
   };
 

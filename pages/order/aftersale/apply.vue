@@ -80,9 +80,7 @@
     <su-fixed bottom placeholder>
       <view class="foot-wrap">
         <view class="foot_box ss-flex ss-col-center ss-row-between ss-p-x-30">
-          <button class="ss-reset-button contcat-btn" @tap="onContactKefu">
-            联系客服
-          </button>
+          <button class="ss-reset-button contcat-btn" @tap="onContactKefu"> 联系客服 </button>
           <button class="ss-reset-button ui-BG-Main-Gradient sub-btn" @tap="submit">提交</button>
         </view>
       </view>

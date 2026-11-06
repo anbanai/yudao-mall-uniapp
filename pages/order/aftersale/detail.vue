@@ -153,9 +153,7 @@
         >
           一键退货/预约取件
         </button>
-        <button class="ss-reset-button contcat-btn btn" @tap="onContactKefu">
-          联系客服
-        </button>
+        <button class="ss-reset-button contcat-btn btn" @tap="onContactKefu"> 联系客服 </button>
       </view>
     </su-fixed>
   </s-layout>
