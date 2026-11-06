@@ -70,13 +70,13 @@ for (const [name, source] of [
 }
 assert.match(
   detailSkuSource,
-  /<detail-cell label="规格" :value="value" \/>/,
-  'the detail SKU row should display only the 规格 label before selection',
+  /<detail-cell :label="label" :value="value" \/>/,
+  'the detail SKU row should use its configured 规格 label',
 );
 assert.match(
   detailSkuSource,
-  /if \(!props\.sku\?\.id\) \{\s*return '';[\s\S]*?if \(!props\.sku\.properties\?\.length\) \{\s*return '';/,
-  'unselected and single-SKU details should not expose 默认规格 as a selected value',
+  /if \(!props\.sku\?\.id\) \{\s*return '选择';[\s\S]*?if \(!props\.sku\.properties\?\.length\) \{\s*return '选择';/,
+  'unselected details should prompt the user to 选择 a specification',
 );
 
 console.log('single SKU selection checks passed');

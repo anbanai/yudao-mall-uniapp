@@ -7,14 +7,14 @@
           class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center"
           @tap="goHome"
         >
-          <text class="cicon-home item-icon" />
+          <text class="cicon-home-o item-icon" />
           <view class="item-title">首页</view>
         </view>
         <view
           class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center"
           @tap="goCart"
         >
-          <text class="cicon-cart item-icon" />
+          <text class="cicon-cart-o item-icon" />
           <view class="item-title">购物车</view>
         </view>
         <view

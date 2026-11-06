@@ -35,10 +35,6 @@
             dotCur="bg-mask-40"
             :seizeHeight="750"
           />
-          <view class="goods-summary ss-flex ss-row-between ss-p-x-20 ss-p-y-18">
-            <text>已售数量 {{ state.goodsInfo.salesCount || 0 }} 件</text>
-            <text>剩余库存 {{ state.selectedSku.stock ?? state.goodsInfo.stock ?? 0 }} 件</text>
-          </view>
           <!-- 限时折扣/会员价的优惠信息 -->
           <view
             class="discount"
@@ -89,11 +85,11 @@
           <!-- 价格+标题 -->
           <view class="title-card detail-card ss-p-y-30 ss-p-x-20">
             <!-- 没有限时折扣/会员价的优惠信息时，展示的价格信息 -->
-            <view
-              class="ss-flex ss-row-between ss-col-center ss-m-b-26"
-              v-if="!state.settlementSku.promotionPrice"
-            >
-              <view class="price-box ss-flex ss-col-bottom">
+            <view class="ss-flex ss-row-between ss-col-center ss-m-b-26">
+              <view
+                class="price-box ss-flex ss-col-bottom"
+                v-if="!state.settlementSku.promotionPrice"
+              >
                 <view class="price-text ss-m-r-16">
                   {{ fen2yuan(state.selectedSku.price || state.goodsInfo.price) }}
                 </view>
@@ -105,7 +101,9 @@
                 </view>
               </view>
               <view class="sales-text">
-                {{ formatSales('exact', state.goodsInfo.salesCount) }}
+                已售{{ state.goodsInfo.salesCount || 0 }}/{{
+                  state.selectedSku.stock ?? state.goodsInfo.stock ?? 0
+                }}
               </view>
             </view>
             <view class="discounts-box ss-flex ss-row-between ss-m-b-28">
@@ -150,17 +148,15 @@
             </view>
             <view class="title-row ss-flex ss-row-between ss-col-start">
               <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
-              <button class="goods-share ss-reset-button" open-type="share">商品分享</button>
+              <button class="goods-share ss-reset-button" open-type="share" aria-label="分享">
+                <text class="cicon-reply share-icon" />
+                <text class="share-label">分享</text>
+              </button>
             </view>
             <view v-if="state.goodsInfo.merchantName" class="merchant-name ss-font-22 ss-m-b-6">
               {{ state.goodsInfo.merchantName }}
             </view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
-            <view class="delivery-info ss-flex ss-col-center ss-row-between">
-              <text>配送地址</text>
-              <text class="delivery-value">全国</text>
-              <text class="delivery-value">快递包邮</text>
-            </view>
             <view v-if="state.publicGroups.length" class="public-groups">
               <button
                 v-for="group in state.publicGroups"
@@ -172,11 +168,34 @@
             </view>
           </view>
 
-          <!-- 功能卡片 -->
-          <view class="detail-cell-card detail-card ss-flex-col">
+          <!-- 配送、服务、规格信息 -->
+          <view class="detail-info-card detail-card ss-flex-col">
+            <view class="detail-info-row delivery-row" @tap="onChooseDeliveryAddress">
+              <text class="detail-info-label">配送</text>
+              <view class="detail-info-content delivery-content">
+                <view class="delivery-address-line">
+                  <text class="cicon-place-o delivery-icon" />
+                  <text class="delivery-address">
+                    {{
+                      state.deliveryAddress
+                        ? `${state.deliveryAddress.areaName} ${state.deliveryAddress.detailAddress}`
+                        : '请选择收货地址'
+                    }}
+                  </text>
+                </view>
+                <text class="delivery-shipping">快递包邮</text>
+              </view>
+              <text class="_icon-forward detail-info-arrow" />
+            </view>
+            <view class="detail-info-row">
+              <text class="detail-info-label">服务</text>
+              <text class="detail-info-content">退货包运费 · 自动退款 · 7天无理由退货...</text>
+              <text class="_icon-forward detail-info-arrow" />
+            </view>
             <detail-cell-sku
               v-model="state.selectedSku.goods_sku_text"
               :sku="state.selectedSku"
+              label="规格"
               @tap="state.showSelectSku = true"
             />
           </view>
@@ -247,7 +266,6 @@
   import ActivityApi from '@/sheep/api/promotion/activity';
   import RewardActivityApi from '@/sheep/api/promotion/rewardActivity';
   import {
-    formatSales,
     formatGoodsSwiper,
     fen2yuan,
     fen2yuanSimple,
@@ -264,6 +282,7 @@
   import { isEmpty } from 'lodash-es';
   import SpuApi from '@/sheep/api/product/spu';
   import GroupApi from '@/sheep/api/product/group';
+  import AddressApi from '@/sheep/api/member/address';
   import {
     getProductGroupResponseData,
     publicProductGroups,
@@ -294,8 +313,12 @@
     showActivityModel: false, // 【满减送/限时折扣】是否展示 Activity 营销活动的弹窗
     rewardActivity: {}, // 【满减送】活动
     activityList: [], // 【秒杀/拼团/砍价】可参与的 Activity 营销活动的列表
+    deliveryAddress: null, // 当前配送地址
+    hasSelectedDeliveryAddress: false,
+    deliveryAddressLoaded: false,
   });
 
+  let deliveryAddressRequest;
   let groupGeneration = 0;
   async function refreshPublicGroups() {
     const token = ++groupGeneration;
@@ -308,7 +331,42 @@
       /* Group discovery is optional for the purchase flow. */
     }
   }
-  onShow(() => void refreshPublicGroups());
+  function loadDeliveryAddress() {
+    if (state.hasSelectedDeliveryAddress || state.deliveryAddressLoaded) {
+      return Promise.resolve();
+    }
+    if (!deliveryAddressRequest) {
+      deliveryAddressRequest = (async () => {
+        try {
+          const { data = [] } = await AddressApi.getAddressList();
+          if (!state.hasSelectedDeliveryAddress) {
+            state.deliveryAddress = data.find((item) => item.defaultStatus) || data[0] || null;
+          }
+        } catch {
+          if (!state.hasSelectedDeliveryAddress) {
+            state.deliveryAddress = null;
+          }
+        } finally {
+          state.deliveryAddressLoaded = true;
+          deliveryAddressRequest = null;
+        }
+      })();
+    }
+    return deliveryAddressRequest;
+  }
+
+  function onChooseDeliveryAddress() {
+    uni.$once('SELECT_ADDRESS', ({ addressInfo } = {}) => {
+      state.deliveryAddress = addressInfo;
+      state.hasSelectedDeliveryAddress = true;
+    });
+    sheep.$router.go('/pages/user/address/list', { type: 'select' });
+  }
+
+  onShow(() => {
+    void refreshPublicGroups();
+    void loadDeliveryAddress();
+  });
   onUnload(() => {
     groupGeneration += 1;
   });
@@ -329,11 +387,12 @@
   }
 
   // 立即购买
-  function onBuy(e) {
+  async function onBuy(e) {
     if (!e.id) {
       sheep.$helper.toast('请选择商品规格');
       return;
     }
+    await loadDeliveryAddress();
     sheep.$router.go('/pages/order/confirm', {
       data: JSON.stringify({
         items: [
@@ -343,6 +402,7 @@
             categoryId: state.goodsInfo.categoryId,
           },
         ],
+        addressInfo: state.deliveryAddress,
       }),
     });
   }
@@ -521,12 +581,6 @@
     overflow: hidden;
   }
 
-  .goods-summary {
-    color: $gray-c;
-    font-size: 24rpx;
-    background: #fff;
-  }
-
   // 价格标题卡片
   .title-card {
     .title-row {
@@ -534,24 +588,24 @@
     }
 
     .goods-share {
+      width: 64rpx;
+      min-height: 76rpx;
       flex-shrink: 0;
-      color: var(--ui-BG-Main);
-      font-size: 24rpx;
-      line-height: 42rpx;
+      flex-direction: column;
+      justify-content: flex-start;
+      color: $dark-3;
     }
 
-    .delivery-info {
-      gap: 16rpx;
-      margin-top: 18rpx;
-      padding-top: 18rpx;
-      border-top: 1rpx solid $gray-e;
-      color: $gray-c;
-      font-size: 24rpx;
+    .share-icon {
+      font-size: 42rpx;
+      line-height: 44rpx;
     }
 
-    .delivery-value {
-      color: $dark-9;
+    .share-label {
+      font-size: 22rpx;
+      line-height: 30rpx;
     }
+
     .price-box {
       .price-text {
         font-size: 42rpx;
@@ -634,6 +688,112 @@
       color: $dark-9;
       line-height: 42rpx;
     }
+  }
+
+  .detail-info-card {
+    padding: 0;
+  }
+
+  .detail-info-row {
+    display: flex;
+    min-height: 88rpx;
+    box-sizing: border-box;
+    align-items: center;
+    padding: 18rpx 20rpx;
+    border-bottom: 1rpx solid $gray-e;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .detail-info-label {
+    width: 86rpx;
+    flex-shrink: 0;
+    color: $dark-9;
+    font-size: 28rpx;
+  }
+
+  .detail-info-content {
+    min-width: 0;
+    flex: 1;
+    color: $dark-9;
+    font-size: 28rpx;
+    line-height: 40rpx;
+  }
+
+  .delivery-content {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10rpx;
+    color: $dark-9;
+  }
+
+  .delivery-address-line {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 10rpx;
+    overflow: hidden;
+  }
+
+  .delivery-address {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .delivery-shipping {
+    flex-shrink: 0;
+    color: $dark-9;
+    font-size: 24rpx;
+    line-height: 32rpx;
+    white-space: nowrap;
+  }
+
+  .delivery-content text:last-child {
+    color: $dark-9;
+  }
+
+  .delivery-icon {
+    flex-shrink: 0;
+    color: $dark-9;
+    font-size: 32rpx;
+  }
+
+  .detail-info-arrow {
+    flex-shrink: 0;
+    margin-left: 12rpx;
+    color: $dark-9;
+    font-size: 28rpx;
+  }
+
+  .detail-info-card :deep(.detail-cell-wrap) {
+    min-height: 88rpx;
+    box-sizing: border-box;
+    padding: 18rpx 20rpx;
+  }
+
+  .detail-info-card :deep(.detail-cell-wrap .label-text) {
+    width: 86rpx;
+    margin-right: 0;
+    color: $dark-9;
+    font-size: 28rpx;
+    font-weight: 400;
+  }
+
+  .detail-info-card :deep(.detail-cell-wrap .cell-content) {
+    color: $dark-9;
+    font-size: 28rpx;
+    font-weight: 400;
+  }
+
+  .detail-info-card :deep(.detail-cell-wrap .right-forwrad-icon) {
+    color: $dark-9;
+    font-size: 28rpx;
   }
 
   // 购买

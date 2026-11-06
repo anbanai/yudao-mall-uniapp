@@ -37,6 +37,10 @@ const skuSelectorSource = readFileSync(
   new URL('../sheep/components/s-select-seckill-sku/s-select-seckill-sku.vue', import.meta.url),
   'utf8',
 );
+const pointDetailSource = readFileSync(
+  new URL('../pages/goods/point.vue', import.meta.url),
+  'utf8',
+);
 assert.match(
   skuSelectorSource,
   /:disabled="isPointExchangeDisabled"/,
@@ -56,6 +60,26 @@ assert.match(
   skuSelectorSource,
   /if\s*\(isPointExchangeDisabled\.value\)\s*return/,
   'the buy handler must guard against bypassing the disabled state',
+);
+assert.match(
+  pointDetailSource,
+  /getPointExchangeStatus\(\s*getShowPrice\.value\.point,\s*sheep\.\$store\('user'\)\.userInfo\.point,\s*state\.selectedSku\.count \|\| 1,\s*\)/,
+  'the detail CTA should calculate the shortfall for the selected SKU and quantity',
+);
+assert.match(
+  pointDetailSource,
+  /state\.selectedSku\.id\s*&&\s*!pointExchangeStatus\.value\.canExchange/,
+  'the detail CTA should stay enabled until a multi-spec SKU is selected',
+);
+assert.match(
+  pointDetailSource,
+  /:disabled="isOutOfStock \|\| isPointExchangeDisabled"/,
+  'the detail CTA should disable for sold-out items or insufficient points',
+);
+assert.match(
+  pointDetailSource,
+  /还差 \{\{ pointExchangeStatus\.shortfall \}\} 积分/,
+  'the detail CTA should explain the point shortfall before opening the selector',
 );
 
 console.log('point exchange eligibility checks passed');
