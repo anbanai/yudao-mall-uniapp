@@ -24,7 +24,6 @@ const {
 } = productGroup;
 
 const { createProductCategoryLoader, getProductCategoryResponseData } = productCategory;
-
 assert.equal(getBlockOverflow(true), 'visible');
 assert.equal(getBlockOverflow(false), 'hidden');
 
