@@ -1,13 +1,10 @@
 <template>
   <view class="category-section">
-    <image
-      v-if="category?.picUrl"
-      class="category-banner"
-      :src="sheep.$url.cdn(category.picUrl)"
-      mode="aspectFill"
-      lazy-load
-      @tap="openCategory"
-    />
+    <view v-if="category?.picUrl" class="category-banner" @tap="openCategory">
+      <image :src="sheep.$url.cdn(category.picUrl)" mode="aspectFill" lazy-load />
+      <view class="category-banner-shade" />
+      <view class="category-banner-title">{{ category.name }}</view>
+    </view>
     <view class="category-title" @tap="openCategory">{{ category?.name }}</view>
 
     <view v-if="loading" class="section-state">加载中...</view>
@@ -75,10 +72,37 @@
   }
 
   .category-banner {
+    position: relative;
+    overflow: hidden;
     width: 100%;
     height: 220rpx;
     border-radius: 20rpx;
     background: #f5f5f5;
+  }
+
+  .category-banner image,
+  .category-banner-shade {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .category-banner-shade {
+    background: rgba(0, 0, 0, 0.28);
+  }
+
+  .category-banner-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: #fff;
+    font-size: 42rpx;
+    font-weight: 600;
+    transform: translate(-50%, -50%);
   }
 
   .category-title {

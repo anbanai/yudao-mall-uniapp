@@ -15,9 +15,14 @@
 
       <view class="category-body ss-flex ss-col-top">
         <view class="side-menu-wrap" :style="[{ top: sideMenuTop }]">
-          <scroll-view scroll-y :style="[{ height: pageHeight + 'px' }]">
+          <scroll-view
+            scroll-y
+            :scroll-into-view="state.menuScrollTarget"
+            :style="[{ height: pageHeight + 'px' }]"
+          >
             <view
               v-for="(item, index) in state.categoryList"
+              :id="`menu-item-${item.id}`"
               :key="item.id"
               class="menu-item ss-flex"
               :class="[{ 'menu-item-active': index === state.activeMenu }]"
@@ -29,17 +34,24 @@
         </view>
 
         <view class="goods-list-box">
-          <scroll-view scroll-y :style="[{ height: pageHeight + 'px' }]">
-            <template v-if="activeCategory">
+          <scroll-view
+            class="goods-list-scroll"
+            scroll-y
+            :scroll-into-view="state.scrollTarget"
+            :style="[{ height: pageHeight + 'px' }]"
+            @scroll="onRightScroll"
+            @touchmove="onRightTouchMove"
+          >
+            <template v-if="state.categoryList.length">
               <category-section
-                v-for="child in activeChildren"
-                :key="child.id"
-                :category="child"
-                :products="state.sections[child.id]?.products || []"
-                :loading="state.sections[child.id]?.loading"
-                :error="state.sections[child.id]?.error"
+                v-for="(category, index) in state.categoryList"
+                :id="`category-section-${category.id}`"
+                :key="category.id"
+                :category="category"
+                :products="state.sections[category.id]?.products || []"
+                :loading="state.sections[category.id]?.loading"
+                :error="state.sections[category.id]?.error"
               />
-              <view v-if="!activeChildren.length" class="page-state">暂无子分类</view>
             </template>
             <view v-else class="page-state">暂无分类</view>
           </scroll-view>
@@ -50,37 +62,49 @@
 </template>
 
 <script setup>
-  import { computed, reactive } from 'vue';
-  import { onShow } from '@dcloudio/uni-app';
+  import { computed, getCurrentInstance, nextTick, reactive } from 'vue';
+  import { onShow, onUnload } from '@dcloudio/uni-app';
 
   import sheep from '@/sheep';
   import CategoryApi from '@/sheep/api/product/category';
   import SpuApi from '@/sheep/api/product/spu';
 
   import CategorySection from './components/category-section.vue';
-  import { buildCategoryProductQuery, buildCategoryTree } from './category-page.mjs';
+  import {
+    buildCategoryProductQuery,
+    createScrollIntentTracker,
+    findActiveCategoryIndex,
+    findInitialCategoryIndex,
+    getSecondLevelCategories,
+  } from './category-page.mjs';
 
   const state = reactive({
     categoryList: [],
     activeMenu: 0,
     sections: {},
     keyword: '',
+    scrollTarget: '',
+    menuScrollTarget: '',
   });
 
+  const instance = getCurrentInstance();
   const { safeArea } = sheep.$platform.device;
   const pageHeight = computed(() => safeArea.height - 44 - 50 - 48);
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const sideMenuTop = computed(() => `${Number(statusBarHeight + 180)}rpx`);
-  const activeCategory = computed(() => state.categoryList[state.activeMenu]);
-  const activeChildren = computed(() => activeCategory.value?.children || []);
 
   let requestToken = 0;
+  let scrollSyncTimer;
+  let scrollTargetTimer;
+  let menuScrollTargetTimer;
+  let rightScrollTop = 0;
+  const scrollIntentTracker = createScrollIntentTracker();
+  let pendingScrollIntent = null;
 
-  async function loadCategoryProducts(category, token) {
-    const children = Array.isArray(category?.children) ? category.children : [];
+  async function loadCategoryProducts(categories, token) {
     const sections = {};
-    children.forEach((child) => {
-      sections[child.id] = {
+    categories.forEach((category) => {
+      sections[category.id] = {
         products: [],
         loading: true,
         error: false,
@@ -89,10 +113,10 @@
     state.sections = sections;
 
     await Promise.all(
-      children.map(async (child) => {
-        const section = sections[child.id];
+      categories.map(async (category) => {
+        const section = sections[category.id];
         try {
-          const response = await SpuApi.getSpuPage(buildCategoryProductQuery(child));
+          const response = await SpuApi.getSpuPage(buildCategoryProductQuery(category));
           if (token !== requestToken) {
             return;
           }
@@ -112,15 +136,89 @@
         }
       }),
     );
+
+    if (token === requestToken && pendingScrollIntent) {
+      const intent = pendingScrollIntent;
+      pendingScrollIntent = null;
+      if (scrollIntentTracker.isCurrent(intent.version)) {
+        scrollToCategory(intent.index);
+      }
+    }
+    if (token === requestToken) {
+      nextTick(onRightScroll);
+    }
   }
 
-  function onMenu(index) {
-    if (!state.categoryList[index]) {
+  function scrollToCategory(index, waitForProducts = false) {
+    const category = state.categoryList[index];
+    if (!category) {
+      return;
+    }
+    const scrollVersion = scrollIntentTracker.capture();
+    pendingScrollIntent = waitForProducts ? { index, version: scrollVersion } : null;
+    syncActiveMenu(index);
+    state.scrollTarget = '';
+    clearTimeout(scrollTargetTimer);
+    nextTick(() => {
+      if (!scrollIntentTracker.isCurrent(scrollVersion)) {
+        return;
+      }
+      state.scrollTarget = `category-section-${category.id}`;
+      scrollTargetTimer = setTimeout(() => {
+        state.scrollTarget = '';
+      }, 500);
+    });
+  }
+
+  function syncActiveMenu(index) {
+    const category = state.categoryList[index];
+    if (!category) {
       return;
     }
     state.activeMenu = index;
-    const token = ++requestToken;
-    void loadCategoryProducts(state.categoryList[index], token);
+    state.menuScrollTarget = '';
+    clearTimeout(menuScrollTargetTimer);
+    nextTick(() => {
+      state.menuScrollTarget = `menu-item-${category.id}`;
+      menuScrollTargetTimer = setTimeout(() => {
+        state.menuScrollTarget = '';
+      }, 500);
+    });
+  }
+
+  function onMenu(index) {
+    scrollToCategory(index);
+  }
+
+  function onRightScroll(event) {
+    const eventScrollTop = Number(event?.detail?.scrollTop);
+    if (Number.isFinite(eventScrollTop)) {
+      rightScrollTop = eventScrollTop;
+    }
+    clearTimeout(scrollSyncTimer);
+    scrollSyncTimer = setTimeout(() => {
+      const query = uni.createSelectorQuery().in(instance?.proxy);
+      query.select('.goods-list-scroll').boundingClientRect();
+      query.selectAll('.category-section').boundingClientRect();
+      query.exec(([scrollRect, sectionRects]) => {
+        if (!scrollRect || !Array.isArray(sectionRects)) {
+          return;
+        }
+        const firstVisibleIndex = findActiveCategoryIndex(
+          sectionRects,
+          scrollRect,
+          rightScrollTop,
+        );
+        if (firstVisibleIndex >= 0 && firstVisibleIndex !== state.activeMenu) {
+          syncActiveMenu(firstVisibleIndex);
+        }
+      });
+    }, 80);
+  }
+
+  function onRightTouchMove() {
+    scrollIntentTracker.invalidate();
+    pendingScrollIntent = null;
   }
 
   function initMenuIndex() {
@@ -129,25 +227,40 @@
     const requestedId = Number(tabbarParams.id);
     appStore.clearParamsForTabbar();
 
-    const selectedIndex = state.categoryList.findIndex(
-      (category) => Number(category.id) === requestedId,
-    );
-    onMenu(selectedIndex >= 0 ? selectedIndex : 0);
+    const selectedIndex = findInitialCategoryIndex(state.categoryList, requestedId);
+    scrollToCategory(selectedIndex, true);
+    void loadCategoryProducts(state.categoryList, requestToken);
   }
 
   async function getList() {
     const token = ++requestToken;
+    rightScrollTop = 0;
+    clearTimeout(scrollSyncTimer);
+    clearTimeout(scrollTargetTimer);
+    clearTimeout(menuScrollTargetTimer);
+    scrollIntentTracker.invalidate();
+    pendingScrollIntent = null;
+    state.scrollTarget = '';
+    state.menuScrollTarget = '';
     try {
       const response = await CategoryApi.getCategoryList();
       if (token !== requestToken || response?.code !== 0) {
+        if (token === requestToken && response?.code !== 0) {
+          state.categoryList = [];
+          state.sections = {};
+          state.activeMenu = 0;
+          pendingScrollIntent = null;
+        }
         return;
       }
-      state.categoryList = buildCategoryTree(response.data);
+      state.categoryList = getSecondLevelCategories(response.data);
       initMenuIndex();
     } catch {
       if (token === requestToken) {
         state.categoryList = [];
         state.sections = {};
+        state.activeMenu = 0;
+        pendingScrollIntent = null;
       }
     }
   }
@@ -162,6 +275,15 @@
 
   onShow(() => {
     void getList();
+  });
+
+  onUnload(() => {
+    clearTimeout(scrollSyncTimer);
+    clearTimeout(scrollTargetTimer);
+    clearTimeout(menuScrollTargetTimer);
+    scrollIntentTracker.invalidate();
+    pendingScrollIntent = null;
+    requestToken += 1;
   });
 </script>
 
