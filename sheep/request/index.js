@@ -1,3 +1,8 @@
+import {
+  sessionEpoch,
+  isCurrentSession,
+  staleSessionResult,
+} from '@/sheep/helper/sessionEpoch.mjs';
 /**
  * Shopro-request
  * @description api模块管理，loading配置，请求拦截，错误处理
@@ -26,8 +31,12 @@ const options = {
   loadingMsg: '加载中',
   // 需要授权才能请求 默认放开
   auth: false,
+  // 需要手机号授权完成正式登录才能请求
+  formalAuth: false,
   // 是否传递 token
   isToken: true,
+  // 是否允许公开请求跨越登录会话切换继续完成
+  sessionIndependent: false,
 };
 
 // Loading全局实例
@@ -70,11 +79,27 @@ const http = new Request({
  * @description 请求拦截器
  */
 http.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    if (!config.custom.sessionIndependent) {
+      config.custom.sessionEpoch ??= sessionEpoch();
+      if (!isCurrentSession(config.custom.sessionEpoch))
+        return Promise.reject(staleSessionResult());
+    }
     // 自定义处理【auth 授权】：必须登录的接口，则跳出 AuthModal 登录弹窗
     if (config.custom.auth && !$store('user').isLogin) {
       showAuthModal();
-      return Promise.reject();
+      return Promise.reject({ code: 401, msg: '请先登录' });
+    }
+
+    if (config.custom.formalAuth) {
+      const userStore = $store('user');
+      await userStore.ensureUserInfo();
+      if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch))
+        return Promise.reject(staleSessionResult());
+      if (!userStore.isFormalLogin) {
+        showAuthModal();
+        return Promise.reject({ code: 'PHONE_AUTH_REQUIRED', msg: '请先授权手机号' });
+      }
     }
 
     // 自定义处理【loading 加载中】：如果需要显示 loading，则显示 loading
@@ -92,6 +117,7 @@ http.interceptors.request.use(
 
     // 增加 token 令牌、terminal 终端、tenant 租户的请求头
     const token = config.custom.isToken ? getAccessToken() : undefined;
+    delete config.header.Authorization;
     if (token) {
       config.header['Authorization'] = token;
     }
@@ -111,9 +137,31 @@ http.interceptors.request.use(
  */
 http.interceptors.response.use(
   (response) => {
+    if (
+      !response.config.custom.sessionIndependent &&
+      !isCurrentSession(response.config.custom.sessionEpoch)
+    ) {
+      response.config.custom.showLoading && closeLoading();
+      return staleSessionResult();
+    }
     // 约定：如果是 /auth/ 下的 URL 地址，并且返回了 accessToken 说明是登录相关的接口，则自动设置登陆令牌
-    if (response.config.url.indexOf('/member/auth/') >= 0 && response.data?.data?.accessToken) {
-      $store('user').setToken(response.data.data.accessToken, response.data.data.refreshToken);
+    if (
+      response.data.code === 0 &&
+      response.config.url.indexOf('/member/auth/') >= 0 &&
+      response.data?.data?.accessToken
+    ) {
+      const userStore = $store('user');
+      if (response.config.url === '/member/auth/refresh-token') {
+        // Refresh preserves account identity, pending requests, and its scoped OpenID.
+        userStore.setToken(response.data.data.accessToken, response.data.data.refreshToken, {
+          load: false,
+          preserveInfo: true,
+        });
+      } else {
+        // Ordinary SMS/password/social login is an account switch even if the old token exists.
+        // Mark the installed epoch for provider continuations after this intentional invalidation.
+        response.data.sessionEpoch = userStore.installLoginSession(response.data.data);
+      }
     }
 
     // 自定处理【loading 加载中】：如果需要显示 loading，则关闭 loading
@@ -122,7 +170,7 @@ http.interceptors.response.use(
     // 自定义处理【error 错误提示】：如果需要显示错误提示，则显示错误提示
     if (response.data.code !== 0) {
       // 特殊：如果 401 错误码，则跳转到登录页 or 刷新令牌
-      if (response.data.code === 401) {
+      if (response.data.code === 401 && !response.config.custom.noRefresh) {
         return refreshToken(response.config);
       }
       // 特殊：处理分销用户绑定失败的提示
@@ -156,6 +204,17 @@ http.interceptors.response.use(
   (error) => {
     const userStore = $store('user');
     const isLogin = userStore.isLogin;
+    if (
+      error?.config &&
+      !error.config.custom.sessionIndependent &&
+      !isCurrentSession(error.config.custom.sessionEpoch)
+    ) {
+      error.config.custom.showLoading && closeLoading();
+      return staleSessionResult();
+    }
+    if (['STALE_SESSION', 'PHONE_AUTH_REQUIRED', 401].includes(error?.code)) {
+      return Promise.resolve(error);
+    }
     let errorMessage = '网络请求出错';
     if (error !== undefined) {
       switch (error.statusCode) {
@@ -197,9 +256,9 @@ http.interceptors.response.use(
           errorMessage = 'HTTP 版本不受支持';
           break;
       }
-      if (error.errMsg.includes('timeout')) errorMessage = '请求超时';
+      if (error.errMsg?.includes('timeout')) errorMessage = '请求超时';
       // #ifdef H5
-      if (error.errMsg.includes('Network'))
+      if (error.errMsg?.includes('Network'))
         errorMessage = window.navigator.onLine ? '服务器异常' : '请检查您的网络连接';
       // #endif
     }
@@ -213,6 +272,9 @@ http.interceptors.response.use(
         });
       }
       error.config.custom.showLoading && closeLoading();
+      if (error.config.custom.showError) {
+        return Promise.reject(error);
+      }
     }
 
     return false;
@@ -223,6 +285,9 @@ http.interceptors.response.use(
 let requestList = []; // 请求队列
 let isRefreshToken = false; // 是否正在刷新中
 const refreshToken = async (config) => {
+  if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch)) {
+    return staleSessionResult();
+  }
   // 如果当前已经是 refresh-token 的 URL 地址，并且还是 401 错误，说明是刷新令牌失败了，直接返回 Promise.reject(error)
   if (config.url.indexOf('/member/auth/refresh-token') >= 0) {
     return Promise.reject('error');
@@ -241,6 +306,9 @@ const refreshToken = async (config) => {
     // 2. 进行刷新访问令牌
     try {
       const refreshTokenResult = await AuthUtil.refreshToken(refreshToken);
+      if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch)) {
+        return staleSessionResult();
+      }
       if (refreshTokenResult.code !== 0) {
         // 如果刷新不成功，直接抛出 e 触发 2.2 的逻辑
         // noinspection ExceptionCaughtLocallyJS
@@ -254,14 +322,20 @@ const refreshToken = async (config) => {
       requestList = [];
       return request(config);
     } catch (e) {
+      if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch)) {
+        return staleSessionResult();
+      }
       // 为什么需要 catch 异常呢？刷新失败时，请求因为 Promise.reject 触发异常。
       // 2.2 刷新失败，只回放队列的请求
       requestList.forEach((cb) => {
         cb();
       });
+      requestList = [];
       // 提示是否要登出。即不回放当前请求！不然会形成递归
       return handleAuthorized();
     } finally {
+      // Stale refresh attempts must settle queued requests too; their epoch guard rejects replay.
+      requestList.forEach((cb) => cb());
       requestList = [];
       isRefreshToken = false;
     }

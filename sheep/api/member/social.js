@@ -2,15 +2,17 @@ import request from '@/sheep/request';
 
 const SocialApi = {
   // 获得社交用户
-  getSocialUser: (type) => {
+  getSocialUser: (type, quiet = false) => {
     return request({
       url: '/member/social-user/get',
       method: 'GET',
       params: {
-        type
+        type,
       },
       custom: {
         showLoading: false,
+        showError: !quiet,
+        noRefresh: quiet,
       },
     });
   },
@@ -22,7 +24,7 @@ const SocialApi = {
       data: {
         type,
         code,
-        state
+        state,
       },
       custom: {
         custom: {
@@ -40,7 +42,7 @@ const SocialApi = {
       method: 'DELETE',
       data: {
         type,
-        openid
+        openid,
       },
       custom: {
         showLoading: false,
