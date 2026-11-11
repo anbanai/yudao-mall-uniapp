@@ -92,6 +92,8 @@ const SpuApi = {
       custom: {
         showLoading: false,
         showError: true,
+        // 商品详情允许未登录访问，登录态切换不应丢弃公开商品数据。
+        sessionIndependent: true,
       },
     });
     return ensureProductResponseOk(response);
