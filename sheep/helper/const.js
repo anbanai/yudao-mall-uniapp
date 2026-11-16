@@ -150,4 +150,6 @@ export const SharePageEnum = {
     page: '/pages/goods/point',
     value: '6',
   },
+  USER: { name: '个人中心', page: '/pages/index/user', value: '7' },
+  CUSTOM: { name: '自定义页面', page: '/pages/index/page', value: '8' },
 };

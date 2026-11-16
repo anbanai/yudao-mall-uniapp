@@ -48,6 +48,7 @@
 
   // 搜索
   function onSearch(keyword) {
+    keyword = String(keyword || '').trim();
     if (!keyword) {
       return;
     }
@@ -66,7 +67,7 @@
     state.historyList.unshift(keyword);
 
     // 最多保留 10 条记录
-    if (state.historyList.length >= 10) {
+    if (state.historyList.length > 10) {
       state.historyList.length = 10;
     }
     uni.setStorageSync('searchHistory', state.historyList);
@@ -78,7 +79,7 @@
       content: '确认清除搜索历史吗？',
       success: function (res) {
         if (res.confirm) {
-          state.historyTag = [];
+          state.historyList = [];
           uni.removeStorageSync('searchHistory');
         }
       },
@@ -86,7 +87,8 @@
   }
 
   onLoad(() => {
-    state.historyList = uni.getStorageSync('searchHistory') || [];
+    const history = uni.getStorageSync('searchHistory');
+    state.historyList = Array.isArray(history) ? history.filter(Boolean).slice(0, 10) : [];
   });
 </script>
 

@@ -9,13 +9,13 @@ const benefitsPage = await readFile(resolve(scriptDir, '../pages/user/benefits/i
 
 assert.equal(
   userPage.includes('/pages/user/benefits/index'),
-  false,
-  '用户中心不应显示会员权益中心入口',
+  true,
+  '用户中心应显示会员权益中心入口',
 );
 assert.equal(
   userPage.includes('>会员权益中心</button>'),
   false,
-  '用户中心不应显示会员权益中心按钮',
+  '会员权益中心入口应使用可访问的自定义入口',
 );
 assert.equal(
   benefitsPage.includes('<s-layout title="会员权益中心"'),
