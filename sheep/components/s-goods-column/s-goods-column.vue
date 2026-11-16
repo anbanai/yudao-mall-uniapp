@@ -4,14 +4,18 @@
     <!-- xs卡片：横向紧凑型，一行放两个，图片左内容右边  -->
     <view
       v-if="size === 'xs'"
-      class="xs-goods-card ss-flex ss-col-stretch"
+      :class="['xs-goods-card', variant && `goods-card--${variant}`, 'ss-flex', 'ss-col-stretch']"
       :style="[elStyles]"
       @tap="onClick"
     >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
+        <image
+          class="tag-icon"
+          :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"
+          lazy-load
+        ></image>
       </view>
-      <image class="xs-img-box" :src="sheep.$url.cdn(data.image || data.picUrl)" mode="aspectFit" />
+      <image class="xs-img-box" :src="goodsImage" mode="aspectFit" lazy-load />
       <view
         v-if="goodsFields.title?.show || goodsFields.name?.show || goodsFields.price?.show"
         class="xs-goods-content ss-flex-col ss-row-around"
@@ -22,6 +26,9 @@
           :style="[{ color: titleColor, width: titleWidth ? titleWidth + 'rpx' : '' }]"
         >
           {{ data.title || data.name }}
+        </view>
+        <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+          {{ data.merchantName }}
         </view>
         <!-- 活动信息 -->
         <view class="iconBox" v-if="data.promotionType > 0 || data.rewardActivity">
@@ -69,15 +76,20 @@
     </view>
 
     <!-- sm卡片：竖向紧凑，一行放三个，图上内容下 -->
-    <view v-if="size === 'sm'" class="sm-goods-card ss-flex-col" :style="[elStyles]" @tap="onClick">
+    <view
+      v-if="size === 'sm'"
+      :class="['sm-goods-card', variant && `goods-card--${variant}`, 'ss-flex-col']"
+      :style="[elStyles]"
+      @tap="onClick"
+    >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
+        <image
+          class="tag-icon"
+          :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"
+          lazy-load
+        ></image>
       </view>
-      <image
-        class="sm-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="aspectFill"
-      ></image>
+      <image class="sm-img-box" :src="goodsImage" mode="aspectFill" :lazy-load="lazyLoad"></image>
 
       <view
         v-if="goodsFields.title?.show || goodsFields.name?.show || goodsFields.price?.show"
@@ -86,9 +98,12 @@
       >
         <view
           v-if="goodsFields.title?.show || goodsFields.name?.show"
-          class="sm-goods-title ss-line-1 ss-m-b-16"
+          :class="[titleLines > 1 ? 'ss-line-2' : 'ss-line-1', 'sm-goods-title', 'ss-m-b-16']"
         >
           {{ data.title || data.name }}
+        </view>
+        <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+          {{ data.merchantName }}
         </view>
         <!-- 活动信息 -->
         <view class="iconBox" v-if="data.promotionType > 0 || data.rewardActivity">
@@ -136,22 +151,33 @@
     </view>
 
     <!-- md卡片：竖向，一行放两个，图上内容下 -->
-    <view v-if="size === 'md'" class="md-goods-card ss-flex-col" :style="[elStyles]" @tap="onClick">
+    <view
+      v-if="size === 'md'"
+      :class="['md-goods-card', variant && `goods-card--${variant}`, 'ss-flex-col']"
+      :style="[elStyles]"
+      @tap="onClick"
+    >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" />
+        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" lazy-load />
       </view>
       <image
-        v-if="data.image_wh"
+        v-if="data.image_wh && !fixedImage"
         class="md-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
+        :src="goodsImage"
         mode="widthFix"
+        :lazy-load="lazyLoad"
       />
       <image
         v-else
         class="md-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        :style="[{ height: defaultImgWidth * 2 + 'rpx' }]"
+        :src="goodsImage"
+        :style="[
+          {
+            height: fixedImage ? fixedImageHeight : defaultImgWidth * 2 + 'rpx',
+          },
+        ]"
         mode="aspectFill"
+        :lazy-load="lazyLoad"
       />
       <view
         class="md-goods-content ss-flex-col ss-row-around ss-p-b-20 ss-p-t-20 ss-p-x-16"
@@ -164,8 +190,14 @@
         >
           {{ data.title || data.name }}
         </view>
+        <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+          {{ data.merchantName }}
+        </view>
         <view
-          v-if="goodsFields.subtitle?.show || goodsFields.introduction?.show"
+          v-if="
+            (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
+            shouldShowGoodsSubtitle(data)
+          "
           class="md-goods-subtitle ss-m-t-16 ss-line-1"
           :style="[{ color: subTitleColor, background: subTitleBackground }]"
         >
@@ -193,57 +225,105 @@
             {{ item }}
           </view>
         </view>
-        <view class="ss-flex ss-col-bottom">
-          <view
-            v-if="goodsFields.price?.show"
-            class="md-goods-price ss-m-t-16 font-OPPOSANS ss-m-r-10"
-            :style="[{ color: goodsFields.price.color }]"
-          >
-            <!-- 活动价格 -->
+        <template v-if="variant === 'point'">
+          <view class="md-point-meta ss-flex ss-col-center">
             <view
-              class="ss-flex"
-              v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+              v-if="goodsFields.price?.show"
+              class="md-point-score md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
             >
               <image
                 :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
                 class="point-img"
               ></image>
-              <text class="point-text ss-m-r-16">
-                {{ data.point }}
-                {{
-                  !data.pointPrice || data.pointPrice === 0
-                    ? ''
-                    : `+${priceUnit}${fen2yuan(data.pointPrice)}`
-                }}
-              </text>
+              <text class="point-text">{{ data.point }}</text>
             </view>
-            <template v-else>
+            <text
+              v-if="goodsFields.price?.show && data.pointPrice > 0"
+              class="md-point-plus md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
+            >
+              +
+            </text>
+            <view
+              v-if="goodsFields.price?.show && data.pointPrice > 0"
+              class="md-point-cash md-goods-price font-OPPOSANS"
+              :style="[{ color: goodsFields.price.color }]"
+            >
               <text class="price-unit ss-font-24">{{ priceUnit }}</text>
-              <text v-if="data.promotionPrice > 0">{{ fen2yuan(data.promotionPrice) }}</text>
-              <text v-else>
-                {{ isArray(data.price) ? fen2yuan(data.price[0]) : fen2yuan(data.price) }}
-              </text>
-            </template>
+              <text>{{ fen2yuan(data.pointPrice) }}</text>
+            </view>
           </view>
-          <view
-            v-if="
-              (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
-              (data.original_price > 0 || data.marketPrice > 0)
-            "
-            class="goods-origin-price ss-m-t-16 font-OPPOSANS ss-flex"
-            :style="[{ color: originPriceColor }]"
-          >
-            <text class="price-unit ss-font-20">{{ priceUnit }}</text>
-            <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
+          <view class="md-point-action ss-flex ss-col-center ss-row-between">
+            <view
+              v-if="
+                (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
+                (data.original_price > 0 || data.marketPrice > 0)
+              "
+              class="goods-origin-price font-OPPOSANS ss-flex"
+              :style="[{ color: originPriceColor }]"
+            >
+              <text class="price-unit ss-font-20">{{ priceUnit }}</text>
+              <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
+            </view>
+            <slot name="cart" />
           </view>
-        </view>
+        </template>
+        <template v-else>
+          <view class="ss-flex ss-col-bottom">
+            <view
+              v-if="goodsFields.price?.show"
+              class="md-goods-price ss-m-t-16 font-OPPOSANS ss-m-r-10"
+              :style="[{ color: goodsFields.price.color }]"
+            >
+              <!-- 活动价格 -->
+              <view
+                class="ss-flex"
+                v-if="
+                  data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type
+                "
+              >
+                <image
+                  :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
+                  class="point-img"
+                ></image>
+                <text class="point-text ss-m-r-16">
+                  {{ data.point }}
+                  {{
+                    !data.pointPrice || data.pointPrice === 0
+                      ? ''
+                      : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+                  }}
+                </text>
+              </view>
+              <template v-else>
+                <text class="price-unit ss-font-24">{{ priceUnit }}</text>
+                <text v-if="data.promotionPrice > 0">{{ fen2yuan(data.promotionPrice) }}</text>
+                <text v-else>
+                  {{ isArray(data.price) ? fen2yuan(data.price[0]) : fen2yuan(data.price) }}
+                </text>
+              </template>
+            </view>
+            <view
+              v-if="
+                (goodsFields.original_price?.show || goodsFields.marketPrice?.show) &&
+                (data.original_price > 0 || data.marketPrice > 0)
+              "
+              class="goods-origin-price ss-m-t-16 font-OPPOSANS ss-flex"
+              :style="[{ color: originPriceColor }]"
+            >
+              <text class="price-unit ss-font-20">{{ priceUnit }}</text>
+              <view class="ss-m-l-8">{{ fen2yuan(data.marketPrice) }}</view>
+            </view>
+          </view>
+        </template>
 
         <view class="ss-m-t-16 ss-flex ss-col-center ss-flex-wrap">
           <view class="sales-text">{{ salesAndStock }}</view>
         </view>
       </view>
 
-      <slot name="cart">
+      <slot name="cart" v-if="variant !== 'point'">
         <view class="cart-box ss-flex ss-col-center ss-row-center">
           <image class="cart-icon" src="/static/img/shop/tabbar/category2.png" mode="" />
         </view>
@@ -258,17 +338,17 @@
       @tap="onClick"
     >
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"></image>
+        <image
+          class="tag-icon"
+          :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)"
+          lazy-load
+        ></image>
       </view>
       <view v-if="seckillTag" class="seckill-tag ss-flex ss-row-center">秒杀</view>
       <view v-if="grouponTag" class="groupon-tag ss-flex ss-row-center">
         <view class="tag-icon">拼团</view>
       </view>
-      <image
-        class="lg-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="aspectFill"
-      />
+      <image class="lg-img-box" :src="goodsImage" mode="aspectFill" lazy-load />
       <view class="lg-goods-content ss-flex-1 ss-flex-col ss-row-between ss-p-b-10 ss-p-t-20">
         <view>
           <view
@@ -278,8 +358,14 @@
           >
             {{ data.title || data.name }}
           </view>
+          <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+            {{ data.merchantName }}
+          </view>
           <view
-            v-if="goodsFields.subtitle?.show || goodsFields.introduction?.show"
+            v-if="
+              (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
+              shouldShowGoodsSubtitle(data)
+            "
             class="lg-goods-subtitle ss-m-t-10 ss-line-1"
             :style="[{ color: subTitleColor, background: subTitleBackground }]"
           >
@@ -361,13 +447,9 @@
     <!-- sl卡片：竖向型，一行放一个，图片上内容下边 -->
     <view v-if="size === 'sl'" class="sl-goods-card ss-flex-col" :style="[elStyles]" @tap="onClick">
       <view v-if="tagStyle.show" class="tag-icon-box">
-        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" />
+        <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" lazy-load />
       </view>
-      <image
-        class="sl-img-box"
-        :src="sheep.$url.cdn(data.image || data.picUrl)"
-        mode="aspectFill"
-      />
+      <image class="sl-img-box" :src="goodsImage" mode="aspectFill" lazy-load />
       <view class="sl-goods-content">
         <view>
           <view
@@ -377,8 +459,14 @@
           >
             {{ data.title || data.name }}
           </view>
+          <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
+            {{ data.merchantName }}
+          </view>
           <view
-            v-if="goodsFields.subtitle?.show || goodsFields.introduction?.show"
+            v-if="
+              (goodsFields.subtitle?.show || goodsFields.introduction?.show) &&
+              shouldShowGoodsSubtitle(data)
+            "
             class="sl-goods-subtitle ss-m-t-16"
             :style="[{ color: subTitleColor, background: subTitleBackground }]"
           >
@@ -503,6 +591,7 @@
   } from '@/sheep/hooks/useGoods';
   import { isArray } from '@/sheep/helper/lodash';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+  import { getGoodsImageHeight, shouldShowGoodsSubtitle } from './goods-column.mjs';
 
   // 数据
   let defaultImgWidth = ref(0);
@@ -596,6 +685,14 @@
       type: Boolean,
       default: true,
     },
+    titleLines: {
+      type: Number,
+      default: 1,
+    },
+    variant: {
+      type: String,
+      default: '',
+    },
     seckillTag: {
       type: Boolean,
       default: false,
@@ -604,6 +701,40 @@
       type: Boolean,
       default: false,
     },
+    fixedImage: {
+      type: Boolean,
+      default: false,
+    },
+    imageWidth: {
+      type: Number,
+      default: 345,
+    },
+    lazyLoad: {
+      type: Boolean,
+      default: true,
+    },
+  });
+
+  const goodsImageFormat = process.env.UNI_PLATFORM === 'mp-weixin' ? 'jpg' : 'webp';
+  const imageParams = {
+    xs: { width: 360, height: 360, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    sm: { width: 240, height: 240, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    md: { width: 360, height: 360, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    lg: { width: 360, height: 360, quality: 80, format: goodsImageFormat, transformOrigin: true },
+    sl: { width: 750, height: 750, quality: 82, format: goodsImageFormat, transformOrigin: true },
+  };
+
+  const goodsImage = computed(() =>
+    sheep.$url.thumb(
+      props.data.image || props.data.picUrl,
+      imageParams[props.size] || imageParams.sl,
+    ),
+  );
+
+  const fixedImageHeight = computed(() => {
+    const width = Number(props.imageWidth) > 0 ? Number(props.imageWidth) : 345;
+    const height = getGoodsImageHeight(width, props.data.image_wh);
+    return `${height}rpx`;
   });
 
   // 优惠文案
@@ -671,7 +802,7 @@
   const elId = `sheep_${Math.ceil(Math.random() * 10e5).toString(36)}`;
 
   function getGoodsPriceCardWH() {
-    if (props.size === 'md') {
+    if (props.size === 'md' && !props.fixedImage) {
       const view = uni.createSelectorQuery().in(proxy);
       view.select(`#${elId}`).fields({
         size: true,
@@ -758,7 +889,7 @@
   }
 
   .price-unit {
-    margin-right: -4px;
+    margin-right: 4rpx;
   }
 
   .sales-text {
@@ -823,6 +954,7 @@
       // width: 228rpx;
       width: 100%;
       height: 208rpx;
+      background-color: #f1f2f4;
     }
 
     .sm-goods-content {
@@ -841,6 +973,33 @@
     }
   }
 
+  .sm-goods-card.goods-card--productGroup {
+    border-radius: 10rpx;
+    box-shadow: 0 2rpx 10rpx rgba(31, 35, 41, 0.04);
+
+    .sm-img-box {
+      height: 216rpx;
+      background: #f5f6f7;
+    }
+
+    .sm-goods-content {
+      min-height: 142rpx;
+      padding: 16rpx 14rpx 18rpx;
+    }
+
+    .sm-goods-title {
+      min-height: 72rpx;
+      line-height: 36rpx;
+      font-weight: 500;
+      color: #26282b;
+    }
+
+    .sm-goods-price {
+      line-height: 38rpx;
+      font-weight: 600;
+    }
+  }
+
   // md
   .md-goods-card {
     overflow: hidden;
@@ -852,6 +1011,7 @@
 
     .md-img-box {
       width: 100%;
+      background-color: #f1f2f4;
     }
 
     .md-goods-title {
@@ -870,6 +1030,46 @@
       font-size: 30rpx;
       color: $red;
       line-height: 36rpx;
+    }
+
+    &.goods-card--point {
+      .md-point-meta,
+      .md-point-action {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .md-point-meta {
+        min-height: 36rpx;
+        margin-top: 16rpx;
+        gap: 8rpx;
+      }
+
+      .md-point-score {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+      }
+
+      .md-point-score .point-text {
+        white-space: nowrap;
+      }
+
+      .md-point-action {
+        min-height: 50rpx;
+        margin-top: 16rpx;
+        justify-content: space-between;
+      }
+
+      .md-point-cash {
+        line-height: 36rpx;
+      }
+
+      .md-point-action .cart-btn {
+        position: static;
+        flex-shrink: 0;
+        margin-left: auto;
+      }
     }
 
     .cart-box {

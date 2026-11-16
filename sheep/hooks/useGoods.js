@@ -81,10 +81,13 @@ export function formatGoodsSwiper(urlList) {
       .map((url, key) => {
         const isVideo = VIDEO_SUFFIX_LIST.some((suffix) => url.includes(suffix));
         const type = isVideo ? 'video' : 'image';
-        const src = $url.cdn(url);
+        const src = isVideo
+          ? $url.cdn(url)
+          : $url.thumb(url, { width: 750, quality: 82, format: 'webp' });
         return {
           type,
           src,
+          lazyLoad: key !== 0,
         };
       }) || []
   );
@@ -496,6 +499,16 @@ export function getRewardActivityRuleItemDescriptions(activity) {
     }
   });
   return result;
+}
+
+/**
+ * 获取默认选中的 SKU，优先选择有库存的 SKU。
+ *
+ * 单规格商品没有可供选择的属性值，需要直接使用 SKU 本身完成购买。
+ */
+export function getDefaultSku(skus) {
+  const list = Array.isArray(skus) ? skus : [];
+  return list.find((sku) => sku && sku.stock > 0) || list[0];
 }
 
 /** 单规格，要默认选中 */

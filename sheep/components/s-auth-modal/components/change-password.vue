@@ -21,7 +21,7 @@
           placeholder="请输入验证码"
           v-model="state.model.code"
           type="number"
-          maxlength="4"
+          maxlength="6"
           :inputBorder="false"
         >
           <template v-slot:right>
@@ -53,9 +53,7 @@
       </uni-forms-item>
     </uni-forms>
 
-    <button class="ss-reset-button type-btn" @tap="closeAuthModal">
-      取消修改
-    </button>
+    <button class="ss-reset-button type-btn" @tap="closeAuthModal"> 取消修改 </button>
   </view>
 </template>
 

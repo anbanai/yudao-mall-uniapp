@@ -51,6 +51,8 @@
       <s-auth-modal />
       <!-- 全局分享弹窗 -->
       <s-share-modal :shareInfo="shareInfo" />
+      <!-- 全局客服弹窗 -->
+      <s-kefu-modal />
       <!-- 全局快捷入口 -->
       <s-menu-tools />
     </view>
@@ -213,7 +215,7 @@
   onShareTimeline(() => {
     return {
       title: shareInfo.value.title,
-      query: shareInfo.value.forward.path,
+      query: shareInfo.value.forward.query ?? shareInfo.value.forward.path,
       imageUrl: shareInfo.value.image,
     };
   });

@@ -196,6 +196,16 @@
         type: String,
         default: '',
       },
+      // 图片上传业务场景，带场景时由后端执行固定策略校验
+      scene: {
+        type: String,
+        default: '',
+      },
+      // 单个文件最大大小，单位 MB
+      maxSize: {
+        type: Number,
+        default: 0,
+      },
     },
     data() {
       return {
@@ -358,6 +368,7 @@
           // TODO 如果为空，video 有问题
           extension: _extname.length > 0 ? _extname : undefined,
           count: this.limitLength - this.files.length, //默认9
+          scene: this.scene || undefined,
           onChooseFile: this.chooseFileCallback,
           onUploadProgress: (progressEvent) => {
             this.setProgress(progressEvent, progressEvent.index);
@@ -389,6 +400,20 @@
         if (!(_extname && _extname.length > 0)) {
           filePaths = res.tempFilePaths;
           files = res.tempFiles;
+        }
+
+        if (this.maxSize > 0) {
+          const maxBytes = this.maxSize * 1024 * 1024;
+          const acceptedFiles = files.filter((file) => file.size <= maxBytes);
+          if (acceptedFiles.length !== files.length) {
+            uni.showToast({
+              title: `图片大小不能超过 ${this.maxSize}MB`,
+              icon: 'none',
+              duration: 3000,
+            });
+          }
+          files = acceptedFiles;
+          filePaths = files.map((file) => file.path);
         }
 
         let currentData = [];

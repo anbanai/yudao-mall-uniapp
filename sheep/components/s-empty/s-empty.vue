@@ -3,7 +3,7 @@
     class="ss-flex-col ss-col-center ss-row-center empty-box"
     :style="[{ paddingTop: paddingTop + 'rpx' }]"
   >
-    <view class=""><image class="empty-icon" :src="icon" mode="widthFix"></image></view>
+    <view class=""><image class="empty-icon" :src="iconUrl" mode="widthFix"></image></view>
     <view class="empty-text ss-m-t-28 ss-m-b-40">
       <text v-if="text !== ''">{{ text }}</text>
     </view>
@@ -14,6 +14,7 @@
 </template>
 
 <script setup>
+  import { computed } from 'vue';
   import sheep from '@/sheep';
   /**
    * 容器组件 - 装修组件的样式容器
@@ -58,6 +59,7 @@
   });
 
   const emits = defineEmits(['clickAction']);
+  const iconUrl = computed(() => sheep.$url.static(props.icon));
 
   function clickAction() {
     if (props.actionUrl !== '') {

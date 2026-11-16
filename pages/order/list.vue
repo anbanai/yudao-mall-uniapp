@@ -120,7 +120,7 @@
 
 <script setup>
   import { reactive } from 'vue';
-  import { onLoad, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app';
+  import { onLoad, onReachBottom, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
   import {
     fen2yuan,
     formatOrderColor,
@@ -131,6 +131,7 @@
   import { concat, isEmpty } from '@/sheep/helper/lodash';
   import OrderApi from '@/sheep/api/trade/order';
   import { resetPagination } from '@/sheep/helper/utils';
+  import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';
 
   // 数据
   const state = reactive({
@@ -165,6 +166,7 @@
       value: 30,
     },
   ];
+  let hasLoaded = false;
 
   // 切换选项卡
   function onTabsChange(e) {
@@ -233,6 +235,7 @@
         const { code } = await OrderApi.receiveOrder(order.id);
         if (code === 0) {
           resetPagination(state.pagination);
+          await sheep.$store('user').refreshOrderCount();
           await getOrderList();
         }
       },
@@ -273,9 +276,7 @@
 
   // 查看物流
   async function onExpress(id) {
-    sheep.$router.go('/pages/order/express/log', {
-      id,
-    });
+    await openOrderLogistics(id);
   }
 
   // 取消订单
@@ -289,6 +290,7 @@
         }
         const { code } = await OrderApi.cancelOrder(orderId);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           // 修改数据的状态
           let index = state.pagination.list.findIndex((order) => order.id === orderId);
           const orderInfo = state.pagination.list[index];
@@ -308,6 +310,7 @@
         if (res.confirm) {
           const { code } = await OrderApi.deleteOrder(orderId);
           if (code === 0) {
+            await sheep.$store('user').refreshOrderCount();
             // 删除数据
             let index = state.pagination.list.findIndex((order) => order.id === orderId);
             state.pagination.list.splice(index, 1);
@@ -339,6 +342,16 @@
     if (options.type) {
       state.currentTab = options.type;
     }
+    await getOrderList();
+    hasLoaded = true;
+  });
+
+  onShow(async () => {
+    if (!hasLoaded) {
+      return;
+    }
+    await sheep.$store('user').refreshOrderCount();
+    resetPagination(state.pagination);
     await getOrderList();
   });
 

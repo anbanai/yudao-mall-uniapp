@@ -8,7 +8,7 @@ const RewardActivityApi = {
       method: 'GET',
       params: { id },
     });
-  }
+  },
 };
 
 export default RewardActivityApi;

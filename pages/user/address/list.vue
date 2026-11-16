@@ -54,8 +54,9 @@
 
   // 选择收货地址
   const onSelect = (addressInfo) => {
-    if (state.openType !== 'select'){ // 不作为选择组件时阻断操作
-      return
+    if (state.openType !== 'select') {
+      // 不作为选择组件时阻断操作
+      return;
     }
     uni.$emit('SELECT_ADDRESS', {
       addressInfo,

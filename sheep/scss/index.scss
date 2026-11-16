@@ -1,13 +1,16 @@
 @import './tools';
 @import './ui';
 
+/* #ifndef MP-WEIXIN */
 /* 字体文件 */
 @font-face {
   font-family: OPPOSANS;
   src: url('~@/sheep/scss/font/OPPOSANS-M-subfont.ttf');
 }
+/* #endif */
+
 .font-OPPOSANS {
-  font-family: OPPOSANS;
+  font-family: OPPOSANS, Arial, sans-serif;
 }
 page {
   -webkit-overflow-scrolling: touch; // 解决ios滑动不流畅

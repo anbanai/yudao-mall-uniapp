@@ -8,6 +8,7 @@ const UserApi = {
       method: 'GET',
       custom: {
         showLoading: false,
+        showError: true,
         auth: true,
       },
     });
@@ -21,7 +22,8 @@ const UserApi = {
       custom: {
         auth: true,
         showSuccess: true,
-        successMsg: '更新成功'
+        formalAuth: true,
+        successMsg: '更新成功',
       },
     });
   },
@@ -34,7 +36,7 @@ const UserApi = {
       custom: {
         loadingMsg: '验证中',
         showSuccess: true,
-        successMsg: '修改成功'
+        successMsg: '修改成功',
       },
     });
   },
@@ -44,12 +46,12 @@ const UserApi = {
       url: '/member/user/update-mobile-by-weixin',
       method: 'PUT',
       data: {
-        code
+        code,
       },
       custom: {
         showSuccess: true,
         loadingMsg: '获取中',
-        successMsg: '修改成功'
+        successMsg: '修改成功',
       },
     });
   },
@@ -62,7 +64,8 @@ const UserApi = {
       custom: {
         loadingMsg: '验证中',
         showSuccess: true,
-        successMsg: '修改成功'
+        formalAuth: true,
+        successMsg: '修改成功',
       },
     });
   },
@@ -75,11 +78,10 @@ const UserApi = {
       custom: {
         loadingMsg: '验证中',
         showSuccess: true,
-        successMsg: '修改成功'
-      }
+        successMsg: '修改成功',
+      },
     });
   },
-
 };
 
 export default UserApi;

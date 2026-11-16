@@ -1,40 +1,40 @@
 @import './mixins';
 
 //颜色 ，渐变背景60%
-$red: #d10019;      // 中国红
-$orange: #f37b1d;   // 桔橙
-$gold: #fbbd08;     // 明黄
-$green: #8dc63f;    // 橄榄绿
-$cyan: #1cbbb4;     // 天青
-$blue: #0081ff;     // 海蓝
-$purple: #6739b6;   // 姹紫
-$brightRed: #e54d42;  // 嫣红
+$red: #d10019; // 中国红
+$orange: #f37b1d; // 桔橙
+$gold: #fbbd08; // 明黄
+$green: #8dc63f; // 橄榄绿
+$cyan: #1cbbb4; // 天青
+$blue: #0081ff; // 海蓝
+$purple: #6739b6; // 姹紫
+$brightRed: #e54d42; // 嫣红
 $forestGreen: #39b54a; // 森绿
-$mauve: #9c26b0;    // 木槿
-$pink: #e03997;     // 桃粉
-$brown: #a5673f;    // 棕褐
-$grey: #8799a3;     // 玄灰
-$gray: #aaaaaa;     // 草灰
-$black: #333333;    // 墨黑
+$mauve: #9c26b0; // 木槿
+$pink: #e03997; // 桃粉
+$brown: #a5673f; // 棕褐
+$grey: #8799a3; // 玄灰
+$gray: #aaaaaa; // 草灰
+$black: #333333; // 墨黑
 
 $colors: ();
 $colors: map-merge(
   (
-    'red':$red,
-    'orange':$orange,
-    'gold':$gold,
-    'green':$green,
-    'cyan':$cyan,
-    'blue':$blue,
-    'purple':$purple,
-    'brightRed':$brightRed,
-    'forestGreen':$forestGreen,
-    'mauve':$mauve,
-    'pink':$pink,
-    'brown':$brown,
-    'grey':$grey,
-    'gray':$gray,
-    'black':$black,
+    'red': $red,
+    'orange': $orange,
+    'gold': $gold,
+    'green': $green,
+    'cyan': $cyan,
+    'blue': $blue,
+    'purple': $purple,
+    'brightRed': $brightRed,
+    'forestGreen': $forestGreen,
+    'mauve': $mauve,
+    'pink': $pink,
+    'brown': $brown,
+    'grey': $grey,
+    'gray': $gray,
+    'black': $black,
   ),
   $colors
 );

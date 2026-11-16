@@ -9,21 +9,28 @@ const CartApi = {
       custom: {
         showSuccess: true,
         successMsg: '已添加到购物车~',
-      }
+        formalAuth: true,
+      },
     });
   },
   updateCartCount: (data) => {
     return request({
       url: '/trade/cart/update-count',
       method: 'PUT',
-      data: data
+      data: data,
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   updateCartSelected: (data) => {
     return request({
       url: '/trade/cart/update-selected',
       method: 'PUT',
-      data: data
+      data: data,
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   deleteCart: (ids) => {
@@ -31,8 +38,11 @@ const CartApi = {
       url: '/trade/cart/delete',
       method: 'DELETE',
       params: {
-        ids
-      }
+        ids,
+      },
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   getCartList: () => {
@@ -42,6 +52,7 @@ const CartApi = {
       custom: {
         showLoading: false,
         auth: true,
+        formalAuth: true,
       },
     });
   },

@@ -41,7 +41,7 @@
           placeholder="请输入验证码"
           v-model="state.model.code"
           type="number"
-          maxlength="4"
+          maxlength="6"
           :inputBorder="false"
         />
       </uni-forms-item>
@@ -110,7 +110,7 @@
       return;
     }
     // 成功后，用户重新登录
-    showAuthModal('accountLogin')
+    showAuthModal('accountLogin');
   };
 </script>
 

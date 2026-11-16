@@ -93,58 +93,28 @@
     margin padding: 内外边距
 	
  ==================== */
-@for $i from 0 through 100 {
-  // 只要双数和能被5除尽的数
-  @if $i % 2==0 or $i % 5==0 {
-    // 得出：u-margin-30或者u-m-30
-    .ss-margin-#{$i},
-    .ss-m-#{$i} {
-      margin: $i + rpx;
-    }
-    .ss-m-x-#{$i} {
-      margin-left: $i + rpx;
-      margin-right: $i + rpx;
-    }
-    .ss-m-y-#{$i} {
-      margin-top: $i + rpx;
-      margin-bottom: $i + rpx;
-    }
+$spacing-rules: (
+  m: (properties: (margin,), values: (20,)),
+  m-x: (properties: (margin-left, margin-right), values: (4, 20, 30)),
+  m-y: (properties: (margin-top, margin-bottom), values: (14, 20, 30, 40)),
+  m-l: (properties: (margin-left,), values: (4, 5, 6, 8, 16, 20, 24, 32, 36, 40, 100)),
+  m-t: (properties: (margin-top,), values: (6, 8, 10, 14, 16, 20, 22, 24, 28, 30, 32, 36, 38, 40, 44, 50, 56, 60, 64, 80)),
+  m-r: (properties: (margin-right,), values: (4, 8, 10, 12, 16, 20, 24, 28, 30, 32, 40, 48, 50, 52, 54)),
+  m-b: (properties: (margin-bottom,), values: (6, 8, 10, 12, 14, 16, 18, 20, 24, 26, 28, 30, 34, 36, 40, 42, 50, 58, 60, 64, 70, 100)),
+  p: (properties: (padding,), values: (10, 20, 25, 30)),
+  p-x: (properties: (padding-left, padding-right), values: (16, 20, 24, 30, 38, 40)),
+  p-y: (properties: (padding-top, padding-bottom), values: (10, 20, 30, 34, 40)),
+  p-l: (properties: (padding-left,), values: (10, 20, 22, 30, 34, 78)),
+  p-t: (properties: (padding-top,), values: (18, 20, 30, 44, 50, 60)),
+  p-r: (properties: (padding-right,), values: (10, 20, 24, 30, 40)),
+  p-b: (properties: (padding-bottom,), values: (0, 10, 20, 30, 40, 50, 60, 100)),
+);
 
-    // 得出：u-padding-30或者u-p-30
-    .ss-padding-#{$i},
-    .ss-p-#{$i} {
-      padding: $i + rpx;
-    }
-    .ss-p-x-#{$i} {
-      padding-left: $i + rpx;
-      padding-right: $i + rpx;
-    }
-    .ss-p-y-#{$i} {
-      padding-top: $i + rpx;
-      padding-bottom: $i + rpx;
-    }
-
-    @each $short, $long in l left, t top, r right, b bottom {
-      // 缩写版，结果如： u-m-l-30
-      // 定义外边距
-      .ss-m-#{$short}-#{$i} {
-        margin-#{$long}: $i + rpx;
-      }
-
-      // 定义内边距
-      .ss-p-#{$short}-#{$i} {
-        padding-#{$long}: $i + rpx;
-      }
-
-      // 完整版，结果如：u-margin-left-30
-      // 定义外边距
-      .ss-margin-#{$long}-#{$i} {
-        margin-#{$long}: $i + rpx;
-      }
-
-      // 定义内边距
-      .ss-padding-#{$long}-#{$i} {
-        padding-#{$long}: $i + rpx;
+@each $rule, $config in $spacing-rules {
+  @each $value in map-get($config, values) {
+    .ss-#{$rule}-#{$value} {
+      @each $property in map-get($config, properties) {
+        #{$property}: $value + rpx;
       }
     }
   }
@@ -155,35 +125,9 @@
     radius
 	
  ==================== */
-@for $i from 0 through 100 {
-  // 只要双数和能被5除尽的数
-  @if $i % 2==0 or $i % 5==0 {
-    .ss-radius-#{$i},
-    .ss-r-#{$i} {
-      border-radius: $i + rpx;
-    }
-
-    .ss-r-t-#{$i} {
-      border-top-left-radius: $i + rpx;
-      border-top-right-radius: $i + rpx;
-    }
-
-    .ss-r-b-#{$i} {
-      border-bottom-left-radius: $i + rpx;
-      border-bottom-right-radius: $i + rpx;
-    }
-
-    @each $short, $long in tl 'top-left', tr 'top-right', bl 'bottom-right', br 'bottom-right' {
-      // 定义外边距
-      .ss-r-#{$short}-#{$i} {
-        border-#{$long}-radius: $i + rpx;
-      }
-
-      // 定义内边距
-      .ss-radius-#{$long}-#{$i} {
-        border-#{$long}-radius: $i + rpx;
-      }
-    }
+@each $i in 10, 40 {
+  .ss-r-#{$i} {
+    border-radius: $i + rpx;
   }
 }
 
@@ -247,7 +191,7 @@
 	
  ==================== */
 
-@for $i from 20 through 50 {
+@each $i in 20, 24, 26, 28, 30, 40 {
   .ss-font-#{$i} {
     font-size: $i + rpx;
   }

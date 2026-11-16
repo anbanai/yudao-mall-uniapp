@@ -45,16 +45,21 @@
               :img="item.spu.picUrl || item.goods.image"
               :price="item.sku.price"
               :skuText="
-                item.sku.properties.length > 1
+                item.sku.properties?.length > 1
                   ? item.sku.properties.reduce(
                       (items2, items) => items2.valueName + ' ' + items.valueName,
                     )
-                  : item.sku.properties[0].valueName
+                  : item.sku.properties?.[0]?.valueName || '默认规格'
               "
               :title="item.spu.name"
               :titleWidth="400"
               priceColor="#FF3000"
             >
+              <template #top>
+                <view v-if="item.spu?.merchantName" class="merchant-name ss-font-22 ss-m-b-6">
+                  {{ item.spu.merchantName }}
+                </view>
+              </template>
               <template v-if="!state.editMode" v-slot:tool>
                 <su-number-box
                   v-model="item.count"

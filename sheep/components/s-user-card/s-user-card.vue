@@ -2,13 +2,54 @@
 <template>
   <view class="ss-user-info-wrap ss-p-t-50" :style="[bgStyle, { marginLeft: `${data.space}px` }]">
     <view class="ss-flex ss-col-center ss-row-between ss-m-b-20">
+      <!-- #ifdef MP-WEIXIN -->
+      <button
+        v-if="!isLogin"
+        class="ss-reset-button left-box profile-auth-btn ss-flex ss-col-center ss-m-l-36"
+        @tap="showAuthModal()"
+      >
+        <view class="avatar-box ss-m-r-24">
+          <image
+            class="avatar-img"
+            :src="sheep.$url.static('/static/img/shop/default_avatar.png')"
+            mode="aspectFill"
+          />
+        </view>
+        <view class="nickname-box ss-flex ss-col-center">
+          <view class="nick-name ss-m-r-20">请先登录</view>
+        </view>
+      </button>
+      <view v-else class="left-box ss-flex ss-col-center ss-m-l-36">
+        <view class="avatar-box ss-m-r-24">
+          <image
+            class="avatar-img"
+            :src="
+              userInfo.avatar
+                ? sheep.$url.cdn(userInfo.avatar)
+                : sheep.$url.static('/static/img/shop/default_avatar.png')
+            "
+            mode="aspectFill"
+            @tap="sheep.$router.go('/pages/user/info')"
+          />
+        </view>
+        <view class="nickname-box ss-flex ss-col-center">
+          <view class="nick-name ss-m-r-20">{{ userInfo?.nickname || nickname }}</view>
+        </view>
+      </view>
+      <!-- #endif -->
+      <!-- #ifndef MP-WEIXIN -->
       <view class="left-box ss-flex ss-col-center ss-m-l-36">
         <view class="avatar-box ss-m-r-24">
-          <image class="avatar-img" :src="
+          <image
+            class="avatar-img"
+            :src="
               isLogin && userInfo.avatar
                 ? sheep.$url.cdn(userInfo.avatar)
-                : sheep.$url.static('/static/img/shop/default_avatar.png')"
-                 mode="aspectFill" @tap="sheep.$router.go('/pages/user/info')">
+                : sheep.$url.static('/static/img/shop/default_avatar.png')
+            "
+            mode="aspectFill"
+            @tap="sheep.$router.go('/pages/user/info')"
+          >
           </image>
         </view>
         <view>
@@ -17,6 +58,7 @@
           </view>
         </view>
       </view>
+      <!-- #endif -->
       <view class="right-box ss-m-r-52">
         <button class="ss-reset-button" @tap="showShareModal">
           <text class="sicon-qrcode"></text>
@@ -33,7 +75,19 @@
         <text class="cicon-mobile-o" />
         <view class="mobile-title ss-m-l-20"> 点击绑定手机号确保账户安全</view>
       </view>
+      <!-- #ifdef MP-WEIXIN -->
+      <button
+        class="ss-reset-button bind-btn"
+        open-type="getPhoneNumber"
+        :disabled="isAuthorizing"
+        @getphonenumber="onPhoneAuthorization"
+      >
+        去绑定
+      </button>
+      <!-- #endif -->
+      <!-- #ifndef MP-WEIXIN -->
       <button class="ss-reset-button bind-btn" @tap="onBind">去绑定</button>
+      <!-- #endif -->
     </view>
   </view>
 </template>
@@ -53,18 +107,17 @@
    *
    *
    */
-  import { computed } from 'vue';
+  import { computed, ref } from 'vue';
   import sheep from '@/sheep';
-  import {
-    showShareModal,
-    showAuthModal,
-  } from '@/sheep/hooks/useModal';
+  import { showShareModal, showAuthModal } from '@/sheep/hooks/useModal';
+  import { authorizePhoneNumber } from '@/sheep/hooks/usePhoneAuthorization';
 
   // 用户信息
   const userInfo = computed(() => sheep.$store('user').userInfo);
 
   // 是否登录
   const isLogin = computed(() => sheep.$store('user').isLogin);
+  const isAuthorizing = ref(false);
   // 接收参数
   const props = defineProps({
     // 装修数据
@@ -107,15 +160,25 @@
 
     // 根据 bgType 返回相应的样式
     return {
-      background: bgType === 'img'
-        ? `url(${bgImg}) no-repeat top center / 100% 100%`
-        : bgColor,
+      background: bgType === 'img' ? `url(${bgImg}) no-repeat top center / 100% 100%` : bgColor,
     };
   });
 
   // 绑定手机号
   function onBind() {
     showAuthModal('changeMobile');
+  }
+
+  async function onPhoneAuthorization(event) {
+    if (isAuthorizing.value) {
+      return;
+    }
+    isAuthorizing.value = true;
+    try {
+      await authorizePhoneNumber(event.detail);
+    } finally {
+      isAuthorizing.value = false;
+    }
   }
 </script>
 
@@ -150,6 +213,12 @@
     .sicon-qrcode {
       font-size: 40rpx;
     }
+  }
+
+  .profile-auth-btn {
+    min-width: 0;
+    padding: 0;
+    text-align: left;
   }
 
   .bind-mobile-box {

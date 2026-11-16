@@ -4,11 +4,11 @@ import UserApi from '@/sheep/api/member/user';
 
 const socialType = 40; // 社交类型 - 支付宝小程序
 
-let subscribeEventList = []
+let subscribeEventList = [];
 
 function load() {
-  checkUpdate()
-  getSubscribeTemplate()
+  checkUpdate();
+  getSubscribeTemplate();
 }
 
 // ================= 登录相关逻辑===================
@@ -17,13 +17,13 @@ function load() {
 
 //支付宝小程序静默授权登录
 const login = async () => {
-  return new Promise(async (resolve,reject)=>{
+  return new Promise(async (resolve, reject) => {
     // 1. 获取支付宝的code
     const codeResult = await uni.login({
       provider: 'alipay',
       scopes: 'auth_user',
     });
-    if(codeResult.errMsg !== 'login:ok'){
+    if (codeResult.errMsg !== 'login:ok') {
       return resolve(false);
     }
 
@@ -35,11 +35,11 @@ const login = async () => {
     } else {
       return resolve(false);
     }
-  })
-}
+  });
+};
 
 // 支付宝小程序手机号授权登录
-const mobileLogin = async (e) =>{
+const mobileLogin = async (e) => {
   return new Promise(async (resolve, reject) => {
     if (e.errMsg !== 'getPhoneNumber:ok') {
       return resolve(false);
@@ -61,8 +61,7 @@ const mobileLogin = async (e) =>{
     // }
     // TODO 芋艿：shareInfo: uni.getStorageSync('shareLog') || {},
   });
-}
-
+};
 
 // 支付宝小程序绑定
 const bind = () => {
@@ -132,43 +131,41 @@ async function getInfo() {
   return data;
 }
 
-
-
 // ========== 非登录相关的逻辑 ==========
 
 // 小程序更新
 const checkUpdate = (silence = true) => {
   if (uni.canIUse('getUpdateManager')) {
     const updateManager = uni.getUpdateManager();
-    updateManager.onCheckForUpdate(function(res) {
+    updateManager.onCheckForUpdate(function (res) {
       // 请求完新版本信息的回调
       if (res.hasUpdate) {
-        updateManager.onUpdateReady(function() {
+        updateManager.onUpdateReady(function () {
           uni.showModal({
             title: '更新提示',
             content: '新版本已经准备好，是否重启应用？',
-            success: function(res) {
+            success: function (res) {
               if (res.confirm) {
                 // 新的版本已经下载好，调用 applyUpdate 应用新版本并重启
                 updateManager.applyUpdate();
               }
             },
           });
-        })
+        });
       }
     });
   } else {
-    if(!silence) {
+    if (!silence) {
       uni.showToast({
         title: '当前为最新版本',
         icon: 'none',
       });
     }
   }
-}
+};
 
 // 获取订阅消息模板
-async function getSubscribeTemplate(){
+async function getSubscribeTemplate() {
   const { code, data } = await SocialApi.getSubscribeTemplateList();
   if (code === 0) {
     subscribeEventList = data;
@@ -176,17 +173,17 @@ async function getSubscribeTemplate(){
 }
 
 // 订阅消息
-function subscribeMessage(event, callback = undefined){
+function subscribeMessage(event, callback = undefined) {
   let tmplIds = [];
   if (typeof event === 'string') {
-    const temp = subscribeEventList.find(item => item.title.includes(event));
+    const temp = subscribeEventList.find((item) => item.title.includes(event));
   }
   if (temp) {
     tmplIds.push(temp.id);
   }
   if (typeof event === 'object') {
     event.forEach((e) => {
-      const temp = subscribeEventList.find(item => item.title.includes(e));
+      const temp = subscribeEventList.find((item) => item.title.includes(e));
       if (temp) {
         tmplIds.push(temp.id);
       }
@@ -196,9 +193,9 @@ function subscribeMessage(event, callback = undefined){
   if (tmplIds.length === 0) return;
   uni.requestSubscribeMessage({
     tmplIds,
-    success: ()=>{
+    success: () => {
       // 不管是拒绝还是同意都触发
-      callback && callback()
+      callback && callback();
     },
     fail: (err) => {
       console.log(err);

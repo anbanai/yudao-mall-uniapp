@@ -25,6 +25,7 @@
               class="swiper-image"
               :mode="props.imageMode"
               :src="item.src"
+              :lazy-load="item.lazyLoad"
               width="100%"
               height="100%"
               @load="onImgLoad"

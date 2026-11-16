@@ -18,11 +18,13 @@
     <view class="ui-navbar-box">
       <view
         class="ui-bar"
-        :class="[{
-           'text-white': state.isDark,
-           'text-black': !state.isDark,
-           'ss-p-x-20': sheep.$platform.provider !== 'alipay'
-        }]"
+        :class="[
+          {
+            'text-white': state.isDark,
+            'text-black': !state.isDark,
+            'ss-p-x-20': sheep.$platform.provider !== 'alipay',
+          },
+        ]"
         :style="[{ height: sys_navBar - sys_statusBar + 'px' }]"
       >
         <view class="icon-box ss-flex">

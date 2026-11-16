@@ -1,6 +1,5 @@
 <template>
-  <view class="bg-white order-list-card-box ss-r-10 ss-m-t-14 ss-m-20"
-        :key="orderData.id">
+  <view class="bg-white order-list-card-box ss-r-10 ss-m-t-14 ss-m-20" :key="orderData.id">
     <view class="order-card-header ss-flex ss-col-center ss-row-between ss-p-x-20">
       <view class="order-no">订单号：{{ orderData.no }}</view>
       <view class="order-state ss-font-26" :class="formatOrderColor(orderData)">
@@ -18,10 +17,10 @@
     </view>
     <view class="pay-box ss-m-t-30 ss-flex ss-row-right ss-p-r-20">
       <view class="ss-flex ss-col-center">
-        <view class="discounts-title pay-color">共 {{ orderData.productCount }} 件商品,总金额:</view>
-        <view class="discounts-money pay-color">
-          ￥{{ fen2yuan(orderData.payPrice) }}
-        </view>
+        <view class="discounts-title pay-color"
+          >共 {{ orderData.productCount }} 件商品,总金额:</view
+        >
+        <view class="discounts-money pay-color"> ￥{{ fen2yuan(orderData.payPrice) }} </view>
       </view>
     </view>
   </view>
@@ -48,7 +47,8 @@
         font-weight: 500;
       }
 
-      .order-state {}
+      .order-state {
+      }
     }
     .pay-box {
       .discounts-title {

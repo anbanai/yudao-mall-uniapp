@@ -3,7 +3,10 @@
   <view>
     <su-popup :show="state.showShareGuide" :showClose="false" @close="onCloseGuide" />
     <view v-if="state.showShareGuide" class="guide-wrap">
-      <image class="guide-image" :src="sheep.$url.static('/static/img/shop/share/share_guide.png')" />
+      <image
+        class="guide-image"
+        :src="sheep.$url.static('/static/img/shop/share/share_guide.png')"
+      />
     </view>
 
     <su-popup :show="show" round="10" :showClose="false" @close="closeShareModal">
@@ -17,13 +20,17 @@
             open-type="share"
             @tap="onShareByForward"
           >
-            <image class="share-img" :src="sheep.$url.static('/static/img/shop/share/share_wx.png')" mode="" />
+            <image
+              class="share-img"
+              :src="sheep.$url.static('/static/img/shop/share/share_wx.png')"
+              mode=""
+            />
             <text class="share-title">微信好友</text>
           </button>
 
           <!-- 操作 ②：生成海报图片 -->
           <button
-            v-if="shareConfig.methods.includes('poster')"
+            v-if="shareConfig.methods.includes('poster') && shareInfo.poster !== false"
             class="share-item share-btn ss-flex-col ss-col-center"
             @tap="onShareByPoster"
           >
@@ -41,7 +48,11 @@
             class="share-item share-btn ss-flex-col ss-col-center"
             @tap="onShareByCopyLink"
           >
-            <image class="share-img" :src="sheep.$url.static('/static/img/shop/share/share_link.png')" mode="" />
+            <image
+              class="share-img"
+              :src="sheep.$url.static('/static/img/shop/share/share_link.png')"
+              mode=""
+            />
             <text class="share-title">复制链接</text>
           </button>
         </view>
@@ -51,13 +62,15 @@
       </view>
     </su-popup>
 
-    <!-- 分享海报，对应操作 ② -->
+    <!-- #ifndef MP-WEIXIN -->
+    <!-- H5/App 保留弹窗海报；微信小程序在 public 分包页中生成。 -->
     <canvas-poster
       ref="SharePosterRef"
       :show="state.showPosterModal"
       :shareInfo="shareInfo"
       @close="state.showPosterModal = false"
     />
+    <!-- #endif -->
   </view>
 </template>
 <script setup>
@@ -66,7 +79,9 @@
    */
   import { ref, unref, reactive, computed } from 'vue';
   import sheep from '@/sheep';
+  // #ifndef MP-WEIXIN
   import canvasPoster from './canvas-poster/index.vue';
+  // #endif
   import { closeShareModal, showAuthModal } from '@/sheep/hooks/useModal';
 
   const show = computed(() => sheep.$store('modal').share);
@@ -92,8 +107,24 @@
       showAuthModal();
       return;
     }
+
+    // #ifdef MP-WEIXIN
+    const modalStore = sheep.$store('modal');
+    modalStore.setPosterShareInfo(props.shareInfo);
+    uni.navigateTo({
+      url: '/pages/public/poster',
+      fail: () => {
+        modalStore.consumePosterShareInfo();
+        sheep.$helper.toast('海报页面打开失败');
+      },
+    });
+    return;
+    // #endif
+
+    // #ifndef MP-WEIXIN
     unref(SharePosterRef).getPoster();
     state.showPosterModal = true;
+    // #endif
   };
 
   // 操作 ①：直接转发分享

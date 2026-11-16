@@ -5,7 +5,7 @@ const AddressApi = {
   getAddressList: () => {
     return request({
       url: '/member/address/list',
-      method: 'GET'
+      method: 'GET',
     });
   },
   // 创建用户收件地址
@@ -16,7 +16,7 @@ const AddressApi = {
       data,
       custom: {
         showSuccess: true,
-        successMsg: '保存成功'
+        successMsg: '保存成功',
       },
     });
   },
@@ -28,7 +28,7 @@ const AddressApi = {
       data,
       custom: {
         showSuccess: true,
-        successMsg: '更新成功'
+        successMsg: '更新成功',
       },
     });
   },
@@ -37,7 +37,7 @@ const AddressApi = {
     return request({
       url: '/member/address/get',
       method: 'GET',
-      params: { id }
+      params: { id },
     });
   },
   // 删除用户收件地址
@@ -45,7 +45,7 @@ const AddressApi = {
     return request({
       url: '/member/address/delete',
       method: 'DELETE',
-      params: { id }
+      params: { id },
     });
   },
 };

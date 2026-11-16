@@ -98,7 +98,13 @@
         <view class="ss-m-t-60 ss-flex ss-flex-wrap ss-row-center">
           <!-- 团长 -->
           <view class="header-avatar ss-m-r-24 ss-m-b-20">
-            <image :src="sheep.$url.cdn(state.data.headRecord.avatar) || sheep.$url.static('/static/img/shop/default_avatar.png')" class="avatar-img"></image>
+            <image
+              :src="
+                sheep.$url.cdn(state.data.headRecord.avatar) ||
+                sheep.$url.static('/static/img/shop/default_avatar.png')
+              "
+              class="avatar-img"
+            ></image>
             <view class="header-tag ss-flex ss-col-center ss-row-center">团长</view>
           </view>
           <!-- 团员 -->
@@ -107,7 +113,13 @@
             v-for="item in state.data.memberRecords"
             :key="item.id"
           >
-            <image :src="sheep.$url.cdn(item.avatar) || sheep.$url.static('/static/img/shop/default_avatar.png')" class="avatar-img"></image>
+            <image
+              :src="
+                sheep.$url.cdn(item.avatar) ||
+                sheep.$url.static('/static/img/shop/default_avatar.png')
+              "
+              class="avatar-img"
+            ></image>
             <view
               class="header-tag ss-flex ss-col-center ss-row-center"
               v-if="item.is_leader == '1'"
@@ -312,7 +324,22 @@
       state.activity = activity;
       state.grouponNum = activity.userSize;
       // 加载商品信息
-      const { data: spu } = await SpuApi.getSpuDetail(activity.spuId);
+      let spu;
+      try {
+        ({ data: spu } = await SpuApi.getSpuDetail(activity.spuId));
+      } catch (error) {
+        console.error('[拼团详情] 商品详情加载失败', { id: activity.spuId, error });
+        state.data = null;
+        state.goodsInfo = {};
+        state.loading = false;
+        return;
+      }
+      if (!spu) {
+        state.data = null;
+        state.goodsInfo = {};
+        state.loading = false;
+        return;
+      }
       state.goodsId = spu.id;
       // 默认显示最低价
       activity.products.forEach((product) => {

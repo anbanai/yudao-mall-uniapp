@@ -7,7 +7,7 @@
         class="poster-img"
         :src="painterImageUrl"
         :style="{
-          height: poster.css.height+ 'px',
+          height: poster.css.height + 'px',
           width: poster.css.width + 'px',
         }"
         :show-menu-by-longpress="true"
@@ -57,8 +57,7 @@
     },
     shareInfo: {
       type: Object,
-      default: () => {
-      },
+      default: () => {},
     },
   });
 
@@ -110,7 +109,7 @@
 
   // 获得海报数据
   async function getPoster() {
-    painterImageUrl.value = undefined
+    painterImageUrl.value = undefined;
     poster.views = await getPosterData({
       width: poster.css.width,
       shareInfo: props.shareInfo,
@@ -164,5 +163,4 @@
   .poster-img {
     border-radius: 20rpx;
   }
-
 </style>

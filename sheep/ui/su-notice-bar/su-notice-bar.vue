@@ -214,7 +214,8 @@
             boxWidth = 0,
             textWidth = 0;
           let textQuery = new Promise((resolve, reject) => {
-            uni.createSelectorQuery()
+            uni
+              .createSelectorQuery()
               // #ifndef MP-ALIPAY
               .in(this)
               // #endif
@@ -226,7 +227,8 @@
               });
           });
           let boxQuery = new Promise((resolve, reject) => {
-            uni.createSelectorQuery()
+            uni
+              .createSelectorQuery()
               // #ifndef MP-ALIPAY
               .in(this)
               // #endif

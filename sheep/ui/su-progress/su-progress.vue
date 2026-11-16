@@ -170,7 +170,7 @@
     margin-left: 10rpx;
     font-size: 16rpx;
     width: 100rpx;
-    color: #FFB9B9;
+    color: #ffb9b9;
   }
 
   .percentage {

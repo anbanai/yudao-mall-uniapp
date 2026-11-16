@@ -8,15 +8,27 @@
     onShareAppMessage
     showLeftButton
   >
-    <s-block v-for="(item, index) in state.components" :key="index" :styles="item.property.style">
-      <s-block-item :type="item.id" :data="item.property" :styles="item.property.style" />
+    <s-block
+      v-for="(item, index) in state.components"
+      :key="index"
+      :styles="item.property.style"
+      :allow-overflow="
+        (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
+      "
+    >
+      <s-block-item
+        :type="item.id"
+        :data="item.property"
+        :styles="item.property.style"
+        :refresh-key="productGroupRefreshKey"
+      />
     </s-block>
   </s-layout>
 </template>
 
 <script setup>
-  import { reactive } from 'vue';
-  import { onLoad, onPageScroll } from '@dcloudio/uni-app';
+  import { reactive, ref } from 'vue';
+  import { onLoad, onPageScroll, onShow } from '@dcloudio/uni-app';
   import DiyApi from '@/sheep/api/promotion/diy';
 
   const state = reactive({
@@ -25,8 +37,19 @@
     navigationBar: {},
     page: {},
   });
+  const productGroupRefreshKey = ref(0);
+  let hasShown = false;
+
+  onShow(() => {
+    if (hasShown) {
+      productGroupRefreshKey.value += 1;
+    } else {
+      hasShown = true;
+    }
+  });
+
   onLoad(async (options) => {
-    let id = options.id
+    let id = options.id;
 
     // #ifdef MP
     // 小程序预览自定义页面

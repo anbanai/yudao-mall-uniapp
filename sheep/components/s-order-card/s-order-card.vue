@@ -1,6 +1,9 @@
 <!-- 装修用户组件：用户订单 -->
 <template>
-  <view class="ss-order-menu-wrap ss-flex ss-col-center" :style="[style, { marginLeft: `${data.space}px` }]">
+  <view
+    class="ss-order-menu-wrap ss-flex ss-col-center"
+    :style="[style, { marginLeft: `${data.space}px` }]"
+  >
     <view
       class="menu-item ss-flex-1 ss-flex-col ss-row-center ss-col-center"
       v-for="item in orderMap"
@@ -26,72 +29,30 @@
    */
   import sheep from '@/sheep';
   import { computed } from 'vue';
-
-  const orderMap = [
-    {
-      title: '待付款',
-      value: '1',
-      icon: '/static/img/shop/order/no_pay.png',
-      path: '/pages/order/list',
-      type: 'unpaid',
-      count: 'unpaidCount',
-    },
-    {
-      title: '待收货',
-      value: '3',
-      icon: '/static/img/shop/order/no_take.png',
-      path: '/pages/order/list',
-      type: 'noget',
-      count: 'deliveredCount',
-    },
-    {
-      title: '待评价',
-      value: '4',
-      icon: '/static/img/shop/order/no_comment.png',
-      path: '/pages/order/list',
-      type: 'nocomment',
-      count: 'uncommentedCount',
-    },
-    {
-      title: '售后单',
-      value: '0',
-      icon: '/static/img/shop/order/change_order.png',
-      path: '/pages/order/aftersale/list',
-      type: 'aftersale',
-      count: 'afterSaleCount',
-    },
-    {
-      title: '全部订单',
-      value: '0',
-      icon: '/static/img/shop/order/all_order.png',
-      path: '/pages/order/list',
-    },
-  ];
+  import { ORDER_MENU as orderMap } from '@/sheep/helper/orderMenu.mjs';
   // 接收参数
   const props = defineProps({
-  	// 装修数据
-  	data: {
-  	  type: Object,
-  	  default: () => ({}),
-  	},
-  	// 装修样式
-  	styles: {
-  	  type: Object,
-  	  default: () => ({}),
-  	},
+    // 装修数据
+    data: {
+      type: Object,
+      default: () => ({}),
+    },
+    // 装修样式
+    styles: {
+      type: Object,
+      default: () => ({}),
+    },
   });
   // 设置角标
   const numData = computed(() => sheep.$store('user').numData);
   // 设置背景样式
   const style = computed(() => {
     // 直接从 props.styles 解构
-    const { bgType, bgImg, bgColor } = props.styles; 
+    const { bgType, bgImg, bgColor } = props.styles;
     // 根据 bgType 返回相应的样式
     return {
-  		background: bgType === 'img'
-  			? `url(${bgImg}) no-repeat top center / 100% 100%`
-  			: bgColor
-  	};
+      background: bgType === 'img' ? `url(${bgImg}) no-repeat top center / 100% 100%` : bgColor,
+    };
   });
 </script>
 

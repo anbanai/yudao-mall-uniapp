@@ -15,7 +15,7 @@ const login = () => {
       provider: 'weixin',
       onlyAuthorize: true,
     });
-    debugger
+    debugger;
     if (loginRes.errMsg == 'login:ok') {
       // TODO third.wechat.login 函数未实现
       const res = await third.wechat.login({
@@ -29,7 +29,7 @@ const login = () => {
       });
 
       if (res.error === 0) {
-        $share.bindBrokerageUser()
+        $share.bindBrokerageUser();
         resolve(true);
       }
     } else {
@@ -60,5 +60,5 @@ async function getInfo() {
 export default {
   load,
   login,
-  getInfo
+  getInfo,
 };

@@ -241,8 +241,13 @@
    * @return {Promise<undefined>} 商品列表
    */
   async function getSpuDetail(ids) {
-    const { data: spu } = await SpuApi.getSpuDetail(ids);
-    return spu;
+    try {
+      const { data: spu } = await SpuApi.getSpuDetail(ids);
+      return spu;
+    } catch (error) {
+      console.error('[拼团商品组件] 商品详情加载失败', { id: ids, error });
+      return null;
+    }
   }
 
   // 初始化
@@ -251,7 +256,8 @@
     const activityList = await getCombinationActivityDetailList(activityIds.join(','));
     // 循环获取活动商品SPU详情并添加到spuList
     for (const activity of activityList) {
-      state.spuList.push(await getSpuDetail(activity.spuId));
+      const spu = await getSpuDetail(activity.spuId);
+      if (spu) state.spuList.push(spu);
     }
 
     // 循环活动列表

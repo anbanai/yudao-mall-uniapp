@@ -33,7 +33,26 @@
     <!-- 商品组件：商品卡片 -->
     <s-goods-card v-if="type === 'ProductCard'" :data="data" :styles="styles" />
     <!-- 商品组件：商品栏 -->
-    <s-goods-shelves v-if="type === 'ProductList'" :data="data" :styles="styles" />
+    <s-product-list
+      v-if="type === 'ProductList'"
+      :data="data"
+      :styles="styles"
+      :refresh-key="refreshKey"
+    />
+    <!-- 商品组件：商品分类（兼容历史上使用 ProductGroup ID 的分类配置） -->
+    <s-goods-category
+      v-if="resolvedProductType === 'ProductCategory'"
+      :data="data"
+      :styles="styles"
+      :refresh-key="refreshKey"
+    />
+    <!-- 商品组件：商品分组 -->
+    <s-goods-group
+      v-if="resolvedProductType === 'ProductGroup'"
+      :data="data"
+      :styles="styles"
+      :refresh-key="refreshKey"
+    />
 
     <!-- 营销组件：拼团 -->
     <s-groupon-block v-if="type === 'PromotionCombination'" :data="data" :styles="styles" />
@@ -60,6 +79,9 @@
 </template>
 
 <script setup>
+  import { computed } from 'vue';
+  import { resolveDiyProductComponentType } from './block-item.mjs';
+
   /**
    * 装修组件 - 组件集
    */
@@ -76,7 +98,14 @@
       type: Object,
       default() {},
     },
+    refreshKey: {
+      type: Number,
+      default: 0,
+    },
   });
+  const resolvedProductType = computed(() =>
+    resolveDiyProductComponentType(props.type, props.data),
+  );
   function onSearch() {}
 </script>
 

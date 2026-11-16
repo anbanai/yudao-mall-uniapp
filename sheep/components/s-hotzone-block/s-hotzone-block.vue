@@ -1,7 +1,7 @@
 <!-- 装修图文组件：热区 -->
 <template>
   <view class="hotzone-wrap">
-    <image :src="sheep.$url.cdn(data.imgUrl)" style="width: 100%" mode="widthFix"></image>
+    <image :src="sheep.$url.cdn(data.imgUrl)" class="hotzone-image" mode="widthFix"></image>
     <view
       class="hotzone-box"
       v-for="(item, index) in data.list"
@@ -39,6 +39,10 @@
 <style lang="scss" scoped>
   .hotzone-wrap {
     position: relative;
+  }
+  .hotzone-image {
+    display: block;
+    width: 100%;
   }
   .hotzone-box {
     position: absolute;

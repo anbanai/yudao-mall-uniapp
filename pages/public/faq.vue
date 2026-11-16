@@ -41,22 +41,14 @@
     loading: true,
   });
 
-  async function getFaqList() {
-    const { error, data } = await sheep.$api.data.faq();
-    if (error === 0) {
-      state.list = data;
-      state.loading = false;
-    }
-  }
   onLoad(() => {
     // TODO 芋艿：【文章】目前简单做，使用营销文章，作为 faq
     if (true) {
       sheep.$router.go('/pages/public/richtext', {
         title: '常见问题',
-      })
+      });
       return;
     }
-    getFaqList();
   });
 </script>
 

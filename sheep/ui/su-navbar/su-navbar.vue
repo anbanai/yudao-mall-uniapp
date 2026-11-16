@@ -212,8 +212,8 @@
   });
 
   const searchModel = computed(() => {
-		return props.defaultSearch
-	})
+    return props.defaultSearch;
+  });
 
   const themeBgColor = computed(() => {
     if (props.dark) {

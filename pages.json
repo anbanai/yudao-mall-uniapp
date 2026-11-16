@@ -27,6 +27,8 @@
 				"enablePullDownRefresh": true
 			},
 			"meta": {
+				"auth": true,
+				"formalAuth": true,
 				"sync": true,
 				"title": "个人中心",
 				"group": "商城"
@@ -49,6 +51,8 @@
 				"navigationBarTitleText": "购物车"
 			},
 			"meta": {
+				"auth": true,
+				"formalAuth": true,
 				"sync": true,
 				"title": "购物车",
 				"group": "商城"
@@ -139,6 +143,30 @@
 					"meta": {
 						"sync": true,
 						"title": "商品列表",
+						"group": "商品"
+					}
+				},
+				{
+					"path": "group-index",
+					"style": {
+						"navigationBarTitleText": "商品分组",
+						"enablePullDownRefresh": true
+					},
+					"meta": {
+						"sync": true,
+						"title": "商品分组",
+						"group": "商品"
+					}
+				},
+				{
+					"path": "group-list",
+					"style": {
+						"navigationBarTitleText": "分组商品",
+						"enablePullDownRefresh": true
+					},
+					"meta": {
+						"sync": true,
+						"title": "分组商品",
 						"group": "商品"
 					}
 				},
@@ -260,7 +288,13 @@
 		},
 		{
 			"root": "pages/user",
-			"pages": [{
+			"pages": [
+				{
+					"path": "benefits/index",
+					"style": { "navigationBarTitleText": "会员权益中心" },
+					"meta": { "auth": true, "formalAuth": true, "title": "会员权益中心", "group": "用户中心" }
+				},
+				{
 					"path": "info",
 					"style": {
 						"navigationBarTitleText": "我的信息"
@@ -471,6 +505,12 @@
 		{
 			"root": "pages/public",
 			"pages": [{
+					"path": "poster",
+					"style": {
+						"navigationBarTitleText": "生成海报"
+					}
+				},
+				{
 					"path": "setting",
 					"style": {
 						"navigationBarTitleText": "系统设置"
@@ -568,6 +608,10 @@
 					"path": "index",
 					"style": {
 						"navigationBarTitleText": "收银台"
+					},
+					"meta": {
+						"auth": true,
+						"formalAuth": true
 					}
 				},
 				{
@@ -672,7 +716,7 @@
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "芋道商城",
+		"navigationBarTitleText": "不忍独享",
 		"navigationBarBackgroundColor": "#FFFFFF",
 		"backgroundColor": "#FFFFFF",
 		"navigationStyle": "custom",

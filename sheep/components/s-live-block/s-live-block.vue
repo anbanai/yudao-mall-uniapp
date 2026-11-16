@@ -55,6 +55,7 @@
 <script setup>
   import { reactive, onMounted } from 'vue';
   import sheep from '@/sheep';
+  import AppApi from '@/sheep/api/migration/app';
 
   const state = reactive({
     liveList: [],
@@ -74,7 +75,7 @@
   const { marginLeft, marginRight } = props.styles || {};
 
   async function getLiveListByIds(ids) {
-    const { data } = await sheep.$api.app.mplive.getRoomList(ids);
+    const { data } = await AppApi.mplive.getRoomList(ids);
     return data;
   }
   function goRoom(id) {
@@ -110,7 +111,7 @@
   async function getMpLink() {
     // #ifndef MP-WEIXIN
     if (state.mpLink === '') {
-      const { error, data } = await sheep.$api.app.mplive.getMpLink();
+      const { error, data } = await AppApi.mplive.getMpLink();
       if (error === 0) {
         state.mpLink = data;
       }

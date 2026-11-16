@@ -2,7 +2,7 @@
 <template>
   <view>
     <!-- 标题栏 -->
-    <view class="head-box ss-m-b-60 ss-flex-col">
+    <view v-if="props.showHeader" class="head-box ss-m-b-60 ss-flex-col">
       <view class="ss-flex ss-m-b-20">
         <view class="head-title-active head-title-line" @tap="showAuthModal('smsLogin')">
           短信登录
@@ -39,7 +39,13 @@
           :inputBorder="false"
         >
           <template v-slot:right>
-            <button class="ss-reset-button login-btn-start" @tap="accountLoginSubmit">登录</button>
+            <button
+              class="ss-reset-button login-btn-start"
+              :disabled="!props.agreeStatus"
+              @tap="accountLoginSubmit"
+            >
+              登录
+            </button>
           </template>
         </uni-easyinput>
       </uni-forms-item>
@@ -49,16 +55,17 @@
 
 <script setup>
   import { ref, reactive, unref } from 'vue';
-  import sheep from '@/sheep';
   import { mobile, password } from '@/sheep/validate/form';
   import { showAuthModal, closeAuthModal } from '@/sheep/hooks/useModal';
   import AuthUtil from '@/sheep/api/member/auth';
 
   const accountLoginRef = ref(null);
 
-  const emits = defineEmits(['onConfirm']);
-
   const props = defineProps({
+    showHeader: {
+      type: Boolean,
+      default: true,
+    },
     agreeStatus: {
       type: [Boolean, null],
       default: null,
@@ -89,12 +96,6 @@
 
     // 检查协议状态
     if (props.agreeStatus !== true) {
-      emits('onConfirm', true);
-      if (props.agreeStatus === false) {
-        sheep.$helper.toast('您已拒绝协议，无法继续登录');
-      } else {
-        sheep.$helper.toast('请选择是否同意协议');
-      }
       return;
     }
 

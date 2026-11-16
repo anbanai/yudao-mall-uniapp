@@ -99,7 +99,7 @@
     formatStock,
     convertProductPropertyList,
     fen2yuan,
-    initDefaultSelect,
+    getDefaultSku,
   } from '@/sheep/hooks/useGoods';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
@@ -124,7 +124,7 @@
   const skuList = computed(() => {
     let skuPrices = props.goodsInfo.skus;
     for (let price of skuPrices) {
-      price.value_id_array = price.properties.map((item) => item.valueId);
+      price.value_id_array = (price.properties || []).map((item) => item.valueId);
     }
     return skuPrices;
   });
@@ -277,9 +277,9 @@
       state.currentPropertyArray[propertyId] !== undefined &&
       state.currentPropertyArray[propertyId] === valueId
     ) {
-      // 点击已被选中的，删除并填充 ''
+      // 点击已被选中的，清空当前属性值
       isChecked = false;
-      state.currentPropertyArray.splice(propertyId, 1, '');
+      state.currentPropertyArray[propertyId] = '';
     } else {
       // 选中
       state.currentPropertyArray[propertyId] = valueId;
@@ -310,8 +310,15 @@
   }
 
   changeDisabled(false);
-  // 初始化默认选中规格中的第一个，如果不需要，注释这段代码即可
-  initDefaultSelect(propertyList, onSelectSku);
+  if (propertyList.length === 0) {
+    // 单规格商品没有属性值，直接选中默认 SKU。
+    const defaultSku = getDefaultSku(skuList.value);
+    if (defaultSku) {
+      defaultSku.properties = defaultSku.properties || [];
+      defaultSku.goods_num = defaultSku.goods_num || 1;
+      state.selectedSku = defaultSku;
+    }
+  }
 </script>
 
 <style lang="scss" scoped>

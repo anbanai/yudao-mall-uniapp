@@ -1,6 +1,6 @@
 <template>
   <!-- SKU 选择的提示框 -->
-  <detail-cell label="选择" :value="value" />
+  <detail-cell :label="label" :value="value" />
 </template>
 
 <script setup>
@@ -15,15 +15,22 @@
       },
     },
     sku: {
-      type: Object
-    }
+      type: Object,
+    },
+    label: {
+      type: String,
+      default: '规格',
+    },
   });
   const value = computed(() => {
     if (!props.sku?.id) {
-      return '请选择商品规格';
+      return '选择';
+    }
+    if (!props.sku.properties?.length) {
+      return '选择';
     }
     let str = '';
-    props.sku.properties.forEach(property => {
+    props.sku.properties.forEach((property) => {
       str += property.propertyName + ':' + property.valueName + ' ';
     });
     return str;

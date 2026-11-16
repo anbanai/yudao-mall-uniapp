@@ -1,5 +1,20 @@
 <!-- 装修商品组件：商品卡片 -->
 <template>
+  <s-empty
+    v-if="state.loaded && state.error"
+    icon="/static/internet-empty.png"
+    text="商品加载失败，请重试"
+    showAction
+    actionText="重新加载"
+    padding-top="60"
+    @clickAction="retry"
+  />
+  <s-empty
+    v-else-if="state.loaded && !state.goodsList.length"
+    icon="/static/data-empty.png"
+    text="当前首页配置的商品不存在或不可售"
+    padding-top="60"
+  />
   <!-- 商品卡片 -->
   <view>
     <!-- 布局1. 单列大图（上图，下内容）-->
@@ -59,7 +74,8 @@
             :bottomRadius="data.borderRadiusBottom"
             :titleWidth="330 - marginLeft - marginRight"
             @click="sheep.$router.go('/pages/goods/index', { id: item.id })"
-            @getHeight="calculateGoodsColumn($event, 'left')"
+            :fixedImage="true"
+            :imageWidth="345"
           >
             <!-- 购买按钮 -->
             <template v-slot:cart>
@@ -89,7 +105,8 @@
             :bottomRadius="data.borderRadiusBottom"
             :titleWidth="330 - marginLeft - marginRight"
             @click="sheep.$router.go('/pages/goods/index', { id: item.id })"
-            @getHeight="calculateGoodsColumn($event, 'right')"
+            :fixedImage="true"
+            :imageWidth="345"
           >
             <!-- 购买按钮 -->
             <template v-slot:cart>
@@ -146,6 +163,7 @@
   import SpuApi from '@/sheep/api/product/spu';
   import OrderApi from '@/sheep/api/trade/order';
   import { appendSettlementProduct } from '@/sheep/hooks/useGoods';
+  import { appendGoodsToColumns } from '@/sheep/components/s-goods-column/goods-list-render.mjs';
 
   // 布局类型
   const LayoutTypeEnum = {
@@ -161,6 +179,8 @@
     goodsList: [],
     leftGoodsList: [],
     rightGoodsList: [],
+    error: false,
+    loaded: false,
   });
   const props = defineProps({
     data: {
@@ -195,66 +215,52 @@
     }
   });
 
-  //region 商品瀑布流布局
-  // 下一个要处理的商品索引
-  let count = 0;
-  // 左列的高度
-  let leftHeight = 0;
-  // 右列的高度
-  let rightHeight = 0;
-
-  /**
-   * 计算商品在左列还是右列
-   * @param height 商品的高度
-   * @param where 添加到哪一列
-   */
-  function calculateGoodsColumn(height = 0, where = 'left') {
-    // 处理完
-    if (!state.goodsList[count]) return;
-    // 增加列的高度
-    if (where === 'left') leftHeight += height;
-    if (where === 'right') rightHeight += height;
-    // 添加到矮的一列
-    if (leftHeight <= rightHeight) {
-      state.leftGoodsList.push(state.goodsList[count]);
-    } else {
-      state.rightGoodsList.push(state.goodsList[count]);
-    }
-    // 计数
-    count++;
-  }
-
-  //endregion
-
   /**
    * 根据商品编号列表，获取商品列表
    * @param ids 商品编号列表
    * @return {Promise<undefined>} 商品列表
    */
   async function getGoodsListByIds(ids) {
-    const { data } = await SpuApi.getSpuListByIds(ids);
-    return data;
+    const response = await SpuApi.getSpuListByIds(ids);
+    if (response?.code !== 0) {
+      throw new Error(response?.msg || '商品接口返回失败');
+    }
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  async function loadGoods() {
+    state.error = false;
+    state.loaded = false;
+    state.goodsList = [];
+    state.leftGoodsList = [];
+    state.rightGoodsList = [];
+    try {
+      // 商品核心数据到达后立即渲染，营销信息随后补充。
+      const ids = Array.isArray(spuIds) ? spuIds : [];
+      state.goodsList = await getGoodsListByIds(ids.join(','));
+      if (layoutType === LayoutTypeEnum.TWO_COL) {
+        appendGoodsToColumns(state.leftGoodsList, state.rightGoodsList, state.goodsList);
+      }
+      if (!state.goodsList.length) return;
+      void OrderApi.getSettlementProduct(state.goodsList.map((item) => item.id).join(','))
+        .then((res) => {
+          if (res?.code === 0) appendSettlementProduct(state.goodsList, res.data);
+        })
+        .catch(() => {});
+    } catch {
+      state.goodsList = [];
+      state.error = true;
+    } finally {
+      state.loaded = true;
+    }
+  }
+
+  function retry() {
+    void loadGoods();
   }
 
   // 初始化
-  onMounted(async () => {
-    // 加载商品列表
-    state.goodsList = await getGoodsListByIds(spuIds.join(','));
-    // 拼接结算信息（营销）
-    await OrderApi.getSettlementProduct(state.goodsList.map((item) => item.id).join(',')).then(
-      (res) => {
-        if (res.code !== 0) {
-          return;
-        }
-        appendSettlementProduct(state.goodsList, res.data);
-      },
-    );
-    // 只有双列布局时需要
-    if (layoutType === LayoutTypeEnum.TWO_COL) {
-      // 分列
-      calculateGoodsColumn();
-    }
-  });
+  onMounted(loadGoods);
 </script>
 
 <style lang="scss" scoped>

@@ -31,20 +31,24 @@
 
   function px2rpx(px) {
     //计算比例
-    let scale = uni.upx2px(100)/100;
-    return px/scale
+    let scale = uni.upx2px(100) / 100;
+    return px / scale;
   }
 
   const imgList = computed(() =>
-      props.data.items.map((item) => {
-        const src = item.type === 'img' ? item.imgUrl : item.videoUrl;
-        return {
-          ...item,
-          type: item.type === 'img' ? 'image' : 'video',
-          src: sheep.$url.cdn(src),
-          poster: sheep.$url.cdn(item.imgUrl),
-        };
-      }),
+    props.data.items.map((item, index) => {
+      const src = item.type === 'img' ? item.imgUrl : item.videoUrl;
+      return {
+        ...item,
+        type: item.type === 'img' ? 'image' : 'video',
+        src:
+          item.type === 'img'
+            ? sheep.$url.thumb(src, { width: 750, quality: 82, format: 'webp' })
+            : sheep.$url.cdn(src),
+        poster: sheep.$url.thumb(item.imgUrl, { width: 750, quality: 82, format: 'webp' }),
+        lazyLoad: index !== 0,
+      };
+    }),
   );
 </script>
 

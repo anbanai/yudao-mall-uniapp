@@ -12,37 +12,36 @@
       />
     </view>
 
-    <uni-forms ref="form" v-model="formData" :rules="rules" label-position="top">
+    <uni-forms ref="form" :modelValue="formData" :rules="rules" label-position="top">
       <!-- 售后类型 -->
       <view class="refund-item">
         <view class="item-title ss-m-b-20">售后类型</view>
         <view class="ss-flex-col">
-          <radio-group @change="onRefundChange">
-            <label
-              class="ss-flex ss-col-center ss-p-y-10"
-              v-for="(item, index) in state.wayList"
-              :key="index"
-            >
-              <radio
-                :checked="formData.way === item.value"
-                color="var(--ui-BG-Main)"
-                style="transform: scale(0.8)"
-                :value="item.value"
-              />
-              <view class="item-value ss-m-l-8">{{ item.text }}</view>
-            </label>
-          </radio-group>
+          <view
+            v-for="(item, index) in state.wayList"
+            :key="index"
+            class="ss-flex ss-col-center ss-p-y-10"
+            :data-way="item.value"
+            @tap="onRefundTypeTap"
+          >
+            <radio
+              :checked="formData.way === item.value"
+              color="var(--ui-BG-Main)"
+              style="transform: scale(0.8)"
+            />
+            <view class="item-value ss-m-l-8">{{ item.text }}</view>
+          </view>
         </view>
       </view>
       <!-- 退款金额 -->
-      <view class="refund-item ss-flex ss-col-center ss-row-between" @tap="state.showModal = true">
+      <view class="refund-item ss-flex ss-col-center ss-row-between">
         <text class="item-title">退款金额</text>
         <view class="ss-flex refund-cause ss-col-center">
           <text class="ss-m-r-20">￥{{ fen2yuan(state.item.payPrice) }}</text>
         </view>
       </view>
       <!-- 申请原因 -->
-      <view class="refund-item ss-flex ss-col-center ss-row-between" @tap="state.showModal = true">
+      <view class="refund-item ss-flex ss-col-center ss-row-between" @tap="openReasonModal">
         <text class="item-title">申请原因</text>
         <view class="ss-flex refund-cause ss-col-center">
           <text class="ss-m-r-20" v-if="formData.applyReason">{{ formData.applyReason }}</text>
@@ -81,7 +80,7 @@
     <su-fixed bottom placeholder>
       <view class="foot-wrap">
         <view class="foot_box ss-flex ss-col-center ss-row-between ss-p-x-30">
-          <button class="ss-reset-button contcat-btn" @tap="sheep.$router.go('/pages/chat/index')">
+          <button class="ss-reset-button contcat-btn" @tap="onContactKefu">
             联系客服
           </button>
           <button class="ss-reset-button ui-BG-Main-Gradient sub-btn" @tap="submit">提交</button>
@@ -96,16 +95,20 @@
           申请原因
         </view>
         <view class="modal-content content_box">
-          <radio-group @change="onChange">
-            <label class="radio ss-flex ss-col-center" v-for="item in state.reasonList" :key="item">
-              <view class="ss-flex-1 ss-p-20">{{ item }}</view>
-              <radio
-                :value="item"
-                color="var(--ui-BG-Main)"
-                :checked="item === state.currentValue"
-              />
-            </label>
-          </radio-group>
+          <view
+            class="radio ss-flex ss-col-center"
+            v-for="item in selectionState.reasonList"
+            :key="item"
+            :data-reason="item"
+            @tap="onReasonSelect"
+          >
+            <view class="ss-flex-1 ss-p-20">{{ item }}</view>
+            <radio
+              :value="item"
+              color="var(--ui-BG-Main)"
+              :checked="item === selectionState.currentValue"
+            />
+          </view>
         </view>
         <view class="modal-foot foot_box ss-flex ss-row-center ss-col-center">
           <button class="ss-reset-button close-btn ui-BG-Main-Gradient" @tap="onReason">
@@ -122,9 +125,15 @@
   import { onLoad } from '@dcloudio/uni-app';
   import { reactive, ref } from 'vue';
   import OrderApi from '@/sheep/api/trade/order';
-  import TradeConfigApi from '@/sheep/api/trade/config';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import AfterSaleApi from '@/sheep/api/trade/afterSale';
+  import { showKefuModal } from '@/sheep/hooks/useModal';
+  import {
+    createAfterSaleSelectionState,
+    setAfterSaleConfig,
+    toggleAfterSaleWay,
+    selectAfterSaleReason,
+  } from '@/sheep/helper/afterSaleSelection.mjs';
 
   const form = ref(null);
   const state = reactive({
@@ -132,8 +141,6 @@
     itemId: 0, // 订单项编号
     order: {}, // 订单
     item: {}, // 订单项
-    config: {}, // 交易配置
-
     // 售后类型
     wayList: [
       {
@@ -145,11 +152,10 @@
         value: '20',
       },
     ],
-    reasonList: [], // 可选的申请原因数组
     showModal: false, // 是否显示申请原因弹窗
-    currentValue: '', // 当前选择的售后原因
   });
-  let formData = reactive({
+  const selectionState = reactive(createAfterSaleSelectionState());
+  const formData = reactive({
     way: '',
     applyReason: '',
     applyDescription: '',
@@ -157,10 +163,18 @@
   });
   const rules = reactive({});
 
+  function onContactKefu() {
+    void showKefuModal({}, sheep.$router);
+  }
+
   // 提交表单
   async function submit() {
     if (!formData.way) {
       sheep.$helper.toast('请选择售后类型');
+      return;
+    }
+    if (!formData.applyReason) {
+      sheep.$helper.toast('请选择申请原因');
       return;
     }
     let data = {
@@ -170,6 +184,7 @@
     };
     const { code } = await AfterSaleApi.createAfterSale(data);
     if (code === 0) {
+      await sheep.$store('user').refreshOrderCount();
       uni.showToast({
         title: '申请成功',
       });
@@ -177,26 +192,41 @@
     }
   }
 
-  // 选择售后类型
-  function onRefundChange(e) {
-    formData.way = e.detail.value;
-    // 清理理由
-    state.reasonList =
-      formData.way === '10'
-        ? state.config.afterSaleRefundReasons || []
-        : state.config.afterSaleReturnReasons || [];
+  // 选择售后类型；原生 radio 不支持取消已选项，因此这里显式处理切换和取消。
+  function onRefundTypeTap(event) {
+    const way = event.currentTarget?.dataset?.way;
+    if (!way) {
+      return;
+    }
+    toggleAfterSaleWay(selectionState, way);
+    formData.way = selectionState.way;
     formData.applyReason = '';
-    state.currentValue = '';
+  }
+
+  function openReasonModal() {
+    if (!formData.way) {
+      sheep.$helper.toast('请先选择售后类型');
+      return;
+    }
+    if (selectionState.reasonList.length === 0) {
+      sheep.$helper.toast('暂无可选申请原因');
+      return;
+    }
+    state.showModal = true;
   }
 
   // 选择申请原因
-  function onChange(e) {
-    state.currentValue = e.detail.value;
+  function onReasonSelect(event) {
+    const reason = event.currentTarget?.dataset?.reason;
+    if (reason == null) {
+      return;
+    }
+    selectAfterSaleReason(selectionState, reason);
   }
 
   // 确定
   function onReason() {
-    formData.applyReason = state.currentValue;
+    formData.applyReason = selectionState.currentValue;
     state.showModal = false;
   }
 
@@ -223,7 +253,12 @@
     }
 
     // 读取配置
-    state.config = (await TradeConfigApi.getTradeConfig()).data;
+    try {
+      setAfterSaleConfig(selectionState, await sheep.$store('tradeConfig').getTradeConfig());
+    } catch {
+      // 售后配置读取失败时保留空选项，客服入口仍可按统一策略回退在线客服。
+      setAfterSaleConfig(selectionState, {});
+    }
   });
 </script>
 

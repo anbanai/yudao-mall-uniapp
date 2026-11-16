@@ -56,6 +56,7 @@ const OrderApi = {
       custom: {
         showError: true,
         showLoading: true,
+        formalAuth: true,
       },
     });
   },
@@ -68,6 +69,7 @@ const OrderApi = {
       custom: {
         showLoading: false,
         showError: false,
+        noRefresh: true,
       },
     });
   },
@@ -77,10 +79,13 @@ const OrderApi = {
       url: `/trade/order/create`,
       method: 'POST',
       data,
+      custom: {
+        formalAuth: true,
+      },
     });
   },
   // 获得订单详细：sync 是可选参数
-  getOrderDetail: (id, sync) => {
+  getOrderDetail: (id, sync, { showError = true } = {}) => {
     return request({
       url: `/trade/order/get-detail`,
       method: 'GET',
@@ -90,6 +95,7 @@ const OrderApi = {
       },
       custom: {
         showLoading: false,
+        showError,
       },
     });
   },
@@ -142,6 +148,21 @@ const OrderApi = {
       params: {
         id,
       },
+      custom: {
+        showError: false,
+      },
+    });
+  },
+  // 生成微信物流查询组件运单令牌
+  ensureWechatWaybillToken: (id) => {
+    return request({
+      url: '/trade/order/ensure-wechat-waybill-token',
+      method: 'POST',
+      params: { id },
+      custom: {
+        showLoading: false,
+        showError: false,
+      },
     });
   },
   // 获得交易订单数量
@@ -152,6 +173,7 @@ const OrderApi = {
       custom: {
         showLoading: false,
         auth: true,
+        formalAuth: true,
       },
     });
   },

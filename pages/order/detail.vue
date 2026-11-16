@@ -65,6 +65,25 @@
       class="detail-goods"
       :style="[{ marginTop: state.orderInfo.receiverAreaId > 0 ? '0' : '-40rpx' }]"
     >
+      <view v-if="state.orderInfo.subOrders?.length" class="merchant-orders ss-m-b-14">
+        <view
+          v-for="subOrder in state.orderInfo.subOrders"
+          :key="subOrder.id"
+          class="merchant-order-card"
+        >
+          <view class="ss-flex ss-row-between ss-p-x-20 ss-p-y-16">
+            <text class="ss-font-28">{{ subOrder.merchantName || '平台自营' }}</text>
+            <text class="ss-font-24">履约单号：{{ subOrder.no }}</text>
+          </view>
+          <view class="ss-flex ss-row-between ss-p-x-20 ss-p-b-16 ss-font-24">
+            <text>状态：{{ formatOrderStatus(subOrder) }}</text>
+            <text>实付：￥{{ fen2yuan(subOrder.payPrice) }}</text>
+          </view>
+          <view v-if="subOrder.logisticsNo" class="ss-p-x-20 ss-p-b-16 ss-font-24">
+            物流单号：{{ subOrder.logisticsNo }}
+          </view>
+        </view>
+      </view>
       <!-- 订单信 -->
       <view class="order-list" v-for="item in state.orderInfo.items" :key="item.goods_id">
         <view class="order-card">
@@ -180,6 +199,13 @@
         <text class="title">积分抵扣</text>
         <text class="detail">-¥{{ fen2yuan(state.orderInfo.pointPrice) }}</text>
       </view>
+      <view class="notice-item ss-flex ss-row-between" v-if="state.orderInfo.givePoint > 0">
+        <text class="title">赠送积分</text>
+        <text class="detail">
+          {{ state.orderInfo.pointGiveTiming === 2 ? '收货后到账' : '支付后到账' }}
+          {{ state.orderInfo.givePoint }} 分
+        </text>
+      </view>
       <view class="notice-item ss-flex ss-row-between" v-if="state.orderInfo.discountPrice > 0">
         <text class="title">活动优惠</text>
         <text class="detail">¥{{ fen2yuan(state.orderInfo.discountPrice) }}</text>
@@ -271,6 +297,7 @@
   import DeliveryApi from '@/sheep/api/trade/delivery';
   import PayOrderApi from '@/sheep/api/pay/order';
   import PickUpVerify from '@/pages/order/pickUpVerify.vue';
+  import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const headerBg = sheep.$url.css('/static/img/shop/order/order_bg.png');
@@ -312,6 +339,7 @@
         }
         const { code } = await OrderApi.cancelOrder(orderId);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           await getOrderDetail(orderId);
         }
       },
@@ -320,9 +348,7 @@
 
   // 查看物流
   async function onExpress(id) {
-    sheep.$router.go('/pages/order/express/log', {
-      id,
-    });
+    await openOrderLogistics(id);
   }
 
   // 确认收货
@@ -352,6 +378,7 @@
         // 正常的确认收货流程
         const { code } = await OrderApi.receiveOrder(orderId);
         if (code === 0) {
+          await sheep.$store('user').refreshOrderCount();
           await getOrderDetail(orderId);
         }
       },
@@ -408,7 +435,8 @@
         merchant_trade_no: state.merchantTradeNo,
       });
     } else {
-      res = await OrderApi.getOrderDetail(id);
+      // 主动同步服务端可能异步更新的支付、发货状态
+      res = await OrderApi.getOrderDetail(id, true);
     }
     if (res.code === 0) {
       state.orderInfo = res.data;
@@ -431,6 +459,7 @@
     // 有几率在 onLoad 完成 state.orderInfo.id 赋值前进入 onShow
     if (state.orderInfo.id) {
       await getOrderDetail(state.orderInfo.id);
+      await sheep.$store('user').refreshOrderCount();
     }
   });
 

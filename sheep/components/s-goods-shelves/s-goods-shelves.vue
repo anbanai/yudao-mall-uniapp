@@ -1,6 +1,6 @@
 <!-- 装修商品组件：商品栏 -->
 <template>
-  <view>
+  <view :class="['goods-shelves', variant && `goods-shelves--${variant}`]">
     <!-- 布局1. 两列商品，图片左文案右 -->
     <view
       v-if="layoutType === 'twoCol'"
@@ -9,7 +9,7 @@
     >
       <view
         class="goods-xs-list"
-        v-for="item in goodsList"
+        v-for="item in displayGoodsList"
         :key="item.id"
         :style="[
           {
@@ -19,6 +19,7 @@
       >
         <s-goods-column
           class="goods-card"
+          :variant="variant"
           size="xs"
           :goodsFields="data.fields"
           :tagStyle="data.badge"
@@ -38,7 +39,7 @@
       :style="[{ margin: '-' + data.space + 'rpx' }]"
     >
       <view
-        v-for="item in goodsList"
+        v-for="item in displayGoodsList"
         :key="item.id"
         class="goods-card-box"
         :style="[
@@ -49,7 +50,9 @@
       >
         <s-goods-column
           class="goods-card"
+          :variant="variant"
           size="sm"
+          :title-lines="variant === 'productGroup' ? 2 : 1"
           :goodsFields="data.fields"
           :tagStyle="data.badge"
           :data="item"
@@ -67,13 +70,15 @@
         <view class="goods-box ss-flex">
           <view
             class="goods-card-box"
-            v-for="item in goodsList"
+            v-for="item in displayGoodsList"
             :key="item.id"
             :style="[{ marginRight: data.space * 2 + 'rpx' }]"
           >
             <s-goods-column
               class="goods-card"
+              :variant="variant"
               size="sm"
+              :title-lines="variant === 'productGroup' ? 2 : 1"
               :goodsFields="data.fields"
               :tagStyle="data.badge"
               :data="item"
@@ -92,9 +97,9 @@
   /**
    * 商品栏
    */
-  import { onMounted, ref, computed } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import sheep from '@/sheep';
-  import SpuApi from "@/sheep/api/product/spu";
+  import SpuApi from '@/sheep/api/product/spu';
 
   const props = defineProps({
     data: {
@@ -105,16 +110,41 @@
       type: Object,
       default() {},
     },
+    goodsList: {
+      type: Array,
+      default: undefined,
+    },
+    variant: {
+      type: String,
+      default: '',
+    },
   });
-  const { layoutType, spuIds } = props.data;
-  let { marginLeft, marginRight } = props.styles;
-  const goodsList = ref([]);
-  onMounted(async () => {
-    if (spuIds.length > 0) {
-      let { data } = await SpuApi.getSpuListByIds(spuIds.join(','));
-      goodsList.value = data;
-    }
-  });
+  const layoutType = computed(() => props.data.layoutType);
+  const marginLeft = computed(() => props.styles.marginLeft || 0);
+  const marginRight = computed(() => props.styles.marginRight || 0);
+  const fetchedGoodsList = ref([]);
+  const displayGoodsList = computed(() => props.goodsList ?? fetchedGoodsList.value);
+
+  watch(
+    () => props.data.spuIds,
+    async (spuIds) => {
+      if (props.goodsList !== undefined) {
+        fetchedGoodsList.value = [];
+        return;
+      }
+      if (!Array.isArray(spuIds) || spuIds.length === 0) {
+        fetchedGoodsList.value = [];
+        return;
+      }
+      try {
+        const { code, data } = await SpuApi.getSpuListByIds(spuIds.join(','));
+        fetchedGoodsList.value = code === 0 && Array.isArray(data) ? data : [];
+      } catch {
+        fetchedGoodsList.value = [];
+      }
+    },
+    { immediate: true },
+  );
 </script>
 
 <style lang="scss" scoped>
@@ -143,5 +173,26 @@
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .goods-shelves--productGroup {
+    padding: 16rpx;
+    background: #f7f8fa;
+
+    .goods-xs-box,
+    .goods-sm-box {
+      margin: -8rpx;
+    }
+
+    .goods-card-box,
+    .goods-xs-list {
+      padding: 8rpx !important;
+    }
+
+    .goods-scroll-box {
+      margin: 0 -16rpx;
+      width: calc(100% + 32rpx);
+      padding: 0 16rpx;
+    }
   }
 </style>

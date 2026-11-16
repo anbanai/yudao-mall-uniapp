@@ -31,7 +31,7 @@ const SpuHistoryApi = {
       method: 'GET',
       data,
       custom: {
-        showLoading: false
+        showLoading: false,
       },
     });
   },

@@ -3,16 +3,37 @@ import $helper from '@/sheep/helper';
 import dayjs from 'dayjs';
 import { ref } from 'vue';
 import test from '@/sheep/helper/test.js';
+import { navigateToKefuChat } from '@/sheep/helper/kefu.mjs';
 import AuthUtil from '@/sheep/api/member/auth';
 
 // 打开授权弹框
-export function showAuthModal(type = 'smsLogin') {
+export function showAuthModal(type = '') {
+  if (!type) {
+    // #ifdef MP-WEIXIN
+    type = 'phoneAuthorization';
+    // #endif
+    // #ifndef MP-WEIXIN
+    type = 'smsLogin';
+    // #endif
+  }
   const modal = $store('modal');
   // #ifdef H5
-  closeAuthModal();
+  const hasPendingPopupClose = modal.auth !== '' || modal.authTransitionCloseId !== 0;
+  const transitionId = (modal.authTransitionId || 0) + 1;
+  modal.$patch((state) => {
+    state.authTransition = true;
+    state.authTransitionId = transitionId;
+    state.authTransitionCloseId = hasPendingPopupClose ? transitionId : 0;
+  });
+  closeAuthModal(true);
   setTimeout(() => {
+    if (!modal.authTransition || modal.authTransitionId !== transitionId) {
+      return;
+    }
     modal.$patch((state) => {
       state.auth = type;
+      state.authTransition = false;
+      state.authTransitionCloseId = 0;
     });
   }, 200);
   // #endif
@@ -25,9 +46,14 @@ export function showAuthModal(type = 'smsLogin') {
 }
 
 // 关闭授权弹框
-export function closeAuthModal() {
+export function closeAuthModal(preserveTransition = false) {
   $store('modal').$patch((state) => {
     state.auth = '';
+    if (!preserveTransition) {
+      state.authTransition = false;
+      state.authTransitionId = (state.authTransitionId || 0) + 1;
+      state.authTransitionCloseId = 0;
+    }
   });
 }
 
@@ -56,6 +82,46 @@ export function showMenuTools() {
 export function closeMenuTools() {
   $store('modal').$patch((state) => {
     state.menu = false;
+  });
+}
+
+// 打开客服弹框。企微配置缺失或读取失败时回退到在线客服页。
+export async function showKefuModal(options = {}, router) {
+  const modal = $store('modal');
+  const tradeConfig = $store('tradeConfig');
+  const chatOptions = options && typeof options === 'object' ? { ...options } : {};
+
+  try {
+    const config = await tradeConfig.getTradeConfig();
+    if (!config?.kefuWechatQrCodeUrl) {
+      $store('modal').$patch((state) => {
+        state.kefu = false;
+        state.kefuOptions = chatOptions;
+      });
+      // keep the existing deep-linkable online chat page as the fallback
+      navigateToKefuChat(router, chatOptions);
+      return false;
+    }
+    modal.$patch((state) => {
+      state.kefuOptions = chatOptions;
+      state.kefu = true;
+    });
+    return true;
+  } catch (error) {
+    modal.$patch((state) => {
+      state.kefu = false;
+      state.kefuOptions = chatOptions;
+    });
+    navigateToKefuChat(router, chatOptions);
+    return false;
+  }
+}
+
+// 关闭客服弹框
+export function closeKefuModal() {
+  $store('modal').$patch((state) => {
+    state.kefu = false;
+    state.kefuOptions = {};
   });
 }
 

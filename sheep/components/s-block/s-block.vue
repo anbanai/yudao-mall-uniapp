@@ -9,11 +9,16 @@
    */
   import { computed, provide, unref } from 'vue';
   import sheep from '@/sheep';
+  import { getBlockOverflow } from './block.mjs';
 
   const props = defineProps({
     styles: {
       type: Object,
       default() {},
+    },
+    allowOverflow: {
+      type: Boolean,
+      default: false,
     },
   });
 
@@ -21,11 +26,18 @@
   const elBackground = computed(() => {
     if (props.styles) {
       if (props.styles.bgType === 'color') {
-        return { background: props.styles.bgColor };
+        return {
+          backgroundColor: props.styles.bgColor,
+          backgroundImage: 'none',
+        };
       }
       if (props.styles.bgType === 'img') {
         return {
-          background: `url(${sheep.$url.cdn(props.styles.bgImg)}) no-repeat top center / 100% auto`,
+          backgroundColor: 'transparent',
+          backgroundImage: `url(${sheep.$url.cdn(props.styles.bgImg)})`,
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: '100% 100%',
         };
       }
     }
@@ -46,7 +58,7 @@
         borderTopRightRadius: `${props.styles.borderTopRightRadius || 0}px`,
         borderBottomRightRadius: `${props.styles.borderBottomRightRadius || 0}px`,
         borderBottomLeftRadius: `${props.styles.borderBottomLeftRadius || 0}px`,
-        overflow: 'hidden',
+        overflow: getBlockOverflow(props.allowOverflow),
       };
     }
   });

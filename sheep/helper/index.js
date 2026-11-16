@@ -647,27 +647,23 @@ export function getRootUrl() {
  * copyText 多端复制文本
  */
 export function copyText(text) {
-  // #ifndef H5
+  const clipboardText = text == null ? '' : String(text);
+  if (!clipboardText) {
+    toast('复制失败!');
+    return;
+  }
+
   uni.setClipboardData({
-    data: text,
-    success: function () {
+    data: clipboardText,
+    success: function (res) {
+      console.log('[copyText] setClipboardData success:', res);
       toast('复制成功!');
     },
-    fail: function () {
-      toast('复制失败!');
+    fail: function (err) {
+      console.error('[copyText] setClipboardData fail:', err);
+      toast(`复制失败: ${err?.errMsg || '未知错误'}`);
     },
   });
-  // #endif
-  // #ifdef H5
-  var createInput = document.createElement('textarea');
-  createInput.value = text;
-  document.body.appendChild(createInput);
-  createInput.select();
-  document.execCommand('Copy');
-  createInput.className = 'createInput';
-  createInput.style.display = 'none';
-  toast('复制成功');
-  // #endif
 }
 
 export default {

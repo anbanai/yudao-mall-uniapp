@@ -89,7 +89,8 @@
   const titleStyle = computed(() => uiTabProvide?.props?.titleStyle);
 
   const computedQuery = () => {
-    uni.createSelectorQuery()
+    uni
+      .createSelectorQuery()
       .in(vm)
       .select('#tab-' + props.index)
       .boundingClientRect((data) => {

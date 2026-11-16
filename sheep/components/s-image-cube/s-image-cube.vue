@@ -50,7 +50,9 @@
   const cell = computed(() => {
     return (
       (windowWidth -
-        ((props.styles.marginLeft || 0) + (props.styles.marginRight || 0) + (props.styles.padding || 0) * 2)) /
+        ((props.styles.marginLeft || 0) +
+          (props.styles.marginRight || 0) +
+          (props.styles.padding || 0) * 2)) /
       4
     );
   });

@@ -15,6 +15,8 @@
   display: inline-block;
 }
 
+// Keep the source catalog for designers, but only emit icons referenced by the application.
+@if false {
 .cicon-Aa:before {
   content: '\e7a1';
 }
@@ -1338,3 +1340,24 @@
 .cicon-zuoji:before {
   content: '\e754';
 }
+}
+
+.cicon-add-round:before { content: '\e717'; }
+.cicon-alarm:before { content: '\e61e'; }
+.cicon-back:before { content: '\e600'; }
+.cicon-box:before { content: '\e714'; }
+.cicon-check-round:before { content: '\e6f1'; }
+.cicon-checkbox:before { content: '\e713'; }
+.cicon-drop-down:before { content: '\e61c'; }
+.cicon-eye:before { content: '\e740'; }
+.cicon-eye-off:before { content: '\e7b3'; }
+.cicon-forward:before { content: '\e601'; }
+.cicon-help-o:before { content: '\e65e'; }
+.cicon-info:before { content: '\e6ef'; }
+.cicon-info-o:before { content: '\e705'; }
+.cicon-mobile-o:before { content: '\e7b6'; }
+.cicon-move-round:before { content: '\e602'; }
+.cicon-play-arrow:before { content: '\e66e'; }
+.cicon-refresh:before { content: '\e611'; }
+.cicon-title:before { content: '\e82f'; }
+.cicon-weixin:before { content: '\e6de'; }

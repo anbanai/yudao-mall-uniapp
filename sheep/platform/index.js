@@ -54,16 +54,16 @@ platform = 'miniProgram';
 provider = 'wechat';
 // #endif
 
-// #ifdef MP-ALIPAY 
+// #ifdef MP-ALIPAY
 name = 'alipayMiniProgram';
 platform = 'alipayMiniProgram';
 provider = 'alipay';
 if (!device.safeAreaInsets) {
-  device.safeAreaInsets = uni.getSystemInfoSync().safeAreaInsets
+  device.safeAreaInsets = uni.getSystemInfoSync().safeAreaInsets;
 }
 // 兜底一下。还是没有值时候，就给个默认值
 if (!device.safeAreaInsets) {
-  device.safeAreaInsets = {}
+  device.safeAreaInsets = {};
 }
 // #endif
 
@@ -92,8 +92,8 @@ const useProvider = (_provider = '') => {
 };
 
 // 支付服务转发
-const pay = (payment, orderType, orderSN) => {
-  return new Pay(payment, orderType, orderSN);
+const pay = (payment, orderType, orderSN, channelCode) => {
+  return new Pay(payment, orderType, orderSN, channelCode);
 };
 
 /**

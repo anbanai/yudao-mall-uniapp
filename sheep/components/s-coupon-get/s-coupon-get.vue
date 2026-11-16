@@ -52,7 +52,7 @@
   const emits = defineEmits(['get', 'close']);
 
   const state = reactive({
-    couponInfo: computed(() => props.modelValue)
+    couponInfo: computed(() => props.modelValue),
   });
 
   // 领取优惠劵

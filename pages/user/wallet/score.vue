@@ -58,13 +58,20 @@
           v-for="item in state.pagination.list"
           :key="item.id"
         >
-          <view class="ss-flex-col">
+          <view class="ss-flex-col list-content">
             <view class="name"
-              >{{ item.title }}{{ item.description ? ' - ' + item.description : '' }}</view
+              >{{ getPointRecordDisplay(item).title
+              }}{{ item.description ? ' - ' + item.description : '' }}</view
             >
-            <view class="time">{{
-              sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss')
-            }}</view>
+            <view class="time">
+              {{ sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss') }}
+              <text :class="['point-status', getPointRecordDisplay(item).statusClass]">
+                · {{ getPointRecordDisplay(item).statusText }}
+              </text>
+            </view>
+            <view class="time" v-if="item.effectiveTime">
+              生效于 {{ sheep.$helper.timeFormat(item.effectiveTime, 'yyyy-mm-dd hh:MM:ss') }}
+            </view>
           </view>
           <view class="add" v-if="item.point > 0">+{{ item.point }}</view>
           <view class="minus" v-else>{{ item.point }}</view>
@@ -92,6 +99,8 @@
   import dayjs from 'dayjs';
   import PointApi from '@/sheep/api/member/point';
   import { resetPagination } from '@/sheep/helper/utils';
+  import { getPointRecordDisplay } from '@/sheep/helper/pointRecord.mjs';
+  import uniDatetimePicker from '../components/uni-datetime-picker/uni-datetime-picker.vue';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const userInfo = computed(() => sheep.$store('user').userInfo);
@@ -247,6 +256,11 @@
       border-bottom: 1rpx solid #dfdfdf;
       padding: 30rpx;
 
+      .list-content {
+        flex: 1;
+        min-width: 0;
+      }
+
       .name {
         font-size: 28rpx;
 
@@ -262,10 +276,30 @@
         font-weight: 500;
         color: rgba(196, 196, 196, 1);
         line-height: 24px;
+
+        .point-status {
+          &.effective {
+            color: #3f8f65;
+          }
+
+          &.pending {
+            color: #b7791f;
+          }
+
+          &.cancelled {
+            color: #999;
+          }
+
+          &.unknown {
+            color: #999;
+          }
+        }
       }
 
       .add {
         font-size: 30rpx;
+        flex-shrink: 0;
+        white-space: nowrap;
 
         font-weight: 500;
         color: #e6b873;
@@ -273,6 +307,8 @@
 
       .minus {
         font-size: 30rpx;
+        flex-shrink: 0;
+        white-space: nowrap;
 
         font-weight: 500;
         color: $dark-3;

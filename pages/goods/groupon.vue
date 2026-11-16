@@ -271,8 +271,16 @@
     }
     state.activity = activity;
     // 加载商品信息
-    const { data: spu } = await SpuApi.getSpuDetail(activity.spuId);
-    if (code !== 0) {
+    let spu;
+    try {
+      ({ data: spu } = await SpuApi.getSpuDetail(activity.spuId));
+    } catch (error) {
+      console.error('[拼团商品] 商品详情加载失败', { id: activity.spuId, error });
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
+    if (!spu) {
       state.goodsInfo = null;
       state.skeletonLoading = false;
       return;
@@ -297,14 +305,9 @@
 
     // 关闭骨架屏
     state.skeletonLoading = false;
-    if (code === 0) {
-      state.goodsInfo = spu;
-      state.grouponNum = activity.userSize;
-      state.goodsSwiper = formatGoodsSwiper(state.goodsInfo.sliderPicUrls);
-    } else {
-      // 未找到商品
-      state.goodsInfo = null;
-    }
+    state.goodsInfo = spu;
+    state.grouponNum = activity.userSize;
+    state.goodsSwiper = formatGoodsSwiper(state.goodsInfo.sliderPicUrls);
   });
 </script>
 
