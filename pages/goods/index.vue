@@ -101,7 +101,7 @@
                 </view>
               </view>
               <view class="sales-text">
-                已售{{ state.goodsInfo.salesCount || 0 }}/{{
+                已售{{ state.goodsInfo.salesCount || 0 }} · 剩余库存{{
                   state.selectedSku.stock ?? state.goodsInfo.stock ?? 0
                 }}
               </view>
@@ -157,6 +157,9 @@
               {{ state.goodsInfo.merchantName }}
             </view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
+            <view v-if="preSaleDeliveryLabel" class="pre-sale-detail">{{
+              preSaleDeliveryLabel
+            }}</view>
             <view v-if="state.publicGroups.length" class="public-groups">
               <button
                 v-for="group in state.publicGroups"
@@ -183,7 +186,7 @@
                     }}
                   </text>
                 </view>
-                <text class="delivery-shipping">快递包邮</text>
+                <text class="delivery-shipping">运费以结算为准</text>
               </view>
               <text class="_icon-forward detail-info-arrow" />
             </view>
@@ -283,6 +286,8 @@
   import SpuApi from '@/sheep/api/product/spu';
   import GroupApi from '@/sheep/api/product/group';
   import AddressApi from '@/sheep/api/member/address';
+  import { createDeliveryAddressLoader } from '@/sheep/helper/deliveryAddress.mjs';
+  import { getPreSaleDeliveryLabel } from '@/sheep/components/s-goods-column/goods-column.mjs';
   import {
     getProductGroupResponseData,
     publicProductGroups,
@@ -314,11 +319,22 @@
     rewardActivity: {}, // 【满减送】活动
     activityList: [], // 【秒杀/拼团/砍价】可参与的 Activity 营销活动的列表
     deliveryAddress: null, // 当前配送地址
-    hasSelectedDeliveryAddress: false,
-    deliveryAddressLoaded: false,
   });
 
-  let deliveryAddressRequest;
+  const deliveryAddressLoader = createDeliveryAddressLoader({
+    getSession: () => {
+      const user = sheep.$store('user');
+      return { isLogin: user.isLogin, userId: user.userInfo?.id };
+    },
+    fetchAddresses: async () => {
+      const { data = [] } = await AddressApi.getAddressList();
+      return data;
+    },
+    applyAddress: (address) => {
+      state.deliveryAddress = address;
+    },
+  });
+  const preSaleDeliveryLabel = computed(() => getPreSaleDeliveryLabel(state.goodsInfo));
   let groupGeneration = 0;
   async function refreshPublicGroups() {
     const token = ++groupGeneration;
@@ -332,33 +348,12 @@
     }
   }
   function loadDeliveryAddress() {
-    if (state.hasSelectedDeliveryAddress || state.deliveryAddressLoaded) {
-      return Promise.resolve();
-    }
-    if (!deliveryAddressRequest) {
-      deliveryAddressRequest = (async () => {
-        try {
-          const { data = [] } = await AddressApi.getAddressList();
-          if (!state.hasSelectedDeliveryAddress) {
-            state.deliveryAddress = data.find((item) => item.defaultStatus) || data[0] || null;
-          }
-        } catch {
-          if (!state.hasSelectedDeliveryAddress) {
-            state.deliveryAddress = null;
-          }
-        } finally {
-          state.deliveryAddressLoaded = true;
-          deliveryAddressRequest = null;
-        }
-      })();
-    }
-    return deliveryAddressRequest;
+    return deliveryAddressLoader.load();
   }
 
   function onChooseDeliveryAddress() {
     uni.$once('SELECT_ADDRESS', ({ addressInfo } = {}) => {
-      state.deliveryAddress = addressInfo;
-      state.hasSelectedDeliveryAddress = true;
+      deliveryAddressLoader.select(addressInfo);
     });
     sheep.$router.go('/pages/user/address/list', { type: 'select' });
   }
@@ -687,6 +682,18 @@
       font-weight: 400;
       color: $dark-9;
       line-height: 42rpx;
+    }
+
+    .pre-sale-detail {
+      width: fit-content;
+      max-width: 100%;
+      padding: 4rpx 10rpx;
+      margin-top: 8rpx;
+      border-radius: 4rpx;
+      background: #fff1eb;
+      color: #d94c20;
+      font-size: 22rpx;
+      line-height: 32rpx;
     }
   }
 

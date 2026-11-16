@@ -16,9 +16,10 @@ assert.match(pointPage, /open-type="share"[\s\S]*cicon-reply[\s\S]*>分享</);
 assert.match(tabbar, /cicon-home-o[\s\S]*首页/);
 assert.match(tabbar, /cicon-cart-o[\s\S]*购物车/);
 assert.match(goodsPage, /<text class="detail-info-label">配送<\/text>/);
-assert.match(goodsPage, /快递包邮/);
-assert.match(goodsPage, /AddressApi\.getAddressList\(\)/);
-assert.match(goodsPage, /defaultStatus/);
+assert.match(goodsPage, /getPreSaleDeliveryLabel\(state\.goodsInfo\)/);
+assert.match(goodsPage, /运费以结算为准/);
+assert.doesNotMatch(goodsPage, /快递包邮/);
+assert.match(goodsPage, /createDeliveryAddressLoader/);
 assert.match(goodsPage, /detailAddress/);
 assert.match(goodsPage, /onChooseDeliveryAddress/);
 assert.match(goodsPage, /addressInfo:\s*state\.deliveryAddress/);
@@ -37,10 +38,11 @@ assert.match(
   /<detail-cell-sku[\s\S]*label="规格"[\s\S]*@tap="state\.showSelectSku = true"/,
 );
 assert.match(pointPage, /<text class="detail-info-label">配送<\/text>/);
+assert.match(pointPage, /运费以结算为准/);
+assert.doesNotMatch(pointPage, /快递包邮/);
 assert.match(pointPage, /<text class="detail-info-label">服务<\/text>/);
 assert.match(pointPage, /退货包运费/);
-assert.match(pointPage, /AddressApi\.getAddressList\(\)/);
-assert.match(pointPage, /defaultStatus/);
+assert.match(pointPage, /createDeliveryAddressLoader/);
 assert.match(pointPage, /detailAddress/);
 assert.match(pointPage, /onChooseDeliveryAddress/);
 assert.match(pointPage, /addressInfo:\s*state\.deliveryAddress/);
@@ -64,7 +66,7 @@ assert.match(detailCellSku, /if \(!props\.sku\?\.id\) \{\s*return '选择';/);
 assert.match(goodsPage, /price:\s*fen2yuan\(state\.goodsInfo\.price\)/);
 assert.match(
   goodsPage,
-  /已售\{\{ state\.goodsInfo\.salesCount \|\| 0 \}\}\/\{\{\s*state\.selectedSku\.stock \?\? state\.goodsInfo\.stock \?\? 0\s*\}\}/,
+  /已售\{\{ state\.goodsInfo\.salesCount \|\| 0 \}\} · 剩余库存\{\{\s*state\.selectedSku\.stock \?\? state\.goodsInfo\.stock \?\? 0\s*\}\}/,
 );
 assert.match(pointPage, /point:\s*getShowPrice\.value\.point/);
 assert.match(pointPage, /title:\s*state\.goodsInfo\.name/);
@@ -74,7 +76,7 @@ assert.match(goodsPage, /ss-flex ss-row-between ss-col-center ss-m-b-26/);
 assert.match(pointPage, /ss-flex ss-row-between ss-col-center ss-m-b-26/);
 assert.match(
   pointPage,
-  /已兑换\{\{ \(activity\.totalStock \|\| 0\) - \(activity\.stock \|\| 0\) \}\}\/\{\{\s*state\.selectedSku\.stock \?\? state\.goodsInfo\.stock \?\? 0\s*\}\}/,
+  /已兑换\{\{ redeemedCount \}\} · 剩余库存\{\{\s*state\.selectedSku\.stock \?\? state\.goodsInfo\.stock \?\? 0\s*\}\}/,
 );
 assert.doesNotMatch(goodsPage, /已售数量/);
 assert.doesNotMatch(pointPage, /已售数量/);

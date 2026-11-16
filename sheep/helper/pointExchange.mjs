@@ -3,6 +3,10 @@ function nonNegativeInteger(value) {
   return Number.isFinite(number) ? Math.max(Math.trunc(number), 0) : 0;
 }
 
+export function getRedeemedCount(totalStock, remainingStock) {
+  return Math.max(nonNegativeInteger(totalStock) - nonNegativeInteger(remainingStock), 0);
+}
+
 export function getPointExchangeStatus(pointPerItem, availablePoint, count = 1) {
   const requiredPoint = nonNegativeInteger(pointPerItem) * Math.max(nonNegativeInteger(count), 1);
   const normalizedAvailablePoint = nonNegativeInteger(availablePoint);

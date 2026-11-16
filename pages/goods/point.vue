@@ -45,7 +45,7 @@
               </text>
             </view>
             <view class="sales-text">
-              已兑换{{ (activity.totalStock || 0) - (activity.stock || 0) }}/{{
+              已兑换{{ redeemedCount }} · 剩余库存{{
                 state.selectedSku.stock ?? state.goodsInfo.stock ?? 0
               }}
             </view>
@@ -78,7 +78,7 @@
                   }}
                 </text>
               </view>
-              <text class="delivery-shipping">快递包邮</text>
+              <text class="delivery-shipping">运费以结算为准</text>
             </view>
             <text class="_icon-forward detail-info-arrow" />
           </view>
@@ -166,9 +166,10 @@
   import detailContentCard from './components/detail/detail-content-card.vue';
   import SpuApi from '@/sheep/api/product/spu';
   import { PromotionActivityTypeEnum, SharePageEnum } from '@/sheep/helper/const';
-  import { getPointExchangeStatus } from '@/sheep/helper/pointExchange.mjs';
+  import { getPointExchangeStatus, getRedeemedCount } from '@/sheep/helper/pointExchange.mjs';
   import PointApi from '@/sheep/api/promotion/point';
   import AddressApi from '@/sheep/api/member/address';
+  import { createDeliveryAddressLoader } from '@/sheep/helper/deliveryAddress.mjs';
 
   const headerBg = sheep.$url.css('/static/img/shop/goods/score-bg.png');
   const btnBg = sheep.$url.css('/static/img/shop/goods/seckill-btn.png');
@@ -187,39 +188,28 @@
     total: 0,
     price: '',
     deliveryAddress: null,
-    hasSelectedDeliveryAddress: false,
-    deliveryAddressLoaded: false,
   });
 
-  let deliveryAddressRequest;
+  const deliveryAddressLoader = createDeliveryAddressLoader({
+    getSession: () => {
+      const user = sheep.$store('user');
+      return { isLogin: user.isLogin, userId: user.userInfo?.id };
+    },
+    fetchAddresses: async () => {
+      const { data = [] } = await AddressApi.getAddressList();
+      return data;
+    },
+    applyAddress: (address) => {
+      state.deliveryAddress = address;
+    },
+  });
   function loadDeliveryAddress() {
-    if (state.hasSelectedDeliveryAddress || state.deliveryAddressLoaded) {
-      return Promise.resolve();
-    }
-    if (!deliveryAddressRequest) {
-      deliveryAddressRequest = (async () => {
-        try {
-          const { data = [] } = await AddressApi.getAddressList();
-          if (!state.hasSelectedDeliveryAddress) {
-            state.deliveryAddress = data.find((item) => item.defaultStatus) || data[0] || null;
-          }
-        } catch {
-          if (!state.hasSelectedDeliveryAddress) {
-            state.deliveryAddress = null;
-          }
-        } finally {
-          state.deliveryAddressLoaded = true;
-          deliveryAddressRequest = null;
-        }
-      })();
-    }
-    return deliveryAddressRequest;
+    return deliveryAddressLoader.load();
   }
 
   function onChooseDeliveryAddress() {
     uni.$once('SELECT_ADDRESS', ({ addressInfo } = {}) => {
-      state.deliveryAddress = addressInfo;
-      state.hasSelectedDeliveryAddress = true;
+      deliveryAddressLoader.select(addressInfo);
     });
     sheep.$router.go('/pages/user/address/list', { type: 'select' });
   }
@@ -296,6 +286,9 @@
       sheep.$store('user').userInfo.point,
       state.selectedSku.count || 1,
     ),
+  );
+  const redeemedCount = computed(() =>
+    getRedeemedCount(activity.value.totalStock, activity.value.stock),
   );
   const isPointExchangeDisabled = computed(
     () => !!state.selectedSku.id && !pointExchangeStatus.value.canExchange,
