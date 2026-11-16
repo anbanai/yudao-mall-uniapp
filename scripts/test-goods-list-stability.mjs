@@ -36,6 +36,17 @@ assert.deepEqual(
 assert.equal(existing.length, 2, 'only unseen goods are appended');
 
 const column = await import('../sheep/components/s-goods-column/goods-column.mjs');
+assert.equal(column.getPreSaleDeliveryLabel({ isPreSale: false, deliveryDays: 7 }), '');
+assert.equal(column.getPreSaleDeliveryLabel({ isPreSale: true }), '预售');
+assert.equal(
+  column.getPreSaleDeliveryLabel({ isPreSale: true, deliveryDays: 7 }),
+  '预售 · 付款后7天内发货',
+);
+assert.equal(
+  column.getPreSaleDeliveryLabel({ isPreSale: true, deliveryDays: 0 }),
+  '预售',
+  'invalid delivery periods must not be presented as a commitment',
+);
 assert.equal(column.getGoodsImageHeight(345), 345, 'unknown dimensions reserve a square image');
 assert.equal(
   column.getGoodsImageHeight(345, { w: 600, h: 300 }),
@@ -69,6 +80,7 @@ assert.match(
   /lazyLoad:\s*\{[\s\S]*?default:\s*true/,
   'other surfaces must retain lazy image loading by default',
 );
+assert.match(goodsColumn, /preSaleDeliveryLabel/);
 assert.match(
   goodsColumn,
   /class="sm-img-box"[\s\S]*?:lazy-load="lazyLoad"/,

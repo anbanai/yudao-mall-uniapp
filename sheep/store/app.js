@@ -1,4 +1,5 @@
 import DiyApi from '@/sheep/api/promotion/diy';
+import ConfigApi from '@/sheep/api/infra/config';
 import { getTenantByWebsite } from '@/sheep/api/infra/tenant';
 import { getTenantId } from '@/sheep/request';
 import { defineStore } from 'pinia';
@@ -68,6 +69,14 @@ const app = defineStore('app', {
       // 加载装修配置
       await adaptTemplate(this.template, templateId);
 
+      let shareCover = {};
+      try {
+        const result = await ConfigApi.getValueByKey('shopro.share.cover');
+        if (result?.code === 0 && result.data) shareCover = JSON.parse(result.data);
+      } catch (error) {
+        console.warn('[分享配置] 使用系统默认封面', error);
+      }
+
       // TODO 芋艿：【初始化优化】未来支持管理后台可配；对应 https://api.shopro.sheepjs.com/shop/api/init
       if (true) {
         this.info = {
@@ -91,9 +100,10 @@ const app = defineStore('app', {
             },
             forwardInfo: {
               title: '',
-              image: '',
+              image: shareCover.default || '',
               desc: '',
             },
+            cover: shareCover,
           },
           bind_mobile: 0,
         };

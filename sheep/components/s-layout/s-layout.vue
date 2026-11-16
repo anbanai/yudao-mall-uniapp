@@ -127,6 +127,10 @@
       type: [Boolean, Object],
       default: true,
     },
+    sharePage: {
+      type: String,
+      default: 'default',
+    },
     leftWidth: {
       type: [Number, String],
       default: 100,
@@ -188,7 +192,7 @@
   // 分享信息
   const shareInfo = computed(() => {
     if (props.onShareAppMessage === true) {
-      return sheep.$platform.share.getShareInfo();
+      return sheep.$platform.share.getShareInfo({ sharePage: props.sharePage });
     } else {
       if (!isEmpty(props.onShareAppMessage)) {
         sheep.$platform.share.updateShareInfo(props.onShareAppMessage);

@@ -8,6 +8,7 @@
       :bgStyle="template?.page || {}"
       :navbarStyle="template?.navigationBar || {}"
       onShareAppMessage
+      sharePage="home"
     >
       <template v-if="homeTemplateReady">
         <s-block

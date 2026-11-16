@@ -13,6 +13,7 @@ import {
 import throttle from '@/sheep/helper/throttle';
 
 let pendingFormalAuthNavigation = null;
+let pendingFormalAuthContinuation = null;
 
 const _go = async (
   path,
@@ -129,14 +130,32 @@ function go(...args) {
 
 function resumeFormalAuthNavigation() {
   const pending = pendingFormalAuthNavigation;
+  const continuation = pendingFormalAuthContinuation;
   pendingFormalAuthNavigation = null;
+  pendingFormalAuthContinuation = null;
   if (pending) {
     void _go(pending.path, pending.params, pending.options);
+  } else if (continuation) {
+    void continuation();
   }
 }
 
 function cancelFormalAuthNavigation() {
   pendingFormalAuthNavigation = null;
+  pendingFormalAuthContinuation = null;
+}
+
+async function requireFormalAuth(continuation) {
+  const userStore = $store('user');
+  if (userStore.isLogin && !userStore.userInfoLoaded) {
+    await userStore.ensureUserInfo();
+  }
+  if (userStore.isFormalLogin) {
+    return continuation();
+  }
+  pendingFormalAuthNavigation = null;
+  pendingFormalAuthContinuation = continuation;
+  showAuthModal();
 }
 
 function paramsToQuery(params) {
@@ -239,5 +258,6 @@ export default {
   getCurrentRoute,
   resumeFormalAuthNavigation,
   cancelFormalAuthNavigation,
+  requireFormalAuth,
   error,
 };

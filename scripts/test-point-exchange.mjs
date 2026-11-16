@@ -9,7 +9,14 @@ assert.equal(
   'point exchange eligibility should be calculated by a reusable helper',
 );
 
-const { getPointExchangeStatus } = await import(helperPath);
+const { getPointExchangeStatus, getRedeemedCount } = await import(helperPath);
+assert.equal(getRedeemedCount(100, 45), 55);
+assert.equal(
+  getRedeemedCount(4, 8),
+  0,
+  'inconsistent inventory must not show negative redemptions',
+);
+assert.equal(getRedeemedCount('invalid', 2), 0, 'invalid inventory values must normalize to zero');
 assert.deepEqual(getPointExchangeStatus(300, 200), {
   requiredPoint: 300,
   availablePoint: 200,

@@ -28,6 +28,9 @@ const getShareInfo = (
     type: 'user',
   },
 ) => {
+  const app = $store('app');
+  const shareConfig = app.platform.share;
+  const params = { ...(scene.params || {}), sharePage: scene.sharePage };
   const shareInfo = {
     title: '', // 分享标题
     desc: '', // 描述
@@ -39,14 +42,11 @@ const getShareInfo = (
     forward: {}, // 转发所需参数
   };
   shareInfo.title = scene.title;
-  shareInfo.image = $url.cdn(scene.image);
+  shareInfo.image = $url.cdn(scene.image || getConfiguredCover(shareConfig, scene.sharePage));
   shareInfo.desc = scene.desc;
 
-  const app = $store('app');
-  const shareConfig = app.platform.share;
-
   // 自动拼接分享用户参数
-  const query = buildSpmQuery(scene.params);
+  const query = buildSpmQuery(params);
   shareInfo.query = query;
 
   // 配置分享链接地址
@@ -77,12 +77,16 @@ const buildSpmQuery = (params) => {
     }
   }
   let page = SharePageEnum.HOME.value; // 页面类型，默认首页
+  if (params.sharePage === 'user') page = SharePageEnum.USER.value;
+  if (typeof params.sharePage === 'string' && params.sharePage.startsWith('page:')) page = SharePageEnum.CUSTOM.value;
   if (typeof params.page !== 'undefined') {
     page = params.page;
   }
   let query = '0'; // 设置页面ID: 如商品ID、拼团ID等
   if (typeof params.query !== 'undefined') {
     query = params.query;
+  } else if (typeof params.sharePage === 'string' && params.sharePage.startsWith('page:')) {
+    query = params.sharePage.slice('page:'.length);
   }
   let platform = platformMap.indexOf($platform.name) + 1;
   let from = '1';
@@ -160,6 +164,13 @@ const decryptSpm = async (spm) => {
         id: shareParamsArray[2], // 设置活动编号
       };
       break;
+    case SharePageEnum.USER.value:
+      shareParams.page = SharePageEnum.USER.page;
+      break;
+    case SharePageEnum.CUSTOM.value:
+      shareParams.page = SharePageEnum.CUSTOM.page;
+      shareParams.query = { id: shareParamsArray[2] };
+      break;
   }
   shareParams.platform = platformMap[shareParamsArray[3] - 1];
   shareParams.from = fromMap[shareParamsArray[4] - 1];
@@ -195,6 +206,14 @@ const bindBrokerageUser = async (val = undefined) => {
     console.error(e);
   }
 };
+
+function getConfiguredCover(shareConfig, sharePage) {
+  const cover = shareConfig?.cover || {};
+  if (sharePage && cover.pages?.[sharePage]) return cover.pages[sharePage];
+  if (sharePage === 'home' && cover.home) return cover.home;
+  if (sharePage === 'user' && cover.user) return cover.user;
+  return cover.default || shareConfig?.forwardInfo?.image || '';
+}
 
 // 更新公众号分享sdk
 const updateShareInfo = (shareInfo) => {

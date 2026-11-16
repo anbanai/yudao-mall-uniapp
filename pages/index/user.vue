@@ -7,6 +7,7 @@
     :bgStyle="template.page"
     :navbarStyle="template.navigationBar"
     onShareAppMessage
+    sharePage="user"
   >
     <s-block
       v-for="(item, index) in template.components"
@@ -23,6 +24,13 @@
         :refresh-key="productGroupRefreshKey"
       />
     </s-block>
+    <view class="benefits-entry" @tap="openBenefits">
+      <view>
+        <text class="benefits-entry-title">会员权益中心</text>
+        <text class="benefits-entry-desc">查看当前等级、升级条件和专属权益</text>
+      </view>
+      <text class="sicon-forward benefits-entry-arrow" />
+    </view>
     <s-empty
       v-if="userDataError"
       icon="/static/internet-empty.png"
@@ -60,6 +68,10 @@
     );
   }
 
+  function openBenefits() {
+    sheep.$router.go('/pages/user/benefits/index');
+  }
+
   async function refreshUserData() {
     try {
       userDataError.value = '';
@@ -88,4 +100,37 @@
   onPageScroll(() => {});
 </script>
 
-<style></style>
+<style lang="scss" scoped>
+  .benefits-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 24rpx 24rpx 0;
+    padding: 26rpx 28rpx;
+    border-radius: 12rpx;
+    background: #fff;
+    box-shadow: 0 8rpx 24rpx rgba(28, 54, 40, 0.06);
+  }
+
+  .benefits-entry-title,
+  .benefits-entry-desc {
+    display: block;
+  }
+
+  .benefits-entry-title {
+    color: #1f4a38;
+    font-size: 28rpx;
+    font-weight: 600;
+  }
+
+  .benefits-entry-desc {
+    margin-top: 8rpx;
+    color: #7a847d;
+    font-size: 22rpx;
+  }
+
+  .benefits-entry-arrow {
+    color: #1f4a38;
+    font-size: 28rpx;
+  }
+</style>
