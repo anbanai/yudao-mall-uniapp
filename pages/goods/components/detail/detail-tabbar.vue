@@ -3,8 +3,18 @@
   <su-fixed bottom placeholder bg="bg-white">
     <view class="ui-tabbar-box">
       <view class="ui-tabbar ss-flex ss-col-center ss-row-between">
+        <template v-if="commerceNav">
+          <view class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center" @tap="goHome">
+            <text class="cicon-home-o item-icon" />
+            <view class="item-title">首页</view>
+          </view>
+          <view class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center" @tap="goCart">
+            <text class="cicon-cart-o item-icon" />
+            <view class="item-title">购物车</view>
+          </view>
+        </template>
         <view
-          v-if="collectIcon"
+          v-if="collectIcon && !commerceNav"
           class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center"
           @tap="onFavorite"
         >
@@ -112,6 +122,10 @@
       type: Boolean,
       default: true,
     },
+    commerceNav: {
+      type: Boolean,
+      default: false,
+    },
   });
 
   async function onFavorite() {
@@ -139,6 +153,10 @@
       id: props.modelValue.id,
     });
   };
+
+  const goHome = () => sheep.$router.go('/pages/index/index');
+  const goCart = () => sheep.$router.go('/pages/index/cart');
+
 </script>
 
 <style lang="scss" scoped>

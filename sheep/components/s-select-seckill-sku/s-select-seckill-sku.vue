@@ -88,7 +88,9 @@
       </view>
       <view class="modal-footer">
         <view class="buy-box ss-flex ss-col-center ss-flex ss-col-center ss-row-center">
-          <button class="ss-reset-button buy-btn" @tap="onBuy">确认</button>
+          <button class="ss-reset-button buy-btn" :disabled="isBuyDisabled" @tap="onBuy">
+            {{ pointShortfall > 0 ? '积分不足' : '确认' }}
+          </button>
         </view>
       </view>
     </view>
@@ -106,6 +108,7 @@
   import { convertProductPropertyList, fen2yuan } from '@/sheep/hooks/useGoods';
   import { isEmpty, min } from '@/sheep/helper/lodash';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+  import { getPointExchangeStatus } from '@/sheep/helper/productDetail.mjs';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
   const props = defineProps({
@@ -122,6 +125,10 @@
       type: Number,
       default: 1,
     },
+    pointBalance: {
+      type: Number,
+      default: 0,
+    },
   });
   const state = reactive({
     goodsInfo: computed(() => props.modelValue),
@@ -136,6 +143,15 @@
     }
     return priceText;
   });
+  const pointShortfall = computed(() => {
+    if (state.goodsInfo.activity_type !== PromotionActivityTypeEnum.POINT.type || !state.selectedSku.id) {
+      return 0;
+    }
+    return getPointExchangeStatus(props.pointBalance, state.selectedSku.point, state.selectedSku.count || 1).shortfall;
+  });
+  const isBuyDisabled = computed(
+    () => !state.selectedSku.id || state.selectedSku.stock <= 0 || pointShortfall.value > 0,
+  );
   const propertyList = convertProductPropertyList(state.goodsInfo.skus);
   // SKU 列表
   const skuList = computed(() => {
@@ -161,6 +177,8 @@
     if (state.selectedSku.id) {
       if (state.selectedSku.stock <= 0) {
         sheep.$helper.toast('库存不足');
+      } else if (pointShortfall.value > 0) {
+        sheep.$helper.toast('积分不足');
       } else {
         emits('buy', state.selectedSku);
       }
@@ -325,6 +343,11 @@
       border-radius: 40rpx;
       background: linear-gradient(90deg, #ff5854, #ff2621);
       color: #fff;
+
+      &[disabled] {
+        background: #b8b8b8;
+        color: #fff;
+      }
     }
   }
 

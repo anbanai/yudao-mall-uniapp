@@ -27,6 +27,10 @@
             dotCur="bg-mask-40"
             :seizeHeight="750"
           />
+          <view class="detail-count-row ss-flex ss-row-between">
+            <text>已售 {{ state.goodsInfo.salesCount || 0 }}</text>
+            <text>剩余库存 {{ remainingStock }}</text>
+          </view>
           <!-- 限时折扣/会员价的优惠信息 -->
           <view
             class="discount"
@@ -77,10 +81,7 @@
           <!-- 价格+标题 -->
           <view class="title-card detail-card ss-p-y-30 ss-p-x-20">
             <!-- 没有限时折扣/会员价的优惠信息时，展示的价格信息 -->
-            <view
-              class="ss-flex ss-row-between ss-col-center ss-m-b-26"
-              v-if="!state.settlementSku.promotionPrice"
-            >
+            <view class="ss-flex ss-row-between ss-col-center ss-m-b-26" v-if="!state.settlementSku.promotionPrice">
               <view class="price-box ss-flex ss-col-bottom">
                 <view class="price-text ss-m-r-16">
                   {{ fen2yuan(state.selectedSku.price || state.goodsInfo.price) }}
@@ -91,9 +92,6 @@
                 >
                   {{ fen2yuan(state.selectedSku.marketPrice || state.goodsInfo.marketPrice) }}
                 </view>
-              </view>
-              <view class="sales-text">
-                {{ formatSales('exact', state.goodsInfo.salesCount) }}
               </view>
             </view>
             <view class="discounts-box ss-flex ss-row-between ss-m-b-28">
@@ -136,12 +134,29 @@
                 <text class="cicon-forward"></text>
               </view>
             </view>
+            <view v-if="preSaleLabel" class="presale-label">{{ preSaleLabel }}</view>
             <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
           </view>
 
-          <!-- 功能卡片 -->
-          <view class="detail-cell-card detail-card ss-flex-col">
+          <view class="detail-info-card detail-card ss-flex-col">
+            <view class="detail-info-row" @tap="onChooseDeliveryAddress">
+              <text class="detail-info-label">配送</text>
+              <view class="detail-info-content delivery-content">
+                <view class="delivery-address-line">
+                  <text class="cicon-place-o delivery-icon" />
+                  <text class="delivery-address">
+                    {{ state.deliveryAddress ? `${state.deliveryAddress.areaName} ${state.deliveryAddress.detailAddress}` : '请选择收货地址' }}
+                  </text>
+                </view>
+                <text class="delivery-shipping">快递包邮</text>
+              </view>
+              <text class="_icon-forward detail-info-arrow" />
+            </view>
+            <view class="detail-info-row">
+              <text class="detail-info-label">服务</text>
+              <text class="detail-info-content">退货包运费 · 自动退款 · 7天无理由退货</text>
+            </view>
             <detail-cell-sku
               v-model="state.selectedSku.goods_sku_text"
               :sku="state.selectedSku"
@@ -175,7 +190,7 @@
         />
 
         <!-- 详情 tabbar -->
-        <detail-tabbar v-model="state.goodsInfo">
+        <detail-tabbar v-model="state.goodsInfo" commerce-nav>
           <view class="buy-box ss-flex ss-col-center ss-p-r-20" v-if="state.goodsInfo.stock > 0">
             <button
               class="ss-reset-button add-btn ui-Shadow-Main"
@@ -216,7 +231,6 @@
   import FavoriteApi from '@/sheep/api/product/favorite';
   import RewardActivityApi from '@/sheep/api/promotion/rewardActivity';
   import {
-    formatSales,
     formatGoodsSwiper,
     fen2yuan,
     fen2yuanSimple,
@@ -232,6 +246,9 @@
   import detailActivityTip from './components/detail/detail-activity-tip.vue';
   import { isEmpty } from '@/sheep/helper/lodash';
   import SpuApi from '@/sheep/api/product/spu';
+  import AddressApi from '@/sheep/api/member/address';
+  import { getPreSaleLabel, getRemainingStock } from '@/sheep/helper/productDetail.mjs';
+  import { showAuthModal } from '@/sheep/hooks/useModal';
 
   onPageScroll(() => {});
   import OrderApi from '@/sheep/api/trade/order';
@@ -257,7 +274,12 @@
     showActivityModel: false, // 【满减送/限时折扣】是否展示 Activity 营销活动的弹窗
     rewardActivity: {}, // 【满减送】活动
     activityList: [], // 【秒杀/拼团/砍价】可参与的 Activity 营销活动的列表
+    deliveryAddress: null,
+    deliveryAddressLoaded: false,
   });
+
+  const remainingStock = computed(() => getRemainingStock(state.selectedSku, state.goodsInfo));
+  const preSaleLabel = computed(() => getPreSaleLabel(state.goodsInfo));
 
   // 规格变更
   function onSkuChange(e) {
@@ -275,11 +297,12 @@
   }
 
   // 立即购买
-  function onBuy(e) {
+  async function onBuy(e) {
     if (!e.id) {
       sheep.$helper.toast('请选择商品规格');
       return;
     }
+    await loadDeliveryAddress();
     sheep.$router.go('/pages/order/confirm', {
       data: JSON.stringify({
         items: [
@@ -289,8 +312,37 @@
             categoryId: state.goodsInfo.categoryId,
           },
         ],
+        addressInfo: state.deliveryAddress || undefined,
       }),
     });
+  }
+
+  async function loadDeliveryAddress() {
+    if (!isLogin.value || state.deliveryAddressLoaded) return;
+    try {
+      const { code, data } = await AddressApi.getAddressList();
+      if (code === 0 && Array.isArray(data)) {
+        state.deliveryAddress = data.find((item) => item.defaultStatus) || data[0] || null;
+      }
+    } catch (error) {
+      state.deliveryAddress = null;
+    } finally {
+      state.deliveryAddressLoaded = true;
+    }
+  }
+
+  function onChooseDeliveryAddress() {
+    if (!isLogin.value) {
+      showAuthModal();
+      return;
+    }
+    uni.$once('SELECT_ADDRESS', ({ addressInfo } = {}) => {
+      if (addressInfo) {
+        state.deliveryAddress = addressInfo;
+        state.deliveryAddressLoaded = true;
+      }
+    });
+    sheep.$router.go('/pages/user/address/list', { type: 'select' });
   }
 
   // 打开营销弹窗
@@ -392,6 +444,7 @@
     }
     state.goodsId = options.id;
     // 1. 加载商品信息
+    loadDeliveryAddress();
     SpuApi.getSpuDetail(state.goodsId).then((res) => {
       if (res.code !== 0 || !res.data) {
         state.goodsInfo = null;
@@ -412,6 +465,9 @@
           state.goodsInfo.favorite = res.data;
         });
       }
+    }).catch(() => {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
     });
 
     // 2. 加载优惠劵信息
@@ -428,6 +484,87 @@
 </script>
 
 <style lang="scss" scoped>
+  .detail-count-row {
+    margin: 0 24rpx 14rpx;
+    color: $dark-9;
+    font-size: 24rpx;
+    line-height: 36rpx;
+  }
+
+  .presale-label {
+    display: inline-flex;
+    margin-bottom: 10rpx;
+    padding: 4rpx 10rpx;
+    border-radius: 4rpx;
+    background: var(--ui-BG-Main-tag);
+    color: var(--ui-BG-Main);
+    font-size: 22rpx;
+    line-height: 30rpx;
+  }
+
+  .detail-info-card {
+    padding: 0 20rpx;
+  }
+
+  .detail-info-row {
+    display: flex;
+    min-height: 82rpx;
+    align-items: center;
+    border-bottom: 1rpx solid $gray-e;
+    font-size: 24rpx;
+  }
+
+  .detail-info-row:last-child {
+    border-bottom: 0;
+  }
+
+  .detail-info-label {
+    flex: 0 0 72rpx;
+    margin-right: 20rpx;
+    color: $dark-9;
+  }
+
+  .detail-info-content {
+    flex: 1;
+    min-width: 0;
+    color: $dark-3;
+  }
+
+  .delivery-content {
+    display: flex;
+    align-items: center;
+  }
+
+  .delivery-address-line {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    margin-right: 16rpx;
+  }
+
+  .delivery-icon {
+    flex: 0 0 auto;
+    margin-right: 8rpx;
+    color: $dark-9;
+  }
+
+  .delivery-address {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .delivery-shipping {
+    flex: 0 0 auto;
+    color: var(--ui-BG-Main);
+  }
+
+  .detail-info-arrow {
+    flex: 0 0 auto;
+    color: $dark-9;
+  }
+
   .detail-card {
     background-color: #ffff;
     margin: 14rpx 20rpx;

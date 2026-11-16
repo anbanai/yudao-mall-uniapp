@@ -368,6 +368,9 @@
       return;
     }
     state.orderPayload = JSON.parse(options.data);
+    if (state.orderPayload.addressInfo?.id) {
+      addressState.value.addressInfo = state.orderPayload.addressInfo;
+    }
 
     // 获取交易配置
     const { data, code } = await TradeConfigApi.getTradeConfig();
