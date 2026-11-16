@@ -5,7 +5,7 @@
     navbar="custom"
     :bgStyle="state.page"
     :navbarStyle="state.navigationBar"
-    onShareAppMessage
+    :share-page="state.id ? `page:${state.id}` : 'default'"
     showLeftButton
   >
     <s-block
@@ -32,6 +32,7 @@
   import DiyApi from '@/sheep/api/promotion/diy';
 
   const state = reactive({
+    id: null,
     name: '',
     components: [],
     navigationBar: {},
@@ -50,12 +51,14 @@
 
   onLoad(async (options) => {
     let id = options.id;
+    state.id = id;
 
     // #ifdef MP
     // 小程序预览自定义页面
     if (options.scene) {
       const sceneParams = decodeURIComponent(options.scene).split('=');
       id = sceneParams[1];
+      state.id = id;
     }
     // #endif
 
