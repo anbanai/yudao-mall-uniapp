@@ -7,6 +7,7 @@ const OrderApi = {
     const data2 = {
       ...data,
     };
+    const couponIds = [...new Set([...(data.couponIds || []), data.couponId].filter((id) => Number(id) > 0))];
     // 移除多余字段
     if (!(data.couponId > 0)) {
       delete data2.couponId;
@@ -40,6 +41,7 @@ const OrderApi = {
     }
     // 解决 SpringMVC 接受 List<Item> 参数的问题
     delete data2.items;
+    delete data2.couponIds;
     for (let i = 0; i < data.items.length; i++) {
       data2[encodeURIComponent('items[' + i + '' + '].skuId')] = data.items[i].skuId + '';
       data2[encodeURIComponent('items[' + i + '' + '].count')] = data.items[i].count + '';
@@ -48,7 +50,8 @@ const OrderApi = {
       }
     }
     const queryString = Object.keys(data2)
-      .map((key) => key + '=' + data2[key])
+      .map((key) => `${key}=${data2[key]}`)
+      .concat(couponIds.map((id) => `couponIds=${encodeURIComponent(id)}`))
       .join('&');
     return request({
       url: `/trade/order/settlement?${queryString}`,

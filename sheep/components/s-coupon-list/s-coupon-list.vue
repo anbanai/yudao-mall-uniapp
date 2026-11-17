@@ -5,7 +5,7 @@
         class="tag ss-flex ss-row-center"
         :class="isDisable ? 'disabled-bg-color' : 'info-bg-color'"
       >
-        {{ data.discountType === 1 ? '满减券' : '折扣券' }}
+        {{ data.couponType === 2 ? '兑换券' : data.discountType === 1 ? '满减券' : '折扣券' }}
       </view>
       <view class="title ss-m-x-30 ss-p-t-18">
         <view class="ss-flex ss-row-between">

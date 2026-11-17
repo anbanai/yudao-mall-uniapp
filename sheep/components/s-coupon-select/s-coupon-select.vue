@@ -24,14 +24,20 @@
         >
           <s-coupon-list :data="item" type="user" :disabled="false">
             <template #default>
-              <label class="ss-flex ss-col-center" @tap="radioChange(item.id)">
-                <radio
-                  color="var(--ui-BG-Main)"
-                  style="transform: scale(0.8)"
-                  :checked="state.couponId === item.id"
-                  @tap.stop="radioChange(item.id)"
-                />
+              <label class="ss-flex ss-col-center">
+              <checkbox
+                color="var(--ui-BG-Main)"
+                style="transform: scale(0.8)"
+                :checked="state.couponIds.includes(item.id)"
+                @tap.stop="toggleCoupon(item.id)"
+              />
               </label>
+            </template>
+            <template v-slot:reason v-if="item.mismatchReason">
+              <view class="ss-flex ss-m-t-24">
+                <view class="reason-title">结算提示：</view>
+                <view class="reason-desc">{{ item.mismatchReason }}</view>
+              </view>
             </template>
           </s-coupon-list>
         </view>
@@ -55,39 +61,50 @@
   </su-popup>
 </template>
 <script setup>
-  import { computed, reactive } from 'vue';
+  import { computed, reactive, watch } from 'vue';
 
   const props = defineProps({
     modelValue: {
       // 优惠劵列表
-      type: Object,
-      default() {},
+      type: Array,
+      default: () => [],
     },
     show: {
       type: Boolean,
       default: false,
+    },
+    selectedIds: {
+      type: Array,
+      default: () => [],
     },
   });
 
   const emits = defineEmits(['confirm', 'close']);
 
   const state = reactive({
-    couponInfo: computed(() => props.modelValue), // 优惠劵列表
-    couponId: undefined, // 选中的优惠劵编号
+    couponInfo: computed(() => props.modelValue || []), // 优惠劵列表
+    couponIds: [...props.selectedIds],
   });
 
-  // 选中优惠劵
-  function radioChange(couponId) {
-    if (state.couponId === couponId) {
-      state.couponId = undefined;
-    } else {
-      state.couponId = couponId;
+  watch(() => props.selectedIds, (ids) => {
+    state.couponIds = [...(ids || [])];
+  }, { deep: true });
+
+  function toggleCoupon(couponId) {
+    if (state.couponIds.includes(couponId)) {
+      state.couponIds = state.couponIds.filter((id) => id !== couponId);
+      return;
     }
+    if (state.couponIds.length >= 10) {
+      uni.showToast({ title: '最多选择10张优惠券', icon: 'none' });
+      return;
+    }
+    state.couponIds.push(couponId);
   }
 
   // 确认优惠劵
   const onConfirm = () => {
-    emits('confirm', state.couponId);
+    emits('confirm', [...state.couponIds]);
   };
 </script>
 <style lang="scss" scoped>

@@ -5,16 +5,35 @@
 
     <!-- 商品信息 -->
     <view class="order-card-box ss-m-b-14">
-      <s-goods-item
-        v-for="item in state.orderInfo.items"
-        :key="item.skuId"
-        :img="item.picUrl"
-        :title="item.spuName"
-        :skuText="item.properties.map((property) => property.valueName).join(' ')"
-        :price="item.price"
-        :num="item.count"
-        marginBottom="10"
-      />
+      <view
+        v-for="merchant in merchantGroups"
+        :key="merchant.name"
+        class="merchant-group ss-p-x-20 ss-p-t-16"
+      >
+        <view class="merchant-name ss-font-26 ss-m-b-10">{{ merchant.name }}</view>
+        <s-goods-item
+          v-for="item in merchant.items"
+          :key="item.skuId"
+          :img="item.picUrl"
+          :title="item.spuName"
+          :skuText="item.properties.map((property) => property.valueName).join(' ')"
+          :price="item.price"
+          :num="item.count"
+          marginBottom="10"
+        />
+      </view>
+      <template v-if="!merchantGroups.length">
+        <s-goods-item
+          v-for="item in state.orderInfo.items"
+          :key="item.skuId"
+          :img="item.picUrl"
+          :title="item.spuName"
+          :skuText="item.properties.map((property) => property.valueName).join(' ')"
+          :price="item.price"
+          :num="item.count"
+          marginBottom="10"
+        />
+      </template>
       <view class="order-item ss-flex ss-col-center ss-row-between ss-p-x-20 bg-white ss-r-10">
         <view class="item-title">订单备注</view>
         <view class="ss-flex ss-col-center">
@@ -57,26 +76,34 @@
         </view>
         <view
           class="order-item ss-flex ss-col-center ss-row-between"
-          v-if="state.orderInfo.type === 0 || state.orderPayload.pointActivityId"
+          v-if="state.orderPayload.pointActivityId"
         >
           <view class="item-title">积分抵扣</view>
           <view class="ss-flex ss-col-center">
-            {{ state.pointStatus || state.orderPayload.pointActivityId ? '剩余积分' : '当前积分' }}
             <image
               :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
               class="score-img"
             />
             <text class="item-value ss-m-r-24">
-              {{
-                state.pointStatus || state.orderPayload.pointActivityId
-                  ? state.orderInfo.totalPoint - state.orderInfo.usePoint
-                  : state.orderInfo.totalPoint || 0
-              }}
+              {{ Math.max((state.orderInfo.totalPoint || 0) - (state.orderInfo.usePoint || 0), 0) }}
             </text>
-            <checkbox-group @change="changeIntegral" v-if="!state.orderPayload.pointActivityId">
+          </view>
+        </view>
+        <view
+          class="order-item point-order-item ss-flex ss-col-center ss-row-between"
+          v-if="state.orderInfo.type === 0"
+        >
+          <view class="item-title">积分抵扣</view>
+          <view class="point-control ss-flex ss-col-center">
+            <view class="point-detail" :class="pointView.disabled ? 'text-disabled' : ''">
+              <view>{{ pointView.summary }}</view>
+              <view v-if="pointView.remainingText">{{ pointView.remainingText }}</view>
+            </view>
+            <checkbox-group @change="changeIntegral">
               <checkbox
+                value="point"
                 :checked="state.pointStatus"
-                :disabled="!state.orderInfo.totalPoint || state.orderInfo.totalPoint <= 0"
+                :disabled="pointView.disabled || state.settling"
               />
             </checkbox-group>
           </view>
@@ -132,8 +159,8 @@
         >
           <view class="item-title">优惠券</view>
           <view class="ss-flex ss-col-center" @tap="state.showCoupon = true">
-            <text class="item-value text-red" v-if="state.orderPayload.couponId > 0">
-              -￥{{ fen2yuan(state.orderInfo.price.couponPrice) }}
+            <text class="item-value text-red" v-if="(state.orderPayload.couponIds || []).length > 0">
+              -￥{{ fen2yuan(state.orderInfo.price.couponPrice) }} · {{ state.orderPayload.couponIds.length }} 张生效
             </text>
             <text
               class="item-value"
@@ -144,14 +171,13 @@
               "
               v-else
             >
-              {{
-                state.couponInfo.filter((coupon) => coupon.match).length > 0
-                  ? state.couponInfo.filter((coupon) => coupon.match).length + ' 张可用'
-                  : '暂无可用优惠券'
-              }}
+              {{ selectedCouponText }}
             </text>
             <text class="_icon-forward item-icon" />
           </view>
+        </view>
+        <view v-for="(reason, couponId) in state.orderInfo.couponExclusionReasons || {}" :key="couponId" class="coupon-exclusion">
+          {{ couponName(couponId) }}未生效：{{ reason }}
         </view>
         <view
           class="order-item ss-flex ss-col-center ss-row-between"
@@ -189,6 +215,7 @@
     <!-- 选择优惠券弹框 -->
     <s-coupon-select
       v-model="state.couponInfo"
+      :selectedIds="state.orderPayload.couponIds || []"
       :show="state.showCoupon"
       @confirm="onSelectCoupon"
       @close="state.showCoupon = false"
@@ -211,9 +238,11 @@
         </view>
         <button
           class="ss-reset-button ui-BG-Main-Gradient ss-r-40 submit-btn ui-Shadow-Main"
+          :disabled="state.submitting"
+          :loading="state.submitting"
           @tap="onConfirm"
         >
-          提交订单
+          {{ state.submitting ? '提交中' : '提交订单' }}
         </button>
       </view>
     </su-fixed>
@@ -221,7 +250,7 @@
 </template>
 
 <script setup>
-  import { reactive, ref, watch } from 'vue';
+  import { computed, reactive, ref, watch } from 'vue';
   import { onLoad } from '@dcloudio/uni-app';
   import AddressSelection from '@/pages/order/addressSelection.vue';
   import sheep from '@/sheep';
@@ -229,6 +258,12 @@
   import TradeConfigApi from '@/sheep/api/trade/config';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import { DeliveryTypeEnum } from '@/sheep/helper/const';
+  import {
+    createExclusiveRunner,
+    createOrderPointFlow,
+    getPointView,
+    isOrderPriceChanged,
+  } from '@/sheep/helper/orderPoints.mjs';
 
   const state = reactive({
     orderPayload: {},
@@ -241,6 +276,18 @@
     showDiscount: false, // 是否展示营销活动
     // ========== 积分 ==========
     pointStatus: false, //是否使用积分
+    settling: false,
+    submitting: false,
+  });
+
+  const merchantGroups = computed(() => {
+    const groups = new Map();
+    (state.orderInfo.items || []).forEach((item) => {
+      const name = item.merchantName || item.spu?.merchantName || '平台自营';
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name).push(item);
+    });
+    return [...groups].map(([name, items]) => ({ name, items }));
   });
 
   const addressState = ref({
@@ -252,24 +299,91 @@
     receiverMobile: '', // 收件人手机
   });
 
-  // ========== 积分 ==========
-  /**
-   * 使用积分抵扣
-   */
-  const changeIntegral = async () => {
-    state.pointStatus = !state.pointStatus;
-    await getOrderInfo();
+  const pointView = computed(() => getPointView(state.orderInfo, state.pointStatus));
+  const selectedCouponText = computed(() => {
+    const count = (state.orderPayload.couponIds || []).length;
+    if (count) return `${count} 张已生效`;
+    const available = state.couponInfo.filter((coupon) => coupon.match).length;
+    return available > 0 ? `${available} 张可用` : '暂无可用优惠券';
+  });
+
+  function couponName(id) {
+    return state.couponInfo.find((coupon) => String(coupon.id) === String(id))?.name || '优惠券';
+  }
+
+  function buildSettlementPayload() {
+    return {
+      items: state.orderPayload.items,
+      couponId: state.orderPayload.couponId,
+      couponIds: state.orderPayload.couponIds || [],
+      deliveryType: addressState.value.deliveryType,
+      addressId: addressState.value.addressInfo.id,
+      pickUpStoreId: addressState.value.pickUpInfo.id,
+      receiverName: addressState.value.receiverName,
+      receiverMobile: addressState.value.receiverMobile,
+      pointStatus: state.pointStatus,
+      combinationActivityId: state.orderPayload.combinationActivityId,
+      combinationHeadId: state.orderPayload.combinationHeadId,
+      seckillActivityId: state.orderPayload.seckillActivityId,
+      pointActivityId: state.orderPayload.pointActivityId,
+    };
+  }
+
+  function applySettlement(data) {
+    state.orderInfo = data;
+    const exclusions = data.couponExclusionReasons || {};
+    state.couponInfo = (data.coupons || []).map((coupon) => ({
+      ...coupon,
+      match: coupon.match || Boolean(exclusions[coupon.id]),
+      mismatchReason: exclusions[coupon.id] || coupon.mismatchReason,
+    }));
+    if (Array.isArray(data.effectiveCouponIds)) {
+      state.orderPayload.couponIds = [...data.effectiveCouponIds];
+      state.orderPayload.couponId = data.effectiveCouponIds[0];
+    } else {
+      state.orderPayload.couponIds = state.orderPayload.couponId ? [state.orderPayload.couponId] : [];
+    }
+    if (data.address) {
+      addressState.value.addressInfo = data.address;
+    }
+  }
+
+  const pointFlow = createOrderPointFlow({
+    getSelected: () => state.pointStatus,
+    setSelected: (value) => {
+      state.pointStatus = value;
+    },
+    getSettlement: () => state.orderInfo,
+    applySettlement,
+    requestSettlement: () => OrderApi.settlementOrder(buildSettlementPayload()),
+  });
+
+  async function runSettlement(action) {
+    const pending = action();
+    state.settling = pointFlow.isSettling();
+    const result = await pending;
+    state.settling = pointFlow.isSettling();
+    return result;
+  }
+
+  const changeIntegral = async (event) => {
+    const checked = event.detail.value.includes('point');
+    await runSettlement(() => pointFlow.toggle(checked));
   };
 
   // 选择优惠券
-  async function onSelectCoupon(couponId) {
-    state.orderPayload.couponId = couponId;
+  async function onSelectCoupon(couponIds) {
+    state.orderPayload.couponIds = couponIds || [];
+    state.orderPayload.couponId = state.orderPayload.couponIds[0];
     await getOrderInfo();
     state.showCoupon = false;
   }
 
   // 提交订单
   function onConfirm() {
+    if (state.submitting) {
+      return;
+    }
     if (addressState.value.deliveryType === 1 && !addressState.value.addressInfo.id) {
       sheep.$helper.toast('请选择收货地址');
       return;
@@ -292,14 +406,15 @@
         return;
       }
     }
-    submitOrder();
+    void submitOrder();
   }
 
   // 创建订单&跳转
-  async function submitOrder() {
+  async function submitOrderOnce() {
     const { code, data } = await OrderApi.createOrder({
       items: state.orderPayload.items,
       couponId: state.orderPayload.couponId,
+      couponIds: state.orderPayload.couponIds || [],
       remark: state.orderPayload.remark,
       deliveryType: addressState.value.deliveryType,
       addressId: addressState.value.addressInfo.id, // 收件地址编号
@@ -311,7 +426,14 @@
       combinationHeadId: state.orderPayload.combinationHeadId,
       seckillActivityId: state.orderPayload.seckillActivityId,
       pointActivityId: state.orderPayload.pointActivityId,
+      expectedPayPrice: state.orderInfo.price.payPrice,
+      expectedUsePoint: state.orderInfo.usePoint || 0,
     });
+    if (isOrderPriceChanged(code)) {
+      await getOrderInfo();
+      sheep.$helper.toast('订单价格或积分抵扣已变化，请重新确认');
+      return;
+    }
     if (code !== 0) {
       return;
     }
@@ -332,33 +454,22 @@
     }
   }
 
+  const submitRunner = createExclusiveRunner(submitOrderOnce);
+
+  async function submitOrder() {
+    const pending = submitRunner.run();
+    state.submitting = submitRunner.isRunning();
+    try {
+      return await pending;
+    } finally {
+      state.submitting = submitRunner.isRunning();
+    }
+  }
+
   // 检查库存 & 计算订单价格
   async function getOrderInfo() {
-    // 计算价格
-    const { data, code } = await OrderApi.settlementOrder({
-      items: state.orderPayload.items,
-      couponId: state.orderPayload.couponId,
-      deliveryType: addressState.value.deliveryType,
-      addressId: addressState.value.addressInfo.id, // 收件地址编号
-      pickUpStoreId: addressState.value.pickUpInfo.id, //自提门店编号
-      receiverName: addressState.value.receiverName, // 选择门店自提时，该字段为联系人名
-      receiverMobile: addressState.value.receiverMobile, // 选择门店自提时，该字段为联系人手机
-      pointStatus: state.pointStatus,
-      combinationActivityId: state.orderPayload.combinationActivityId,
-      combinationHeadId: state.orderPayload.combinationHeadId,
-      seckillActivityId: state.orderPayload.seckillActivityId,
-      pointActivityId: state.orderPayload.pointActivityId,
-    });
-    if (code !== 0) {
-      return code;
-    }
-    state.orderInfo = data;
-    state.couponInfo = data.coupons || [];
-    // 设置收货地址
-    if (state.orderInfo.address) {
-      addressState.value.addressInfo = state.orderInfo.address;
-    }
-    return code;
+    const result = await runSettlement(() => pointFlow.refresh());
+    return result.response?.code ?? -1;
   }
 
   onLoad(async (options) => {
@@ -368,9 +479,7 @@
       return;
     }
     state.orderPayload = JSON.parse(options.data);
-    if (state.orderPayload.addressInfo?.id) {
-      addressState.value.addressInfo = state.orderPayload.addressInfo;
-    }
+    addressState.value.addressInfo = state.orderPayload.addressInfo || {};
 
     // 获取交易配置
     const { data, code } = await TradeConfigApi.getTradeConfig();
@@ -411,6 +520,15 @@
 </script>
 
 <style lang="scss" scoped>
+  .coupon-exclusion {
+    padding: 0 20rpx 12rpx;
+    color: #a34a35;
+    font-size: 22rpx;
+    line-height: 1.5;
+  }
+</style>
+
+<style lang="scss" scoped>
   :deep() {
     .uni-input-wrapper {
       width: 320rpx;
@@ -442,6 +560,25 @@
     width: 36rpx;
     height: 36rpx;
     margin: 0 4rpx;
+  }
+
+  .order-item.point-order-item {
+    min-height: 104rpx;
+    height: auto;
+    padding: 12rpx 0;
+    box-sizing: border-box;
+
+    .point-control {
+      min-width: 0;
+      max-width: 520rpx;
+    }
+
+    .point-detail {
+      margin-right: 12rpx;
+      font-size: 24rpx;
+      line-height: 36rpx;
+      text-align: right;
+    }
   }
 
   .order-item {
