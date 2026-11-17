@@ -1,6 +1,6 @@
 <!-- 优惠券详情  -->
 <template>
-  <s-layout title="优惠券详情">
+  <s-layout title="优惠券详情" :onShareAppMessage="shareInfo">
     <view class="bg-white">
       <!-- 详情卡片 -->
       <view class="detail-wrap ss-p-20">
@@ -14,7 +14,7 @@
           </view>
           <view class="top ss-flex-col ss-col-center">
             <view class="title ss-m-t-50 ss-m-b-20 ss-m-x-20">{{ state.coupon.name }}</view>
-            <view class="subtitle ss-m-b-50">
+            <view class="subtitle ss-m-b-50" v-if="state.coupon.couponType !== 2">
               满 {{ fen2yuan(state.coupon.usePrice) }} 元，
               {{
                 state.coupon.discountType === 1
@@ -22,27 +22,28 @@
                   : '打 ' + state.coupon.discountPercent / 10.0 + ' 折'
               }}
             </view>
+            <view class="subtitle ss-m-b-50" v-else>兑换指定商品：{{ state.exchangeProduct?.name || state.coupon.name }}</view>
             <button
+              v-if="state.coupon.couponType === 2 && state.couponId > 0"
               class="ss-reset-button ss-m-b-30"
-              :class="
-                state.coupon.canTake || state.coupon.status === 1
-                  ? 'use-btn' // 优惠劵模版（可领取）、优惠劵（可使用）
-                  : 'disable-btn'
-              "
-              :disabled="!state.coupon.canTake"
+              :class="state.coupon.status === 1 ? 'use-btn' : 'disable-btn'"
+              :disabled="state.coupon.status !== 1"
+              @click="redeemExchangeCoupon"
+            >
+              立即兑换
+            </button>
+            <button
+              v-else
+              class="ss-reset-button ss-m-b-30"
+              :class="state.coupon.canTake || state.coupon.status === 1 ? 'use-btn' : 'disable-btn'"
+              :disabled="!(state.newcomer?.canTake || state.newcomer?.reasonCode === 'LOGIN_REQUIRED' || state.coupon.canTake)"
               @click="getCoupon"
             >
-              <text v-if="state.id > 0">{{ state.coupon.canTake ? '立即领取' : '已领取' }}</text>
-              <text v-else>
-                {{
-                  state.coupon.status === 1
-                    ? '可使用'
-                    : state.coupon.status === 2
-                    ? '已使用'
-                    : '已过期'
-                }}
-              </text>
+              <text v-if="state.id > 0">{{ state.newcomer?.reasonCode === 'LOGIN_REQUIRED' ? '登录领取' : state.newcomer?.canTake || state.coupon.canTake ? '立即领取' : '暂不可领' }}</text>
+              <text v-else>{{ state.coupon.status === 1 ? '可使用' : state.coupon.status === 2 ? '已使用' : '已过期' }}</text>
             </button>
+            <view v-if="state.newcomer?.reason && state.newcomer.reasonCode !== 'LOGIN_REQUIRED'" class="coupon-reason">{{ state.newcomer.reason }}</view>
+            <view v-if="state.promotionError" class="promotion-error">该推广链接已失效</view>
             <view class="time ss-m-y-30" v-if="state.coupon.validityType === 2">
               有效期：领取后 {{ state.coupon.fixedEndTerm }} 天内可用
             </view>
@@ -55,7 +56,10 @@
           <view class="bottom">
             <view class="type ss-flex ss-col-center ss-row-between ss-p-x-30">
               <view>优惠券类型</view>
-              <view>{{ state.coupon.discountType === 1 ? '满减券' : '折扣券' }}</view>
+              <view>{{ state.coupon.couponType === 2 ? '商品兑换券' : state.coupon.discountType === 1 ? '满减券' : '折扣券' }}</view>
+            </view>
+            <view v-if="state.coupon.couponType === 2" class="type ss-flex ss-col-center ss-row-between ss-p-x-30">
+              <view>兑换商品</view><view>指定规格 · 1 件</view>
             </view>
             <uni-collapse>
               <uni-collapse-item title="优惠券说明" v-if="state.coupon.description">
@@ -147,7 +151,7 @@
 <script setup>
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
-  import { reactive } from 'vue';
+  import { computed, reactive } from 'vue';
   import { concat } from 'lodash-es';
   import CouponApi from '@/sheep/api/promotion/coupon';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
@@ -159,6 +163,11 @@
     id: 0, // 优惠劵模版编号 templateId
     couponId: 0, // 用户优惠劵编号 couponId
     coupon: {}, // 优惠劵信息
+    promotionCode: '',
+    promotion: null,
+    promotionError: false,
+    newcomer: null,
+    exchangeProduct: null,
 
     pagination: {
       list: [],
@@ -170,6 +179,17 @@
     tabMaps: [], // 指定分类时，每个分类构成一个 tab
     currentTab: 0, // 选中的 tabMaps 下标
     loadStatus: '',
+  });
+
+  const shareInfo = computed(() => {
+    const info = sheep.$platform.share.getShareInfo({
+      title: state.coupon.name || '优惠券',
+      image: sheep.$url.cdn(state.coupon.picUrl),
+    });
+    if (state.promotion?.miniProgramPath) {
+      info.forward = { ...info.forward, path: state.promotion.miniProgramPath.replace(/^\//, '') };
+    }
+    return info;
   });
 
   function onTabsChange(e) {
@@ -221,16 +241,49 @@
 
   // 领取优惠劵
   async function getCoupon() {
-    const { code } = await CouponApi.takeCoupon(state.id);
-    if (code !== 0) {
-      return;
-    }
-    uni.showToast({
-      title: '领取成功',
+    await sheep.$router.requireFormalAuth(async () => {
+      let result;
+      if (state.promotionCode) {
+        result = await CouponApi.takeCouponPromotion(state.promotionCode);
+      } else if (state.newcomer?.templateId) {
+        result = await CouponApi.takeNewcomerCoupon(state.id);
+      } else {
+        result = await CouponApi.takeCoupon(state.id);
+      }
+      if (result?.code !== 0) {
+        if (result?.msg) uni.showToast({ title: result.msg, icon: 'none' });
+        return;
+      }
+      if (!state.promotionCode && state.newcomer?.templateId && !result.data?.canTake) {
+        uni.showToast({ title: result.data?.reason || '暂不可领取', icon: 'none' });
+        state.newcomer = result.data;
+        state.coupon.canTake = false;
+        return;
+      }
+      if (result.data?.reasonCode === 'ALREADY_TAKEN') {
+        uni.showToast({ title: result.data.reason || '新人券已领取', icon: 'none' });
+        state.coupon.canTake = false;
+        return;
+      }
+      uni.showToast({ title: '领取成功', icon: 'success' });
+      if (state.promotionCode || state.newcomer?.templateId) {
+        state.coupon.canTake = false;
+        return;
+      }
+      setTimeout(getCouponContent, 600);
     });
-    setTimeout(() => {
-      getCouponContent();
-    }, 1000);
+  }
+
+  function redeemExchangeCoupon() {
+    if (state.coupon.status !== 1 || !state.coupon.exchangeSkuId) return;
+    sheep.$router.go('/pages/order/confirm', {
+      data: JSON.stringify({
+        order_type: 'goods',
+        couponId: Number(state.couponId),
+        couponIds: [Number(state.couponId)],
+        items: [{ skuId: Number(state.coupon.exchangeSkuId), count: 1 }],
+      }),
+    });
   }
 
   // 加载优惠劵信息
@@ -243,6 +296,17 @@
       return;
     }
     state.coupon = data;
+    if (data.couponType === 2 && data.exchangeSpuId) {
+      const exchangeResult = await SpuApi.getSpuDetail(data.exchangeSpuId);
+      state.exchangeProduct = exchangeResult?.code === 0 ? exchangeResult.data : null;
+    }
+    if (state.id > 0) {
+      const qualification = await CouponApi.getNewcomerCoupon(state.id);
+      state.newcomer = qualification?.code === 0 ? qualification.data : null;
+      if (state.newcomer) {
+        state.coupon.canTake = Boolean(state.newcomer.canTake || state.newcomer.reasonCode === 'LOGIN_REQUIRED');
+      }
+    }
     // 不同指定范围，加载不同数据
     if (state.coupon.productScope === 2) {
       await getGoodsListById();
@@ -260,10 +324,20 @@
     getGoodsListByCategory();
   }
 
-  onLoad((options) => {
-    state.id = options.id;
-    state.couponId = options.couponId;
-    getCouponContent(state.id, state.couponId);
+  onLoad(async (options) => {
+    state.id = Number(options.id || 0);
+    state.couponId = Number(options.couponId || 0);
+    state.promotionCode = options.promotionCode || '';
+    if (state.promotionCode) {
+      const promotionResult = await CouponApi.resolveCouponPromotion(state.promotionCode);
+      state.promotion = promotionResult?.code === 0 ? promotionResult.data : null;
+      if (!state.promotion) {
+        state.promotionError = true;
+        return;
+      }
+      state.id = Number(state.promotion.templateId);
+    }
+    await getCouponContent(state.id, state.couponId);
   });
 
   // 上拉加载更多
@@ -386,5 +460,14 @@
     font-size: 34rpx;
     font-weight: bold;
     color: #333333;
+  }
+
+  .coupon-reason, .promotion-error {
+    max-width: 620rpx;
+    margin: 0 30rpx;
+    color: #a34a35;
+    font-size: 22rpx;
+    line-height: 1.5;
+    text-align: center;
   }
 </style>

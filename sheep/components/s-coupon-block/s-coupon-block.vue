@@ -7,6 +7,7 @@
     :style="[bgStyle, { marginLeft: `${data.space}px` }]"
   >
     <view
+      v-if="couponList.length"
       class="coupon-box ss-flex"
       :style="couponList.length === 2 ? couponBoxStyleTwo : couponBoxStyleNormal"
     >
@@ -48,6 +49,16 @@
           </template>
         </su-coupon>
       </view>
+    </view>
+    <view v-for="item in newcomerCoupons" :key="item.templateId" class="newcomer-coupon">
+      <view class="newcomer-copy">
+        <text class="newcomer-title">{{ item.name }}</text>
+        <text class="newcomer-desc">{{ item.description || newcomerOffer(item) }}</text>
+        <text v-if="!item.canTake && item.reason" class="newcomer-reason">{{ item.reason }}</text>
+      </view>
+      <button class="newcomer-button" :disabled="claimingId === item.templateId" @tap="claimNewcomer(item)">
+        {{ claimingId === item.templateId ? '领取中' : item.reasonCode === 'LOGIN_REQUIRED' ? '登录领取' : item.canTake ? '立即领取' : '暂不可领' }}
+      </button>
     </view>
   </scroll-view>
 </template>
@@ -142,21 +153,74 @@
   };
 
   const couponList = ref([]);
-  // 立即领取优惠券
-  async function onGetCoupon(id) {
-    const { error, msg } = await CouponApi.takeCoupon(id);
-    if (error === 0) {
-      uni.showToast({
-        title: msg,
-        icon: 'none',
+  const newcomerCoupons = ref([]);
+  const newcomerTemplateIds = ref(new Set());
+  const claimingId = ref(null);
+
+  function newcomerOffer(item) {
+    if (item.discountType === 1) return `满${floatToFixed2(item.usePrice)}元减${floatToFixed2(item.discountPrice)}元`;
+    return `满${floatToFixed2(item.usePrice)}元打${formatDiscountPercent(item.discountPercent)}折`;
+  }
+
+  async function loadNewcomerCoupons(templates) {
+    const candidates = templates || [];
+    const results = await Promise.all(candidates.map((item) => CouponApi.getNewcomerCoupon(item.id)));
+    const configured = results.filter((result) => result?.code === 0 && result.data?.templateId);
+    newcomerTemplateIds.value = new Set(configured.map((result) => String(result.data.templateId)));
+    newcomerCoupons.value = configured
+      .filter((result) => result.data.showEntry)
+      .map((result) => result.data);
+  }
+
+  async function claimNewcomer(item) {
+    if ((!item?.canTake && item?.reasonCode !== 'LOGIN_REQUIRED') || claimingId.value) return;
+    claimingId.value = item.templateId;
+    try {
+      await sheep.$router.requireFormalAuth(async () => {
+        const result = await CouponApi.takeNewcomerCoupon(item.templateId);
+        if (result?.code === 0) {
+          if (result.data?.reasonCode === 'ALREADY_TAKEN') {
+            uni.showToast({ title: result.data.reason || '已领取', icon: 'none' });
+          } else {
+            uni.showToast({ title: '领取成功', icon: 'success' });
+          }
+          await refreshCouponLists();
+        } else if (result?.data?.reason) {
+          uni.showToast({ title: result.data.reason, icon: 'none' });
+        }
       });
-      return;
+    } finally {
+      claimingId.value = null;
     }
+  }
+
+  async function refreshCouponLists() {
     await getCouponTemplateList();
   }
+
+  // 立即领取优惠券
+  async function onGetCoupon(id) {
+    await sheep.$router.requireFormalAuth(async () => {
+      const { code, msg } = await CouponApi.takeCoupon(id);
+      if (code !== 0) {
+        uni.showToast({ title: msg || '领取失败', icon: 'none' });
+        return;
+      }
+      await getCouponTemplateList();
+    });
+  }
   const getCouponTemplateList = async () => {
-    const { data } = await CouponApi.getCouponTemplateListByIds(props.data.couponIds.join(','));
-    couponList.value = data;
+    const ids = props.data.couponIds || [];
+    if (!ids.length) {
+      couponList.value = [];
+      newcomerCoupons.value = [];
+      newcomerTemplateIds.value = new Set();
+      return;
+    }
+    const { data } = await CouponApi.getCouponTemplateListByIds(ids.join(','));
+    const templates = data || [];
+    await loadNewcomerCoupons(templates);
+    couponList.value = templates.filter((item) => !newcomerTemplateIds.value.has(String(item.id)));
   };
   onMounted(() => {
     getCouponTemplateList();
@@ -189,4 +253,22 @@
       margin-left: 0 !important;
     }
   }
+
+  .newcomer-coupon {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
+    margin: 18rpx 20rpx 0;
+    padding: 22rpx 24rpx;
+    border-radius: 8rpx;
+    background: #fff5ec;
+    border: 1rpx solid #f0d5c2;
+  }
+  .newcomer-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 6rpx; }
+  .newcomer-title { color: #7b3825; font-size: 28rpx; font-weight: 600; }
+  .newcomer-desc, .newcomer-reason { color: #765d52; font-size: 22rpx; }
+  .newcomer-button { flex: none; margin: 0; padding: 0 22rpx; height: 58rpx; line-height: 58rpx; border: 0; border-radius: 5rpx; background: #b64b35; color: #fff; font-size: 22rpx; }
+  .newcomer-button::after { border: 0; }
+  .newcomer-button[disabled] { opacity: .55; }
 </style>

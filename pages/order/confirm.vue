@@ -159,8 +159,8 @@
         >
           <view class="item-title">优惠券</view>
           <view class="ss-flex ss-col-center" @tap="state.showCoupon = true">
-            <text class="item-value text-red" v-if="state.orderPayload.couponId > 0">
-              -￥{{ fen2yuan(state.orderInfo.price.couponPrice) }}
+            <text class="item-value text-red" v-if="(state.orderPayload.couponIds || []).length > 0">
+              -￥{{ fen2yuan(state.orderInfo.price.couponPrice) }} · {{ state.orderPayload.couponIds.length }} 张生效
             </text>
             <text
               class="item-value"
@@ -171,14 +171,13 @@
               "
               v-else
             >
-              {{
-                state.couponInfo.filter((coupon) => coupon.match).length > 0
-                  ? state.couponInfo.filter((coupon) => coupon.match).length + ' 张可用'
-                  : '暂无可用优惠券'
-              }}
+              {{ selectedCouponText }}
             </text>
             <text class="_icon-forward item-icon" />
           </view>
+        </view>
+        <view v-for="(reason, couponId) in state.orderInfo.couponExclusionReasons || {}" :key="couponId" class="coupon-exclusion">
+          {{ couponName(couponId) }}未生效：{{ reason }}
         </view>
         <view
           class="order-item ss-flex ss-col-center ss-row-between"
@@ -216,6 +215,7 @@
     <!-- 选择优惠券弹框 -->
     <s-coupon-select
       v-model="state.couponInfo"
+      :selectedIds="state.orderPayload.couponIds || []"
       :show="state.showCoupon"
       @confirm="onSelectCoupon"
       @close="state.showCoupon = false"
@@ -300,11 +300,22 @@
   });
 
   const pointView = computed(() => getPointView(state.orderInfo, state.pointStatus));
+  const selectedCouponText = computed(() => {
+    const count = (state.orderPayload.couponIds || []).length;
+    if (count) return `${count} 张已生效`;
+    const available = state.couponInfo.filter((coupon) => coupon.match).length;
+    return available > 0 ? `${available} 张可用` : '暂无可用优惠券';
+  });
+
+  function couponName(id) {
+    return state.couponInfo.find((coupon) => String(coupon.id) === String(id))?.name || '优惠券';
+  }
 
   function buildSettlementPayload() {
     return {
       items: state.orderPayload.items,
       couponId: state.orderPayload.couponId,
+      couponIds: state.orderPayload.couponIds || [],
       deliveryType: addressState.value.deliveryType,
       addressId: addressState.value.addressInfo.id,
       pickUpStoreId: addressState.value.pickUpInfo.id,
@@ -320,7 +331,18 @@
 
   function applySettlement(data) {
     state.orderInfo = data;
-    state.couponInfo = data.coupons || [];
+    const exclusions = data.couponExclusionReasons || {};
+    state.couponInfo = (data.coupons || []).map((coupon) => ({
+      ...coupon,
+      match: coupon.match || Boolean(exclusions[coupon.id]),
+      mismatchReason: exclusions[coupon.id] || coupon.mismatchReason,
+    }));
+    if (Array.isArray(data.effectiveCouponIds)) {
+      state.orderPayload.couponIds = [...data.effectiveCouponIds];
+      state.orderPayload.couponId = data.effectiveCouponIds[0];
+    } else {
+      state.orderPayload.couponIds = state.orderPayload.couponId ? [state.orderPayload.couponId] : [];
+    }
     if (data.address) {
       addressState.value.addressInfo = data.address;
     }
@@ -350,8 +372,9 @@
   };
 
   // 选择优惠券
-  async function onSelectCoupon(couponId) {
-    state.orderPayload.couponId = couponId;
+  async function onSelectCoupon(couponIds) {
+    state.orderPayload.couponIds = couponIds || [];
+    state.orderPayload.couponId = state.orderPayload.couponIds[0];
     await getOrderInfo();
     state.showCoupon = false;
   }
@@ -391,6 +414,7 @@
     const { code, data } = await OrderApi.createOrder({
       items: state.orderPayload.items,
       couponId: state.orderPayload.couponId,
+      couponIds: state.orderPayload.couponIds || [],
       remark: state.orderPayload.remark,
       deliveryType: addressState.value.deliveryType,
       addressId: addressState.value.addressInfo.id, // 收件地址编号
@@ -494,6 +518,15 @@
     }
   });
 </script>
+
+<style lang="scss" scoped>
+  .coupon-exclusion {
+    padding: 0 20rpx 12rpx;
+    color: #a34a35;
+    font-size: 22rpx;
+    line-height: 1.5;
+  }
+</style>
 
 <style lang="scss" scoped>
   :deep() {

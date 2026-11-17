@@ -37,6 +37,42 @@ const CouponApi = {
       params: { id },
     });
   },
+  // 首页新人券资格（公开查询）
+  getNewcomerCoupon: (id) => {
+    return request({
+      url: '/promotion/coupon-template/newcomer',
+      method: 'GET',
+      params: { id },
+      custom: { showLoading: false, showError: false },
+    });
+  },
+  // 授权领取首页新人券
+  takeNewcomerCoupon: (templateId) => {
+    return request({
+      url: '/promotion/coupon/take-newcomer',
+      method: 'POST',
+      data: { templateId },
+      custom: { auth: true, formalAuth: true, showLoading: true, loadingMsg: '领取中' },
+    });
+  },
+  // 解析后台生成的推广码及小程序分享路径
+  resolveCouponPromotion: (code) => {
+    return request({
+      url: '/promotion/coupon-promotion/resolve',
+      method: 'GET',
+      params: { code },
+      custom: { showLoading: false, showError: false },
+    });
+  },
+  // 授权领取推广券，服务端记录推广归因
+  takeCouponPromotion: (code) => {
+    return request({
+      url: '/promotion/coupon-promotion/take',
+      method: 'POST',
+      params: { code },
+      custom: { auth: true, formalAuth: true, showLoading: true, loadingMsg: '领取中' },
+    });
+  },
   // 我的优惠劵列表
   getCouponPage: (params) => {
     return request({
