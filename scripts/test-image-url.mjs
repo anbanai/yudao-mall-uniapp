@@ -12,8 +12,8 @@ const env = Object.fromEntries(
     }),
 );
 
-const ossOrigin = 'https://static.teaworthshare.com';
-const cdnUrl = 'https://img.teaworthshare.com';
+const ossOrigin = 'https://static.teagravity.com';
+const cdnUrl = 'https://img.teagravity.com';
 const source = `${ossOrigin}/20260914/product.jpg`;
 
 assert.equal(
@@ -86,11 +86,11 @@ assert.equal(
 );
 
 assert.equal(
-  rewriteMediaUrl('https://static.teaworthshare.com/20260914/product.jpg', {
+  rewriteMediaUrl('https://static.teagravity.com/20260914/product.jpg', {
     cdnUrl: env.SHOPRO_CDN_URL,
     ossOrigin: env.SHOPRO_OSS_ORIGIN,
   }),
-  'https://static.teaworthshare.com/20260914/product.jpg',
+  'https://static.teagravity.com/20260914/product.jpg',
   'production media URLs returned by the API must be rewritten to the CDN',
 );
 
