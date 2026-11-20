@@ -35,6 +35,8 @@ const options = {
   formalAuth: false,
   // 是否传递 token
   isToken: true,
+  // 是否允许公开请求跨越登录会话切换继续完成
+  sessionIndependent: false,
 };
 
 // Loading全局实例
@@ -78,8 +80,11 @@ const http = new Request({
  */
 http.interceptors.request.use(
   async (config) => {
-    config.custom.sessionEpoch ??= sessionEpoch();
-    if (!isCurrentSession(config.custom.sessionEpoch)) return Promise.reject(staleSessionResult());
+    if (!config.custom.sessionIndependent) {
+      config.custom.sessionEpoch ??= sessionEpoch();
+      if (!isCurrentSession(config.custom.sessionEpoch))
+        return Promise.reject(staleSessionResult());
+    }
     // 自定义处理【auth 授权】：必须登录的接口，则跳出 AuthModal 登录弹窗
     if (config.custom.auth && !$store('user').isLogin) {
       showAuthModal();
@@ -89,7 +94,7 @@ http.interceptors.request.use(
     if (config.custom.formalAuth) {
       const userStore = $store('user');
       await userStore.ensureUserInfo();
-      if (!isCurrentSession(config.custom.sessionEpoch))
+      if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch))
         return Promise.reject(staleSessionResult());
       if (!userStore.isFormalLogin) {
         showAuthModal();
@@ -132,7 +137,10 @@ http.interceptors.request.use(
  */
 http.interceptors.response.use(
   (response) => {
-    if (!isCurrentSession(response.config.custom.sessionEpoch)) {
+    if (
+      !response.config.custom.sessionIndependent &&
+      !isCurrentSession(response.config.custom.sessionEpoch)
+    ) {
       response.config.custom.showLoading && closeLoading();
       return staleSessionResult();
     }
@@ -196,7 +204,11 @@ http.interceptors.response.use(
   (error) => {
     const userStore = $store('user');
     const isLogin = userStore.isLogin;
-    if (error?.config && !isCurrentSession(error.config.custom.sessionEpoch)) {
+    if (
+      error?.config &&
+      !error.config.custom.sessionIndependent &&
+      !isCurrentSession(error.config.custom.sessionEpoch)
+    ) {
       error.config.custom.showLoading && closeLoading();
       return staleSessionResult();
     }
@@ -273,7 +285,9 @@ http.interceptors.response.use(
 let requestList = []; // 请求队列
 let isRefreshToken = false; // 是否正在刷新中
 const refreshToken = async (config) => {
-  if (!isCurrentSession(config.custom.sessionEpoch)) return staleSessionResult();
+  if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch)) {
+    return staleSessionResult();
+  }
   // 如果当前已经是 refresh-token 的 URL 地址，并且还是 401 错误，说明是刷新令牌失败了，直接返回 Promise.reject(error)
   if (config.url.indexOf('/member/auth/refresh-token') >= 0) {
     return Promise.reject('error');
@@ -292,7 +306,9 @@ const refreshToken = async (config) => {
     // 2. 进行刷新访问令牌
     try {
       const refreshTokenResult = await AuthUtil.refreshToken(refreshToken);
-      if (!isCurrentSession(config.custom.sessionEpoch)) return staleSessionResult();
+      if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch)) {
+        return staleSessionResult();
+      }
       if (refreshTokenResult.code !== 0) {
         // 如果刷新不成功，直接抛出 e 触发 2.2 的逻辑
         // noinspection ExceptionCaughtLocallyJS
@@ -306,7 +322,9 @@ const refreshToken = async (config) => {
       requestList = [];
       return request(config);
     } catch (e) {
-      if (!isCurrentSession(config.custom.sessionEpoch)) return staleSessionResult();
+      if (!config.custom.sessionIndependent && !isCurrentSession(config.custom.sessionEpoch)) {
+        return staleSessionResult();
+      }
       // 为什么需要 catch 异常呢？刷新失败时，请求因为 Promise.reject 触发异常。
       // 2.2 刷新失败，只回放队列的请求
       requestList.forEach((cb) => {

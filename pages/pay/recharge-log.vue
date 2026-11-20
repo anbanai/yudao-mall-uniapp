@@ -55,7 +55,7 @@
 <script setup>
   import { reactive } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import PayWalletApi from '@/sheep/api/pay/wallet';
   import sheep from '@/sheep';
   import { fen2yuan } from '../../sheep/hooks/useGoods';

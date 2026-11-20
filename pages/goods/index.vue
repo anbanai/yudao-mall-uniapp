@@ -8,14 +8,6 @@
       <detailSkeleton v-if="state.skeletonLoading" />
       <!-- 下架/售罄提醒 -->
       <s-empty
-        v-else-if="state.detailLoadError"
-        text="商品加载失败，请重试"
-        icon="/static/internet-empty.png"
-        showAction
-        actionText="重新加载"
-        @clickAction="loadGoodsDetail"
-      />
-      <s-empty
         v-else-if="state.goodsInfo === null"
         text="商品不存在或已下架"
         icon="/static/soldout-empty.png"
@@ -35,6 +27,10 @@
             dotCur="bg-mask-40"
             :seizeHeight="750"
           />
+          <view class="detail-count-row ss-flex ss-row-between">
+            <text>已售 {{ state.goodsInfo.salesCount || 0 }}</text>
+            <text>剩余库存 {{ remainingStock }}</text>
+          </view>
           <!-- 限时折扣/会员价的优惠信息 -->
           <view
             class="discount"
@@ -85,11 +81,8 @@
           <!-- 价格+标题 -->
           <view class="title-card detail-card ss-p-y-30 ss-p-x-20">
             <!-- 没有限时折扣/会员价的优惠信息时，展示的价格信息 -->
-            <view class="ss-flex ss-row-between ss-col-center ss-m-b-26">
-              <view
-                class="price-box ss-flex ss-col-bottom"
-                v-if="!state.settlementSku.promotionPrice"
-              >
+            <view class="ss-flex ss-row-between ss-col-center ss-m-b-26" v-if="!state.settlementSku.promotionPrice">
+              <view class="price-box ss-flex ss-col-bottom">
                 <view class="price-text ss-m-r-16">
                   {{ fen2yuan(state.selectedSku.price || state.goodsInfo.price) }}
                 </view>
@@ -99,11 +92,6 @@
                 >
                   {{ fen2yuan(state.selectedSku.marketPrice || state.goodsInfo.marketPrice) }}
                 </view>
-              </view>
-              <view class="sales-text">
-                已售{{ state.goodsInfo.salesCount || 0 }}/{{
-                  state.selectedSku.stock ?? state.goodsInfo.stock ?? 0
-                }}
               </view>
             </view>
             <view class="discounts-box ss-flex ss-row-between ss-m-b-28">
@@ -146,41 +134,19 @@
                 <text class="cicon-forward"></text>
               </view>
             </view>
-            <view class="title-row ss-flex ss-row-between ss-col-start">
-              <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
-              <button class="goods-share ss-reset-button" open-type="share" aria-label="分享">
-                <text class="cicon-reply share-icon" />
-                <text class="share-label">分享</text>
-              </button>
-            </view>
-            <view v-if="state.goodsInfo.merchantName" class="merchant-name ss-font-22 ss-m-b-6">
-              {{ state.goodsInfo.merchantName }}
-            </view>
+            <view v-if="preSaleLabel" class="presale-label">{{ preSaleLabel }}</view>
+            <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
-            <view v-if="state.publicGroups.length" class="public-groups">
-              <button
-                v-for="group in state.publicGroups"
-                :key="group.id"
-                class="public-groups__chip ss-reset-button"
-                @tap="sheep.$router.go('/pages/goods/group-list', { groupIds: group.id })"
-                >{{ group.name }} <text class="sicon-forward"
-              /></button>
-            </view>
           </view>
 
-          <!-- 配送、服务、规格信息 -->
           <view class="detail-info-card detail-card ss-flex-col">
-            <view class="detail-info-row delivery-row" @tap="onChooseDeliveryAddress">
+            <view class="detail-info-row" @tap="onChooseDeliveryAddress">
               <text class="detail-info-label">配送</text>
               <view class="detail-info-content delivery-content">
                 <view class="delivery-address-line">
                   <text class="cicon-place-o delivery-icon" />
                   <text class="delivery-address">
-                    {{
-                      state.deliveryAddress
-                        ? `${state.deliveryAddress.areaName} ${state.deliveryAddress.detailAddress}`
-                        : '请选择收货地址'
-                    }}
+                    {{ state.deliveryAddress ? `${state.deliveryAddress.areaName} ${state.deliveryAddress.detailAddress}` : '请选择收货地址' }}
                   </text>
                 </view>
                 <text class="delivery-shipping">快递包邮</text>
@@ -189,13 +155,11 @@
             </view>
             <view class="detail-info-row">
               <text class="detail-info-label">服务</text>
-              <text class="detail-info-content">退货包运费 · 自动退款 · 7天无理由退货...</text>
-              <text class="_icon-forward detail-info-arrow" />
+              <text class="detail-info-content">退货包运费 · 自动退款 · 7天无理由退货</text>
             </view>
             <detail-cell-sku
               v-model="state.selectedSku.goods_sku_text"
               :sku="state.selectedSku"
-              label="规格"
               @tap="state.showSelectSku = true"
             />
           </view>
@@ -226,7 +190,7 @@
         />
 
         <!-- 详情 tabbar -->
-        <detail-tabbar v-model="state.goodsInfo">
+        <detail-tabbar v-model="state.goodsInfo" commerce-nav>
           <view class="buy-box ss-flex ss-col-center ss-p-r-20" v-if="state.goodsInfo.stock > 0">
             <button
               class="ss-reset-button add-btn ui-Shadow-Main"
@@ -260,10 +224,11 @@
 
 <script setup>
   import { reactive, computed } from 'vue';
-  import { onLoad, onPageScroll, onShow, onUnload } from '@dcloudio/uni-app';
+  import { onLoad, onPageScroll } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import CouponApi from '@/sheep/api/promotion/coupon';
   import ActivityApi from '@/sheep/api/promotion/activity';
+  import FavoriteApi from '@/sheep/api/product/favorite';
   import RewardActivityApi from '@/sheep/api/promotion/rewardActivity';
   import {
     formatGoodsSwiper,
@@ -279,14 +244,11 @@
   import detailCommentCard from './components/detail/detail-comment-card.vue';
   import detailContentCard from './components/detail/detail-content-card.vue';
   import detailActivityTip from './components/detail/detail-activity-tip.vue';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import SpuApi from '@/sheep/api/product/spu';
-  import GroupApi from '@/sheep/api/product/group';
   import AddressApi from '@/sheep/api/member/address';
-  import {
-    getProductGroupResponseData,
-    publicProductGroups,
-  } from '@/sheep/components/s-goods-group/product-group.mjs';
+  import { getPreSaleLabel, getRemainingStock } from '@/sheep/helper/productDetail.mjs';
+  import { showAuthModal } from '@/sheep/hooks/useModal';
 
   onPageScroll(() => {});
   import OrderApi from '@/sheep/api/trade/order';
@@ -299,12 +261,11 @@
     timeTxtwidth: '16rpx',
     isDay: true,
   };
+  const isLogin = computed(() => sheep.$store('user').isLogin);
   let state = reactive({
     goodsId: 0,
     skeletonLoading: true, // SPU 加载中
     goodsInfo: {}, // SPU 信息
-    detailLoadError: false, // SPU 请求失败
-    publicGroups: [],
     showSelectSku: false, // 是否展示 SKU 选择弹窗
     selectedSku: {}, // 选中的 SKU
     settlementSku: {}, // 结算的 SKU：由于 selectedSku 不进行默认选中，所以初始使用结算价格最低的 SKU 作为基础展示
@@ -313,63 +274,12 @@
     showActivityModel: false, // 【满减送/限时折扣】是否展示 Activity 营销活动的弹窗
     rewardActivity: {}, // 【满减送】活动
     activityList: [], // 【秒杀/拼团/砍价】可参与的 Activity 营销活动的列表
-    deliveryAddress: null, // 当前配送地址
-    hasSelectedDeliveryAddress: false,
+    deliveryAddress: null,
     deliveryAddressLoaded: false,
   });
 
-  let deliveryAddressRequest;
-  let groupGeneration = 0;
-  async function refreshPublicGroups() {
-    const token = ++groupGeneration;
-    state.publicGroups = [];
-    if (!state.goodsId) return;
-    try {
-      const groups = getProductGroupResponseData(await GroupApi.getGroupListBySpuId(state.goodsId));
-      if (token === groupGeneration) state.publicGroups = publicProductGroups(groups);
-    } catch {
-      /* Group discovery is optional for the purchase flow. */
-    }
-  }
-  function loadDeliveryAddress() {
-    if (state.hasSelectedDeliveryAddress || state.deliveryAddressLoaded) {
-      return Promise.resolve();
-    }
-    if (!deliveryAddressRequest) {
-      deliveryAddressRequest = (async () => {
-        try {
-          const { data = [] } = await AddressApi.getAddressList();
-          if (!state.hasSelectedDeliveryAddress) {
-            state.deliveryAddress = data.find((item) => item.defaultStatus) || data[0] || null;
-          }
-        } catch {
-          if (!state.hasSelectedDeliveryAddress) {
-            state.deliveryAddress = null;
-          }
-        } finally {
-          state.deliveryAddressLoaded = true;
-          deliveryAddressRequest = null;
-        }
-      })();
-    }
-    return deliveryAddressRequest;
-  }
-
-  function onChooseDeliveryAddress() {
-    uni.$once('SELECT_ADDRESS', ({ addressInfo } = {}) => {
-      state.deliveryAddress = addressInfo;
-      state.hasSelectedDeliveryAddress = true;
-    });
-    sheep.$router.go('/pages/user/address/list', { type: 'select' });
-  }
-
-  onShow(() => {
-    void refreshPublicGroups();
-    void loadDeliveryAddress();
-  });
-  onUnload(() => {
-    groupGeneration += 1;
-  });
+  const remainingStock = computed(() => getRemainingStock(state.selectedSku, state.goodsInfo));
+  const preSaleLabel = computed(() => getPreSaleLabel(state.goodsInfo));
 
   // 规格变更
   function onSkuChange(e) {
@@ -402,9 +312,37 @@
             categoryId: state.goodsInfo.categoryId,
           },
         ],
-        addressInfo: state.deliveryAddress,
+        addressInfo: state.deliveryAddress || undefined,
       }),
     });
+  }
+
+  async function loadDeliveryAddress() {
+    if (!isLogin.value || state.deliveryAddressLoaded) return;
+    try {
+      const { code, data } = await AddressApi.getAddressList();
+      if (code === 0 && Array.isArray(data)) {
+        state.deliveryAddress = data.find((item) => item.defaultStatus) || data[0] || null;
+      }
+    } catch (error) {
+      state.deliveryAddress = null;
+    } finally {
+      state.deliveryAddressLoaded = true;
+    }
+  }
+
+  function onChooseDeliveryAddress() {
+    if (!isLogin.value) {
+      showAuthModal();
+      return;
+    }
+    uni.$once('SELECT_ADDRESS', ({ addressInfo } = {}) => {
+      if (addressInfo) {
+        state.deliveryAddress = addressInfo;
+        state.deliveryAddressLoaded = true;
+      }
+    });
+    sheep.$router.go('/pages/user/address/list', { type: 'select' });
   }
 
   // 打开营销弹窗
@@ -456,16 +394,11 @@
   }
 
   async function getSettlementByIds(ids) {
-    const response = await OrderApi.getSettlementProduct(ids);
-    if (
-      !response ||
-      response.code !== 0 ||
-      !Array.isArray(response.data) ||
-      response.data.length !== 1
-    ) {
+    let { data, code } = await OrderApi.getSettlementProduct(ids);
+    if (code !== 0 || data.length !== 1) {
       return;
     }
-    const data = response.data[0];
+    data = data[0];
 
     // 补充 SKU 的价格信息
     state.goodsInfo.skus.forEach((sku) => {
@@ -502,40 +435,6 @@
     }
   }
 
-  function loadGoodsDetail() {
-    state.detailLoadError = false;
-    state.skeletonLoading = true;
-    state.goodsInfo = {};
-    return SpuApi.getSpuDetail(state.goodsId)
-      .then((res) => {
-        if (res.code !== 0) {
-          state.detailLoadError = true;
-          state.goodsInfo = null;
-          state.skeletonLoading = false;
-          return;
-        }
-        if (!res.data) {
-          state.goodsInfo = null;
-          state.skeletonLoading = false;
-          return;
-        }
-        // 加载到商品
-        state.skeletonLoading = false;
-        state.goodsInfo = res.data;
-        // 获取结算信息
-        getSettlementByIds(state.goodsId);
-      })
-      .catch((error) => {
-        console.error('[商品详情] 商品加载失败', {
-          id: state.goodsId,
-          error,
-        });
-        state.detailLoadError = true;
-        state.goodsInfo = null;
-        state.skeletonLoading = false;
-      });
-  }
-
   onLoad((options) => {
     // 非法参数
     if (!options.id) {
@@ -545,7 +444,31 @@
     }
     state.goodsId = options.id;
     // 1. 加载商品信息
-    void loadGoodsDetail();
+    loadDeliveryAddress();
+    SpuApi.getSpuDetail(state.goodsId).then((res) => {
+      if (res.code !== 0 || !res.data) {
+        state.goodsInfo = null;
+        state.skeletonLoading = false;
+        return;
+      }
+      // 加载到商品
+      state.skeletonLoading = false;
+      state.goodsInfo = res.data;
+      // 获取结算信息
+      getSettlementByIds(state.goodsId);
+      // 加载是否收藏
+      if (isLogin.value) {
+        FavoriteApi.isFavoriteExists(state.goodsId, 'goods').then((res) => {
+          if (res.code !== 0) {
+            return;
+          }
+          state.goodsInfo.favorite = res.data;
+        });
+      }
+    }).catch(() => {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+    });
 
     // 2. 加载优惠劵信息
     getCoupon();
@@ -561,19 +484,87 @@
 </script>
 
 <style lang="scss" scoped>
-  .public-groups {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12rpx;
-    padding-top: 24rpx;
+  .detail-count-row {
+    margin: 0 24rpx 14rpx;
+    color: $dark-9;
+    font-size: 24rpx;
+    line-height: 36rpx;
   }
-  .public-groups__chip {
-    padding: 8rpx 18rpx;
-    border-radius: 24rpx;
-    background: #f5f6f8;
-    color: #666;
+
+  .presale-label {
+    display: inline-flex;
+    margin-bottom: 10rpx;
+    padding: 4rpx 10rpx;
+    border-radius: 4rpx;
+    background: var(--ui-BG-Main-tag);
+    color: var(--ui-BG-Main);
+    font-size: 22rpx;
+    line-height: 30rpx;
+  }
+
+  .detail-info-card {
+    padding: 0 20rpx;
+  }
+
+  .detail-info-row {
+    display: flex;
+    min-height: 82rpx;
+    align-items: center;
+    border-bottom: 1rpx solid $gray-e;
     font-size: 24rpx;
   }
+
+  .detail-info-row:last-child {
+    border-bottom: 0;
+  }
+
+  .detail-info-label {
+    flex: 0 0 72rpx;
+    margin-right: 20rpx;
+    color: $dark-9;
+  }
+
+  .detail-info-content {
+    flex: 1;
+    min-width: 0;
+    color: $dark-3;
+  }
+
+  .delivery-content {
+    display: flex;
+    align-items: center;
+  }
+
+  .delivery-address-line {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    margin-right: 16rpx;
+  }
+
+  .delivery-icon {
+    flex: 0 0 auto;
+    margin-right: 8rpx;
+    color: $dark-9;
+  }
+
+  .delivery-address {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .delivery-shipping {
+    flex: 0 0 auto;
+    color: var(--ui-BG-Main);
+  }
+
+  .detail-info-arrow {
+    flex: 0 0 auto;
+    color: $dark-9;
+  }
+
   .detail-card {
     background-color: #ffff;
     margin: 14rpx 20rpx;
@@ -583,29 +574,6 @@
 
   // 价格标题卡片
   .title-card {
-    .title-row {
-      gap: 16rpx;
-    }
-
-    .goods-share {
-      width: 64rpx;
-      min-height: 76rpx;
-      flex-shrink: 0;
-      flex-direction: column;
-      justify-content: flex-start;
-      color: $dark-3;
-    }
-
-    .share-icon {
-      font-size: 42rpx;
-      line-height: 44rpx;
-    }
-
-    .share-label {
-      font-size: 22rpx;
-      line-height: 30rpx;
-    }
-
     .price-box {
       .price-text {
         font-size: 42rpx;
@@ -688,112 +656,6 @@
       color: $dark-9;
       line-height: 42rpx;
     }
-  }
-
-  .detail-info-card {
-    padding: 0;
-  }
-
-  .detail-info-row {
-    display: flex;
-    min-height: 88rpx;
-    box-sizing: border-box;
-    align-items: center;
-    padding: 18rpx 20rpx;
-    border-bottom: 1rpx solid $gray-e;
-
-    &:last-child {
-      border-bottom: 0;
-    }
-  }
-
-  .detail-info-label {
-    width: 86rpx;
-    flex-shrink: 0;
-    color: $dark-9;
-    font-size: 28rpx;
-  }
-
-  .detail-info-content {
-    min-width: 0;
-    flex: 1;
-    color: $dark-9;
-    font-size: 28rpx;
-    line-height: 40rpx;
-  }
-
-  .delivery-content {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 10rpx;
-    color: $dark-9;
-  }
-
-  .delivery-address-line {
-    display: flex;
-    min-width: 0;
-    flex: 1;
-    align-items: center;
-    gap: 10rpx;
-    overflow: hidden;
-  }
-
-  .delivery-address {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .delivery-shipping {
-    flex-shrink: 0;
-    color: $dark-9;
-    font-size: 24rpx;
-    line-height: 32rpx;
-    white-space: nowrap;
-  }
-
-  .delivery-content text:last-child {
-    color: $dark-9;
-  }
-
-  .delivery-icon {
-    flex-shrink: 0;
-    color: $dark-9;
-    font-size: 32rpx;
-  }
-
-  .detail-info-arrow {
-    flex-shrink: 0;
-    margin-left: 12rpx;
-    color: $dark-9;
-    font-size: 28rpx;
-  }
-
-  .detail-info-card :deep(.detail-cell-wrap) {
-    min-height: 88rpx;
-    box-sizing: border-box;
-    padding: 18rpx 20rpx;
-  }
-
-  .detail-info-card :deep(.detail-cell-wrap .label-text) {
-    width: 86rpx;
-    margin-right: 0;
-    color: $dark-9;
-    font-size: 28rpx;
-    font-weight: 400;
-  }
-
-  .detail-info-card :deep(.detail-cell-wrap .cell-content) {
-    color: $dark-9;
-    font-size: 28rpx;
-    font-weight: 400;
-  }
-
-  .detail-info-card :deep(.detail-cell-wrap .right-forwrad-icon) {
-    color: $dark-9;
-    font-size: 28rpx;
   }
 
   // 购买

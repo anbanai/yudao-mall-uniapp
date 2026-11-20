@@ -96,7 +96,7 @@
   import { ref, reactive, unref } from 'vue';
   import sheep from '@/sheep';
   import { onLoad } from '@dcloudio/uni-app';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import { mobile } from '@/sheep/validate/form';
   import AreaApi from '@/sheep/api/system/area';
   import AddressApi from '@/sheep/api/member/address';

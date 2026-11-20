@@ -153,9 +153,7 @@
         >
           一键退货/预约取件
         </button>
-        <button class="ss-reset-button contcat-btn btn" @tap="onContactKefu">
-          联系客服
-        </button>
+        <button class="ss-reset-button contcat-btn btn" @tap="onContactKefu"> 联系客服 </button>
       </view>
     </su-fixed>
   </s-layout>
@@ -165,7 +163,7 @@
   import sheep from '@/sheep';
   import { onLoad, onShow } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import {
     fen2yuan,
     formatAfterSaleStatusDescription,

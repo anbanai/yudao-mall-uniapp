@@ -67,7 +67,7 @@
   import { reactive } from 'vue';
   import { onLoad, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import { formatOrderColor } from '@/sheep/hooks/useGoods';
   import { resetPagination } from '@/sheep/helper/utils';
   import CombinationApi from '@/sheep/api/promotion/combination';

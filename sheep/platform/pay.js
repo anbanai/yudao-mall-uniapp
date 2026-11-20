@@ -330,7 +330,8 @@ export function getPayMethods(channels) {
   const wechatMethod = payMethods[0];
   if (
     (platform === 'WechatOfficialAccount' && channels.includes('wx_pub')) ||
-    (platform === 'WechatMiniProgram' && (channels.includes('wx_lite') || channels.includes('yeepay_wx_lite'))) ||
+    (platform === 'WechatMiniProgram' &&
+      (channels.includes('wx_lite') || channels.includes('yeepay_wx_lite'))) ||
     (platform === 'App' && channels.includes('wx_app'))
   ) {
     wechatMethod.disabled = false;

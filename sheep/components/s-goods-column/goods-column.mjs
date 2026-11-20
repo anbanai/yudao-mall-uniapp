@@ -16,6 +16,13 @@ export function shouldShowGoodsSubtitle(data = {}) {
   return Boolean(subtitle) && subtitle !== title;
 }
 
+export function getPreSaleDeliveryLabel(data = {}) {
+  if (data.isPreSale !== true) return '';
+  const deliveryDays = Number(data.deliveryDays);
+  if (!Number.isInteger(deliveryDays) || deliveryDays < 1) return '预售';
+  return `预售 · 付款后${deliveryDays}天内发货`;
+}
+
 export function getGoodsImageHeight(width, imageWh) {
   const numericWidth = Number(width);
   const sourceWidth = Number(imageWh?.w);

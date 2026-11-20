@@ -3,19 +3,37 @@
   <su-fixed bottom placeholder bg="bg-white">
     <view class="ui-tabbar-box">
       <view class="ui-tabbar ss-flex ss-col-center ss-row-between">
+        <template v-if="commerceNav">
+          <view class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center" @tap="goHome">
+            <text class="cicon-home-o item-icon" />
+            <view class="item-title">首页</view>
+          </view>
+          <view class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center" @tap="goCart">
+            <text class="cicon-cart-o item-icon" />
+            <view class="item-title">购物车</view>
+          </view>
+        </template>
         <view
+          v-if="collectIcon && !commerceNav"
           class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center"
-          @tap="goHome"
+          @tap="onFavorite"
         >
-          <text class="cicon-home-o item-icon" />
-          <view class="item-title">首页</view>
-        </view>
-        <view
-          class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center"
-          @tap="goCart"
-        >
-          <text class="cicon-cart-o item-icon" />
-          <view class="item-title">购物车</view>
+          <block v-if="modelValue.favorite">
+            <image
+              class="item-icon"
+              :src="sheep.$url.static('/static/img/shop/goods/collect_1.gif')"
+              mode="aspectFit"
+            />
+            <view class="item-title">已收藏</view>
+          </block>
+          <block v-else>
+            <image
+              class="item-icon"
+              :src="sheep.$url.static('/static/img/shop/goods/collect_0.png')"
+              mode="aspectFit"
+            />
+            <view class="item-title">收藏</view>
+          </block>
         </view>
         <view
           v-if="serviceIcon"
@@ -28,6 +46,18 @@
             mode="aspectFit"
           />
           <view class="item-title">客服</view>
+        </view>
+        <view
+          v-if="shareIcon"
+          class="detail-tabbar-item ss-flex ss-flex-col ss-row-center ss-col-center"
+          @tap="showShareModal"
+        >
+          <image
+            class="item-icon"
+            :src="sheep.$url.static('/static/img/shop/goods/share.png')"
+            mode="aspectFit"
+          />
+          <view class="item-title">分享</view>
         </view>
         <slot></slot>
       </view>
@@ -47,7 +77,8 @@
    */
   import { reactive } from 'vue';
   import sheep from '@/sheep';
-  import { showKefuModal } from '@/sheep/hooks/useModal';
+  import { showShareModal } from '@/sheep/hooks/useModal';
+  import FavoriteApi from '@/sheep/api/product/favorite';
 
   // 数据
   const state = reactive({});
@@ -79,23 +110,53 @@
       type: Number,
       default: 0,
     },
+    collectIcon: {
+      type: Boolean,
+      default: true,
+    },
     serviceIcon: {
       type: Boolean,
       default: true,
     },
+    shareIcon: {
+      type: Boolean,
+      default: true,
+    },
+    commerceNav: {
+      type: Boolean,
+      default: false,
+    },
   });
+
+  async function onFavorite() {
+    // 情况一：取消收藏
+    if (props.modelValue.favorite) {
+      const { code } = await FavoriteApi.deleteFavorite(props.modelValue.id);
+      if (code !== 0) {
+        return
+      }
+      sheep.$helper.toast('取消收藏');
+      props.modelValue.favorite = false;
+    // 情况二：添加收藏
+    } else {
+      const { code } = await FavoriteApi.createFavorite(props.modelValue.id);
+      if (code !== 0) {
+        return
+      }
+      sheep.$helper.toast('收藏成功');
+      props.modelValue.favorite = true;
+    }
+  }
+
+  const onChat = () => {
+    sheep.$router.go('/pages/chat/index', {
+      id: props.modelValue.id,
+    });
+  };
 
   const goHome = () => sheep.$router.go('/pages/index/index');
   const goCart = () => sheep.$router.go('/pages/index/cart');
 
-  const onChat = () => {
-    void showKefuModal(
-      {
-        id: props.modelValue.id,
-      },
-      sheep.$router,
-    );
-  };
 </script>
 
 <style lang="scss" scoped>
@@ -113,9 +174,6 @@
       .item-icon {
         width: 40rpx;
         height: 40rpx;
-        font-size: 40rpx;
-        line-height: 40rpx;
-        color: #333;
       }
 
       .item-title {

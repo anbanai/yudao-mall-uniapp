@@ -140,7 +140,7 @@
   import { computed, reactive, ref, unref } from 'vue';
   import { onLoad, onPageScroll } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
-  import { isEmpty, min } from 'lodash-es';
+  import { isEmpty, min } from '@/sheep/helper/lodash';
   import { fen2yuan, formatGoodsSwiper, useDurationTime } from '@/sheep/hooks/useGoods';
   import detailNavbar from './components/detail/detail-navbar.vue';
   import detailCellSku from './components/detail/detail-cell-sku.vue';

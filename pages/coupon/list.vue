@@ -71,7 +71,7 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import { resetPagination } from '@/sheep/helper/utils';
   import CouponApi from '@/sheep/api/promotion/coupon';
 

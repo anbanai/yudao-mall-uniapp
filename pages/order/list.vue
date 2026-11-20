@@ -128,7 +128,7 @@
     handleOrderButtons,
   } from '@/sheep/hooks/useGoods';
   import sheep from '@/sheep';
-  import { concat, isEmpty } from 'lodash-es';
+  import { concat, isEmpty } from '@/sheep/helper/lodash';
   import OrderApi from '@/sheep/api/trade/order';
   import { resetPagination } from '@/sheep/helper/utils';
   import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';

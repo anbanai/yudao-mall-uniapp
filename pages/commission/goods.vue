@@ -59,7 +59,7 @@
   import $share from '@/sheep/platform/share';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import { showShareModal } from '@/sheep/hooks/useModal';
   import SpuApi from '@/sheep/api/product/spu';
   import BrokerageApi from '@/sheep/api/trade/brokerage';

@@ -89,7 +89,7 @@
 
   import { reactive, computed } from 'vue';
   import sheep from '@/sheep';
-  import { clone } from 'lodash-es';
+  import { clone } from '@/sheep/helper/lodash';
 
   // 数据
   const state = reactive({

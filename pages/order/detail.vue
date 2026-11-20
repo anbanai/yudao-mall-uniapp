@@ -286,7 +286,7 @@
   import sheep from '@/sheep';
   import { onLoad, onShow } from '@dcloudio/uni-app';
   import { reactive, ref, watch } from 'vue';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import {
     fen2yuan,
     formatOrderStatus,

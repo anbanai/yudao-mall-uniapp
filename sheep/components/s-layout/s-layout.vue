@@ -65,7 +65,7 @@
    */
   import { computed, onMounted } from 'vue';
   import sheep from '@/sheep';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   // #ifdef MP-WEIXIN
   import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
   // #endif

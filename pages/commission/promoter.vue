@@ -54,7 +54,7 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
   import { resetPagination, getWeekTimes, getMonthTimes } from '@/sheep/helper/utils';
 

@@ -217,7 +217,7 @@
   import { onLoad } from '@dcloudio/uni-app';
   import { fen2yuan, useDurationTime } from '@/sheep/hooks/useGoods';
   import { showShareModal } from '@/sheep/hooks/useModal';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import CombinationApi from '@/sheep/api/promotion/combination';
   import SpuApi from '@/sheep/api/product/spu';
   import { SharePageEnum } from '@/sheep/helper/const';

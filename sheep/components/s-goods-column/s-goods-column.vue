@@ -27,6 +27,7 @@
         >
           {{ data.title || data.name }}
         </view>
+        <view v-if="preSaleDeliveryLabel" class="pre-sale-delivery">{{ preSaleDeliveryLabel }}</view>
         <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
           {{ data.merchantName }}
         </view>
@@ -102,6 +103,7 @@
         >
           {{ data.title || data.name }}
         </view>
+        <view v-if="preSaleDeliveryLabel" class="pre-sale-delivery">{{ preSaleDeliveryLabel }}</view>
         <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
           {{ data.merchantName }}
         </view>
@@ -190,6 +192,7 @@
         >
           {{ data.title || data.name }}
         </view>
+        <view v-if="preSaleDeliveryLabel" class="pre-sale-delivery">{{ preSaleDeliveryLabel }}</view>
         <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
           {{ data.merchantName }}
         </view>
@@ -358,6 +361,7 @@
           >
             {{ data.title || data.name }}
           </view>
+          <view v-if="preSaleDeliveryLabel" class="pre-sale-delivery">{{ preSaleDeliveryLabel }}</view>
           <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
             {{ data.merchantName }}
           </view>
@@ -459,6 +463,7 @@
           >
             {{ data.title || data.name }}
           </view>
+          <view v-if="preSaleDeliveryLabel" class="pre-sale-delivery">{{ preSaleDeliveryLabel }}</view>
           <view v-if="data.merchantName" class="merchant-name ss-font-20 ss-line-1">
             {{ data.merchantName }}
           </view>
@@ -589,9 +594,13 @@
     formatStock,
     getRewardActivityRuleItemDescriptions,
   } from '@/sheep/hooks/useGoods';
-  import { isArray } from 'lodash-es';
+  import { isArray } from '@/sheep/helper/lodash';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
-  import { getGoodsImageHeight, shouldShowGoodsSubtitle } from './goods-column.mjs';
+  import {
+    getGoodsImageHeight,
+    getPreSaleDeliveryLabel,
+    shouldShowGoodsSubtitle,
+  } from './goods-column.mjs';
 
   // 数据
   let defaultImgWidth = ref(0);
@@ -730,6 +739,7 @@
       imageParams[props.size] || imageParams.sl,
     ),
   );
+  const preSaleDeliveryLabel = computed(() => getPreSaleDeliveryLabel(props.data));
 
   const fixedImageHeight = computed(() => {
     const width = Number(props.imageWidth) > 0 ? Number(props.imageWidth) : 345;
@@ -915,6 +925,19 @@
     color: #c4c4c4;
     line-height: 36rpx;
     text-decoration: line-through;
+  }
+
+  .pre-sale-delivery {
+    width: fit-content;
+    max-width: 100%;
+    padding: 2rpx 8rpx;
+    margin-top: 6rpx;
+    border-radius: 4rpx;
+    background: #fff1eb;
+    color: #d94c20;
+    font-size: 20rpx;
+    line-height: 30rpx;
+    white-space: normal;
   }
 
   // xs

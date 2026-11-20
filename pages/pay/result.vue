@@ -65,7 +65,7 @@
 <script setup>
   import { onHide, onLoad, onShow } from '@dcloudio/uni-app';
   import { computed, reactive, ref } from 'vue';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import sheep from '@/sheep';
   import PayOrderApi from '@/sheep/api/pay/order';
   import { fen2yuan } from '@/sheep/hooks/useGoods';

@@ -122,7 +122,7 @@
   import sheep from '@/sheep';
   import { reactive } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import SpuHistoryApi from '@/sheep/api/product/history';
   import { cloneDeep } from '@/sheep/helper/utils';
 

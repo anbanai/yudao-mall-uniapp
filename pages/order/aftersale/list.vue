@@ -64,7 +64,7 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom, onShow } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import {
     formatAfterSaleStatus,
     formatAfterSaleStatusDescription,

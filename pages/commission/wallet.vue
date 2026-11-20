@@ -190,7 +190,7 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import dayjs from 'dayjs';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import { resetPagination } from '@/sheep/helper/utils';

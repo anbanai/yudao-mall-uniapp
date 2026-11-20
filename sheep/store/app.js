@@ -7,7 +7,7 @@ import $platform from '@/sheep/platform';
 import $router from '@/sheep/router';
 import user from './user';
 import sys from './sys';
-import { baseUrl, h5Url, cdnUrl, ossOrigin, filesystem, tenantId } from '@/sheep/config';
+import { baseUrl, h5Url } from '@/sheep/config';
 
 const app = defineStore('app', {
   state: () => ({
@@ -21,7 +21,6 @@ const app = defineStore('app', {
       copytime: '', // 版权信息 II
 
       cdnurl: '', // 云存储域名
-      ossOrigin: '', // OSS 源站域名
       filesystem: '', // 云存储平台
     },
     platform: {
@@ -81,15 +80,14 @@ const app = defineStore('app', {
       // TODO 芋艿：【初始化优化】未来支持管理后台可配；对应 https://api.shopro.sheepjs.com/shop/api/init
       if (true) {
         this.info = {
-          name: '不忍独享',
-          logo: 'https://static.teaworthshare.com/20260820/%E4%B8%8D%E5%BF%8D%E7%8B%AC%E4%BA%AB%20%20%E6%B0%B4%E5%8D%B0-06.png',
-          version: '2026.08',
-          copyright: '好茶不忍独享',
-          copytime: 'Copyright© 2026 不忍独享',
+          name: '芋道商城',
+          logo: 'https://static.iocoder.cn/ruoyi-vue-pro-logo.png',
+          version: '2026.09',
+          copyright: '全部开源，个人与企业可 100% 免费使用',
+          copytime: 'Copyright© 2018-2025',
 
-          cdnurl: cdnUrl, // CDN/云存储域名
-          ossOrigin,
-          filesystem,
+          cdnurl: 'https://file.sheepjs.com', // 云存储域名
+          filesystem: 'qcloud', // 云存储平台
         };
         this.platform = {
           share: {
@@ -115,6 +113,11 @@ const app = defineStore('app', {
         const sysStore = sys();
         sysStore.setTheme();
 
+        // 模拟用户登录
+        const userStore = user();
+        if (userStore.isLogin) {
+          userStore.loginAfter();
+        }
         return Promise.resolve(true);
       } else {
         $router.error('InitError', res.msg || '加载失败');
@@ -143,7 +146,6 @@ const adaptTenant = async () => {
   // 1. 获取当前租户 ID
   const oldTenantId = getTenantId();
   let newTenantId = null;
-  let miniProgramFallbackTenantId = null;
 
   try {
     // 2.1 情况一：H5：根据 url 参数、域名来获取新的租户ID
@@ -164,36 +166,26 @@ const adaptTenant = async () => {
 
     // 2.2 情况二：微信小程序：小程序环境下的处理逻辑 - 根据 appId 获取租户
     // #ifdef MP
-    miniProgramFallbackTenantId = tenantId;
     const appId = uni.getAccountInfoSync()?.miniProgram?.appId;
     if (appId) {
-      const tenantResult = await getTenantByWebsite(appId);
-      if (tenantResult?.code !== 0) {
-        throw new Error(tenantResult?.msg || `租户查询失败: ${appId}`);
-      }
-      newTenantId = tenantResult.data?.id || miniProgramFallbackTenantId;
-      if (!tenantResult.data?.id) {
-        console.warn(`[租户] AppID 未绑定租户，将继续使用默认租户: ${appId}`);
-      }
+      const { data } = await getTenantByWebsite(appId);
+      newTenantId = data?.id;
     }
     // #endif
 
+    // 3. 如果是新租户（不相等），则进行切换
+    // noinspection EqualityComparisonWithCoercionJS
+    if (newTenantId && newTenantId != oldTenantId) {
+      // 清理掉登录用户的 token
+      const userStore = user();
+      userStore.setToken();
+
+      // 设置新的 tenantId 到本地存储
+      uni.setStorageSync('tenant-id', newTenantId);
+      console.log('租户 ID 已更新:', `${oldTenantId} -> ${newTenantId}`);
+    }
   } catch (error) {
     console.error('adaptTenant 执行失败:', error);
-    // 小程序租户查询失败时也回退到配置的默认租户，避免沿用设备上残留的旧租户。
-    if (miniProgramFallbackTenantId) newTenantId = miniProgramFallbackTenantId;
-  }
-
-  // 3. 如果是新租户（不相等），则进行切换。放在 try/catch 之后，确保异常回退也会生效。
-  // noinspection EqualityComparisonWithCoercionJS
-  if (newTenantId && newTenantId != oldTenantId) {
-    // 清理掉登录用户的 token
-    const userStore = user();
-    userStore.resetUserData();
-
-    // 设置新的 tenantId 到本地存储
-    uni.setStorageSync('tenant-id', newTenantId);
-    console.log('租户 ID 已更新:', `${oldTenantId} -> ${newTenantId}`);
   }
 };
 

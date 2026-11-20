@@ -95,7 +95,7 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { computed, reactive } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import dayjs from 'dayjs';
   import PointApi from '@/sheep/api/member/point';
   import { resetPagination } from '@/sheep/helper/utils';

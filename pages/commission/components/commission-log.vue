@@ -52,7 +52,7 @@
 <script setup>
   import sheep from '@/sheep';
   import { reactive } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import dayjs from 'dayjs';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
   import { fen2yuan } from '../../../sheep/hooks/useGoods';

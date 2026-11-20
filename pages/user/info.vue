@@ -211,7 +211,7 @@
 <script setup>
   import { computed, reactive, onBeforeMount } from 'vue';
   import sheep from '@/sheep';
-  import { clone } from 'lodash-es';
+  import { clone } from '@/sheep/helper/lodash';
   import { showAuthModal } from '@/sheep/hooks/useModal';
   import { authorizePhoneNumber } from '@/sheep/hooks/usePhoneAuthorization';
   import UserApi from '@/sheep/api/member/user';

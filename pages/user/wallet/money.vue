@@ -89,7 +89,7 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import dayjs from 'dayjs';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import PayWalletApi from '@/sheep/api/pay/wallet';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import { resetPagination } from '@/sheep/helper/utils';

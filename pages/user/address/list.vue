@@ -42,7 +42,7 @@
   import { onBeforeMount, reactive } from 'vue';
   import { onLoad, onShow } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
   import AreaApi from '@/sheep/api/system/area';
   import AddressApi from '@/sheep/api/member/address';
 

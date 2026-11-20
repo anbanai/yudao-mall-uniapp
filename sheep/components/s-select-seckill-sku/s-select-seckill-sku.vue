@@ -88,16 +88,8 @@
       </view>
       <view class="modal-footer">
         <view class="buy-box ss-flex ss-col-center ss-flex ss-col-center ss-row-center">
-          <button
-            class="ss-reset-button buy-btn"
-            :class="{ 'buy-btn--disabled': isPointExchangeDisabled }"
-            :disabled="isPointExchangeDisabled"
-            @tap="onBuy"
-          >
-            <text v-if="isPointExchangeDisabled">
-              还差 {{ pointExchangeStatus.shortfall }} 积分
-            </text>
-            <text v-else>确认</text>
+          <button class="ss-reset-button buy-btn" :disabled="isBuyDisabled" @tap="onBuy">
+            {{ pointShortfall > 0 ? '积分不足' : '确认' }}
           </button>
         </view>
       </view>
@@ -113,10 +105,10 @@
   // 按钮状态： active,nostock
   import { computed, reactive, watch } from 'vue';
   import sheep from '@/sheep';
-  import { convertProductPropertyList, fen2yuan, getDefaultSku } from '@/sheep/hooks/useGoods';
-  import { isEmpty, min } from 'lodash-es';
+  import { convertProductPropertyList, fen2yuan } from '@/sheep/hooks/useGoods';
+  import { isEmpty, min } from '@/sheep/helper/lodash';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
-  import { getPointExchangeStatus } from '@/sheep/helper/pointExchange.mjs';
+  import { getPointExchangeStatus } from '@/sheep/helper/productDetail.mjs';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
   const props = defineProps({
@@ -133,26 +125,16 @@
       type: Number,
       default: 1,
     },
+    pointBalance: {
+      type: Number,
+      default: 0,
+    },
   });
   const state = reactive({
     goodsInfo: computed(() => props.modelValue),
     selectedSku: {},
     currentPropertyArray: {},
   });
-  const userInfo = computed(() => sheep.$store('user').userInfo);
-  const pointExchangeStatus = computed(() =>
-    getPointExchangeStatus(
-      state.selectedSku.point,
-      userInfo.value.point,
-      state.selectedSku.count || 1,
-    ),
-  );
-  const isPointExchangeDisabled = computed(
-    () =>
-      state.goodsInfo.activity_type === PromotionActivityTypeEnum.POINT.type &&
-      !!state.selectedSku.id &&
-      !pointExchangeStatus.value.canExchange,
-  );
   const getShowPriceText = computed(() => {
     let priceText = `￥${fen2yuan(state.goodsInfo.price)}`;
     if (!isEmpty(state.selectedSku)) {
@@ -161,12 +143,21 @@
     }
     return priceText;
   });
+  const pointShortfall = computed(() => {
+    if (state.goodsInfo.activity_type !== PromotionActivityTypeEnum.POINT.type || !state.selectedSku.id) {
+      return 0;
+    }
+    return getPointExchangeStatus(props.pointBalance, state.selectedSku.point, state.selectedSku.count || 1).shortfall;
+  });
+  const isBuyDisabled = computed(
+    () => !state.selectedSku.id || state.selectedSku.stock <= 0 || pointShortfall.value > 0,
+  );
   const propertyList = convertProductPropertyList(state.goodsInfo.skus);
   // SKU 列表
   const skuList = computed(() => {
     let skuPrices = state.goodsInfo.skus;
     for (let price of skuPrices) {
-      price.value_id_array = (price.properties || []).map((item) => item.valueId);
+      price.value_id_array = price.properties.map((item) => item.valueId);
     }
     return skuPrices;
   });
@@ -183,10 +174,11 @@
   );
 
   const onBuy = () => {
-    if (isPointExchangeDisabled.value) return;
     if (state.selectedSku.id) {
       if (state.selectedSku.stock <= 0) {
         sheep.$helper.toast('库存不足');
+      } else if (pointShortfall.value > 0) {
+        sheep.$helper.toast('积分不足');
       } else {
         emits('buy', state.selectedSku);
       }
@@ -305,9 +297,9 @@
       state.currentPropertyArray[propertyId] !== undefined &&
       state.currentPropertyArray[propertyId] === valueId
     ) {
-      // 点击已被选中的，清空当前属性值
+      // 点击已被选中的，删除并填充 ''
       isChecked = false;
-      state.currentPropertyArray[propertyId] = '';
+      state.currentPropertyArray.splice(propertyId, 1, '');
     } else {
       // 选中
       state.currentPropertyArray[propertyId] = valueId;
@@ -338,15 +330,6 @@
   };
 
   changeDisabled(false);
-  if (propertyList.length === 0) {
-    // 单规格商品没有属性值，直接选中默认 SKU。
-    const defaultSku = getDefaultSku(skuList.value);
-    if (defaultSku) {
-      defaultSku.properties = defaultSku.properties || [];
-      defaultSku.count = defaultSku.count || 1;
-      state.selectedSku = defaultSku;
-    }
-  }
 </script>
 
 <style lang="scss" scoped>
@@ -360,11 +343,11 @@
       border-radius: 40rpx;
       background: linear-gradient(90deg, #ff5854, #ff2621);
       color: #fff;
-    }
 
-    .buy-btn--disabled {
-      background: #d8d8d8;
-      color: #777;
+      &[disabled] {
+        background: #b8b8b8;
+        color: #fff;
+      }
     }
   }
 

@@ -102,7 +102,7 @@
   import sheep from '@/sheep';
   import { reactive } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import FavoriteApi from '@/sheep/api/product/favorite';
   import { resetPagination } from '@/sheep/helper/utils';
 

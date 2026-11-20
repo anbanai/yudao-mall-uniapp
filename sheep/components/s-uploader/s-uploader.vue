@@ -48,7 +48,7 @@
   import uploadImage from './upload-image.vue';
   import uploadFile from './upload-file.vue';
   import sheep from '@/sheep';
-  import { isEmpty } from 'lodash-es';
+  import { isEmpty } from '@/sheep/helper/lodash';
 
   let fileInput = null;
   /**

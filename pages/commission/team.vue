@@ -257,7 +257,7 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { computed, reactive, ref } from 'vue';
-  import { isNil, concat } from 'lodash-es';
+  import { isNil, concat } from '@/sheep/helper/lodash';
   import { onPageScroll } from '@dcloudio/uni-app';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
   import { fen2yuan } from '../../sheep/hooks/useGoods';

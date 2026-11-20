@@ -10,10 +10,7 @@
             {{ item.description }}
           </view>
         </view>
-        <image
-          class="activity-left-image"
-          :src="sheep.$url.static('/static/activity-left.png')"
-        />
+        <image class="activity-left-image" :src="sheep.$url.static('/static/activity-left.png')" />
         <image
           class="activity-right-image"
           :src="sheep.$url.static('/static/activity-right.png')"
@@ -69,7 +66,7 @@
   import { reactive } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import RewardActivityApi from '@/sheep/api/promotion/rewardActivity';
   import SpuApi from '@/sheep/api/product/spu';
   import { appendSettlementProduct } from '@/sheep/hooks/useGoods';

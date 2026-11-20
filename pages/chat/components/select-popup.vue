@@ -32,7 +32,7 @@
 
 <script setup>
   import { reactive, watch } from 'vue';
-  import { concat } from 'lodash-es';
+  import { concat } from '@/sheep/helper/lodash';
   import GoodsItem from './goods.vue';
   import OrderItem from './order.vue';
   import OrderApi from '@/sheep/api/trade/order';
