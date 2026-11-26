@@ -26,17 +26,12 @@ export function createScrollIntentTracker() {
   };
 }
 
-export function getSecondLevelCategories(categories = []) {
+export function getTopLevelCategories(categories = []) {
   const source = Array.isArray(categories) ? categories : [];
-  const rootIds = new Set(
-    source
-      .filter((category) => Number(category?.parentId) === 0)
-      .map((category) => Number(category.id)),
-  );
-  return source.filter((category) => rootIds.has(Number(category?.parentId)));
+  return source.filter((category) => Number(category?.parentId) === 0);
 }
 
-export function findInitialCategoryIndex(categories = [], requestedId) {
+export function findInitialCategoryIndex(categories = [], requestedId, allCategories = categories) {
   const id = Number(requestedId);
   if (!Number.isInteger(id) || id <= 0) {
     return 0;
@@ -47,8 +42,9 @@ export function findInitialCategoryIndex(categories = [], requestedId) {
     return categoryIndex;
   }
 
-  const childIndex = categories.findIndex((category) => Number(category.parentId) === id);
-  return childIndex >= 0 ? childIndex : 0;
+  const linkedCategory = allCategories.find((category) => Number(category?.id) === id);
+  const parentIndex = categories.findIndex((category) => Number(category.id) === Number(linkedCategory?.parentId));
+  return parentIndex >= 0 ? parentIndex : 0;
 }
 
 export function findActiveCategoryIndex(sectionRects = [], scrollRect, scrollTop = 0) {

@@ -80,7 +80,7 @@
     createScrollIntentTracker,
     findActiveCategoryIndex,
     findInitialCategoryIndex,
-    getSecondLevelCategories,
+    getTopLevelCategories,
   } from './category-page.mjs';
 
   const state = reactive({
@@ -227,13 +227,13 @@
     pendingScrollIntent = null;
   }
 
-  function initMenuIndex() {
+  function initMenuIndex(categories) {
     const appStore = sheep.$store('app');
     const tabbarParams = appStore.paramsForTabbar || {};
     const requestedId = Number(tabbarParams.id);
     appStore.clearParamsForTabbar();
 
-    const selectedIndex = findInitialCategoryIndex(state.categoryList, requestedId);
+    const selectedIndex = findInitialCategoryIndex(state.categoryList, requestedId, categories);
     scrollToCategory(selectedIndex, true);
     void loadCategoryProducts(state.categoryList, requestToken);
   }
@@ -259,8 +259,9 @@
         }
         return;
       }
-      state.categoryList = getSecondLevelCategories(response.data);
-      initMenuIndex();
+      const categories = Array.isArray(response.data) ? response.data : [];
+      state.categoryList = getTopLevelCategories(categories);
+      initMenuIndex(categories);
     } catch {
       if (token === requestToken) {
         state.categoryList = [];

@@ -10,7 +10,7 @@ import {
   createScrollIntentTracker,
   findActiveCategoryIndex,
   findInitialCategoryIndex,
-  getSecondLevelCategories,
+  getTopLevelCategories,
   normalizeDisplayProductCount,
 } from '../pages/index/category-page.mjs';
 
@@ -39,11 +39,13 @@ const categories = [
   { id: 2, parentId: 0, name: '器具分类' },
   { id: 21, parentId: 2, name: '茶器' },
 ];
-const secondLevelCategories = getSecondLevelCategories(categories);
-assert.deepEqual(secondLevelCategories.map(({ id }) => id), [11, 12, 21]);
-assert.equal(findInitialCategoryIndex(secondLevelCategories, 12), 1);
-assert.equal(findInitialCategoryIndex(secondLevelCategories, 2), 2);
-assert.equal(findInitialCategoryIndex(secondLevelCategories, undefined), 0);
+const topLevelCategories = getTopLevelCategories(categories);
+assert.deepEqual(topLevelCategories.map(({ id }) => id), [1, 2]);
+assert.deepEqual(getTopLevelCategories([categories[0], categories[4]]), topLevelCategories);
+assert.deepEqual(getTopLevelCategories(null), []);
+assert.equal(findInitialCategoryIndex(topLevelCategories, 2), 1);
+assert.equal(findInitialCategoryIndex(topLevelCategories, 21, categories), 1);
+assert.equal(findInitialCategoryIndex(topLevelCategories, undefined), 0);
 assert.equal(
   findActiveCategoryIndex(
     [{ top: 100, bottom: 500 }, { top: 510, bottom: 900 }],
@@ -83,7 +85,7 @@ const categorySection = readFileSync(
 );
 assert.match(categoryPage, /requestToken/);
 assert.match(categoryPage, /buildCategoryProductQuery/);
-assert.match(categoryPage, /getSecondLevelCategories\(response\.data\)/);
+assert.match(categoryPage, /getTopLevelCategories\(categories\)/);
 assert.match(
   categoryPage,
   /<view\s+v-for="category in state\.categoryList"\s+:id="`category-section-\$\{category\.id\}`"\s+:key="category\.id"\s+class="category-anchor"[^>]*>\s*<category-section/,
