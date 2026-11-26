@@ -30,29 +30,28 @@ export function getProductGroupMenuHeight(itemCount) {
 }
 
 export function normalizeGroupIds(groupIds = []) {
-  const ids = Array.isArray(groupIds) ? groupIds : String(groupIds || '').split(',');
+  // The mini-program can receive the comma escaped in a saved DIY link.
+  const ids = Array.isArray(groupIds) ? groupIds : String(groupIds || '').split(/,|%2C/i);
   return [...new Set(ids.map(Number).filter((id) => Number.isSafeInteger(id) && id > 0))].slice(
     0,
     GROUP_LIMIT,
   );
 }
 
-// Old saved metadata has no visibility field; only explicit hidden/disabled values are rejected.
-export function publicProductGroups(groups = []) {
+export function enabledProductGroups(groups = []) {
   if (!Array.isArray(groups)) return [];
   const seen = new Set();
   return groups.filter((group) => {
     const id = Number(group?.id);
     if (!Number.isSafeInteger(id) || id <= 0 || seen.has(id)) return false;
     if (group.status != null && Number(group.status) !== 0) return false;
-    if ([false, 0, 'false', '0'].includes(group.storefrontVisible)) return false;
     seen.add(id);
     return true;
   });
 }
 
 export function orderSelectedGroups(groupIds, groups = []) {
-  const groupMap = new Map(publicProductGroups(groups).map((group) => [Number(group.id), group]));
+  const groupMap = new Map(enabledProductGroups(groups).map((group) => [Number(group.id), group]));
   return normalizeGroupIds(groupIds)
     .map((id) => groupMap.get(id))
     .filter(Boolean);

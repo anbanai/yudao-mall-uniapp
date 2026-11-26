@@ -1,35 +1,33 @@
 import {
   normalizeGroupIds,
   normalizeGroupSort,
-  publicProductGroups,
+  enabledProductGroups,
 } from '../../sheep/components/s-goods-group/product-group.mjs';
 
-// Generic copy cannot retain a group name after that group becomes internal.
 // The destination revalidates every ID before displaying names and products.
 export function buildProductGroupShare({
   groups = [],
+  browse = false,
   keyword = '',
   sortType,
   linkAddress = '',
   image = '',
 } = {}) {
-  const ids = normalizeGroupIds(publicProductGroups(groups).map((group) => group.id));
-  const path = ids.length ? 'pages/goods/group-list' : 'pages/goods/group-index';
-  const query = ids.length
-    ? `groupIds=${ids.join(',')}&keyword=${encodeURIComponent(
-        String(keyword),
-      )}&sortType=${normalizeGroupSort(sortType)}`
-    : '';
-  const pageUrl = `${path}${query ? `?${query}` : ''}`;
-  // H5's Vue Router decodes once, then UniApp's decodedQuery decodes again.
-  // Keep literal percent escapes (e.g. a keyword containing "%26") intact.
-  const h5Query = ids.length
-    ? `groupIds=${ids.join(',')}&keyword=${encodeURIComponent(
-        encodeURIComponent(String(keyword)),
-      )}&sortType=${normalizeGroupSort(sortType)}`
-    : '';
+  const ids = normalizeGroupIds(enabledProductGroups(groups).map((group) => group.id));
+  const showProducts = ids.length > 0 && !browse;
+  const path = showProducts ? 'pages/goods/group-list' : 'pages/goods/group-index';
+  let query = ids.length ? `groupIds=${ids.join(',')}` : '';
+  let h5Query = query;
+  if (showProducts) {
+    const escapedKeyword = encodeURIComponent(String(keyword));
+    const sort = normalizeGroupSort(sortType);
+    // H5's Vue Router and UniApp's decodedQuery each decode the query once.
+    h5Query += `&keyword=${encodeURIComponent(escapedKeyword)}&sortType=${sort}`;
+    query += `&keyword=${escapedKeyword}&sortType=${sort}`;
+  }
+  const pageUrl = `${path}${query ? '?' + query : ''}`;
   return {
-    title: ids.length ? '分组商品' : '商品分组',
+    title: showProducts ? '分组商品' : '商品分组',
     desc: '按主题发现好物',
     image,
     path,

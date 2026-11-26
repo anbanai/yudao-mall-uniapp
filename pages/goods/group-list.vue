@@ -12,7 +12,11 @@
     <view class="group-filter">
       <view class="group-filter__heading">
         <text>{{ selectedGroupNames || '分组商品' }}</text>
-        <button class="group-filter__button ss-reset-button" @tap="openFilter">筛选分组</button>
+        <button
+          v-if="state.configuredGroupIds.length > 1"
+          class="group-filter__button ss-reset-button"
+          @tap="openFilter"
+        >筛选分组</button>
       </view>
       <view v-if="state.filterOpen">
         <uni-search-bar
@@ -89,9 +93,6 @@
           ? '该分组没有匹配的商品'
           : '该分组暂无商品'
       "
-      :showAction="pagerState.unavailable"
-      actionText="浏览其他分组"
-      actionUrl="/pages/goods/group-index"
     />
     <uni-load-more
       v-if="!pagerState.error && (pagerState.loading || pagerState.list.length)"
@@ -113,7 +114,7 @@
     getProductGroupResponseData,
     normalizeGroupIds,
     normalizeGroupSort,
-    publicProductGroups,
+    orderSelectedGroups,
   } from '@/sheep/components/s-goods-group/product-group.mjs';
   import {
     createGroupPager,
@@ -122,6 +123,7 @@
   import { buildProductGroupShare, decodeGroupShareKeyword } from './group-share.mjs';
 
   const state = reactive({
+    configuredGroupIds: [],
     groupIds: [],
     keyword: '',
     sortType: 'default',
@@ -204,9 +206,11 @@
     state.groupsFailed = false;
     state.availableGroups = [];
     try {
-      const groups = getProductGroupResponseData(await GroupApi.getGroupList());
+      const groups = getProductGroupResponseData(
+        await GroupApi.getGroupListByIds(state.configuredGroupIds.join(',')),
+      );
       if (token !== groupsGeneration) return;
-      state.availableGroups = publicProductGroups(groups);
+      state.availableGroups = orderSelectedGroups(state.configuredGroupIds, groups);
       const availableIds = new Set(state.availableGroups.map((group) => Number(group.id)));
       state.draftIds = state.draftIds.filter((id) => availableIds.has(id));
     } catch {
@@ -256,13 +260,14 @@
   }
 
   onLoad((options) => {
-    state.groupIds = normalizeGroupIds(options.groupIds);
+    state.configuredGroupIds = normalizeGroupIds(options.groupIds);
+    state.groupIds = [...state.configuredGroupIds];
     state.keyword = String(options.keyword || '');
     // #ifndef H5
     state.keyword = decodeGroupShareKeyword(options.keyword);
     // #endif
     state.sortType = normalizeGroupSort(options.sortType);
-    // Titles always come from public metadata; route-provided names are ignored.
+    // Titles always come from group metadata; route-provided names are ignored.
     void refresh();
   });
   onShow(() => {
