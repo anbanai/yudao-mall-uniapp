@@ -201,13 +201,17 @@
     if (Number.isFinite(eventScrollTop)) {
       rightScrollTop = eventScrollTop;
     }
-    clearTimeout(scrollSyncTimer);
+    if (scrollSyncTimer !== undefined) {
+      return;
+    }
+    const token = requestToken;
     scrollSyncTimer = setTimeout(() => {
+      scrollSyncTimer = undefined;
       const query = uni.createSelectorQuery().in(instance?.proxy);
       query.select('.goods-list-scroll').boundingClientRect();
       query.selectAll('.category-anchor').boundingClientRect();
       query.exec(([scrollRect, sectionRects]) => {
-        if (!scrollRect || !Array.isArray(sectionRects)) {
+        if (token !== requestToken || !scrollRect || !Array.isArray(sectionRects)) {
           return;
         }
         const firstVisibleIndex = findActiveCategoryIndex(
@@ -242,6 +246,7 @@
     const token = ++requestToken;
     rightScrollTop = 0;
     clearTimeout(scrollSyncTimer);
+    scrollSyncTimer = undefined;
     clearTimeout(scrollTargetTimer);
     clearTimeout(menuScrollTargetTimer);
     scrollIntentTracker.invalidate();

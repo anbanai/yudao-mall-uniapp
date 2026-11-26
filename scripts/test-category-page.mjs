@@ -32,15 +32,19 @@ assert.deepEqual(buildCategoryProductQuery({ id: 23 }), {
 });
 
 const categories = [
-  { id: 1, parentId: 0, name: '产品分类' },
+  { id: 1, parentId: 0, name: '产品分类', picUrl: '/images/tea.jpg' },
   { id: 11, parentId: 1, name: '绿茶', displayProductCount: 8 },
   { id: 12, parentId: 1, name: '红茶' },
   { id: 111, parentId: 11, name: '龙井' },
-  { id: 2, parentId: 0, name: '器具分类' },
-  { id: 21, parentId: 2, name: '茶器' },
+  { id: 2, parentId: 0, name: '器具分类', picUrl: '/images/wares.jpg' },
+  { id: 21, parentId: 2, name: '茶器', picUrl: '/images/teaware.jpg' },
 ];
 const topLevelCategories = getTopLevelCategories(categories);
 assert.deepEqual(topLevelCategories.map(({ id }) => id), [1, 2]);
+assert.deepEqual(topLevelCategories.map(({ picUrl }) => picUrl), [
+  '/images/tea.jpg',
+  '/images/wares.jpg',
+]);
 assert.deepEqual(getTopLevelCategories([categories[0], categories[4]]), topLevelCategories);
 assert.deepEqual(getTopLevelCategories(null), []);
 assert.equal(findInitialCategoryIndex(topLevelCategories, 2), 1);
@@ -91,6 +95,8 @@ assert.match(
   /<view\s+v-for="category in state\.categoryList"\s+:id="`category-section-\$\{category\.id\}`"\s+:key="category\.id"\s+class="category-anchor"[^>]*>\s*<category-section/,
 );
 assert.match(categoryPage, /selectAll\('\.category-anchor'\)/);
+assert.match(categoryPage, /<category-section\s+:category="category"/);
+assert.match(categorySection, /<image :src="sheep\.\$url\.cdn\(category\.picUrl\)"/);
 assert.match(categoryPage, /scroll-into-view="state\.scrollTarget"/);
 assert.match(categoryPage, /@touchmove="onRightTouchMove"/);
 assert.match(categoryPage, /scrollToCategory\(selectedIndex, true\)/);
@@ -101,6 +107,60 @@ const getListBody = categoryPage.match(/async function getList\(\) \{([\s\S]*?)\
 assert.match(getListBody, /rightScrollTop\s*=\s*0/);
 assert.match(getListBody, /scrollIntentTracker\.invalidate\(\)/);
 assert.doesNotMatch(`${categoryPage}\n${categorySection}`, /商品总数|查看全部/);
+
+const rightScrollSource = categoryPage.match(/function onRightScroll\(event\) \{[\s\S]*?\n  \}/)?.[0];
+assert.ok(rightScrollSource);
+const scrollTimers = new Map();
+let timerId = 0;
+let activeMenu = 0;
+const scrollQuery = {
+  in: () => scrollQuery,
+  select: () => scrollQuery,
+  selectAll: () => scrollQuery,
+  boundingClientRect: () => scrollQuery,
+  exec: (callback) =>
+    callback([{ top: 100, bottom: 700 }, [{ top: -300, bottom: 120 }, { top: 120, bottom: 840 }]]),
+};
+const onRightScroll = new Function(
+  'uni',
+  'setTimeout',
+  'clearTimeout',
+  'findActiveCategoryIndex',
+  'syncActiveMenu',
+  'state',
+  `const instance = {};
+  const requestToken = 1;
+  let rightScrollTop = 0;
+  let scrollSyncTimer;
+  ${rightScrollSource}
+  return onRightScroll;`,
+)(
+  { createSelectorQuery: () => scrollQuery },
+  (callback) => {
+    scrollTimers.set(++timerId, callback);
+    return timerId;
+  },
+  (id) => scrollTimers.delete(id),
+  findActiveCategoryIndex,
+  (index) => {
+    activeMenu = index;
+  },
+  {
+    get activeMenu() {
+      return activeMenu;
+    },
+  },
+);
+onRightScroll({ detail: { scrollTop: 400 } });
+const firstTimer = [...scrollTimers.keys()][0];
+onRightScroll({ detail: { scrollTop: 420 } });
+assert.deepEqual(
+  [...scrollTimers.keys()],
+  [firstTimer],
+  'A new scroll event must not delay synchronization',
+);
+scrollTimers.get(firstTimer)();
+assert.equal(activeMenu, 1);
 
 // Observe the same loading state and product list that the page template reads.
 const loadProductsSource = categoryPage.match(
