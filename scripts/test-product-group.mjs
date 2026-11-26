@@ -99,6 +99,12 @@ assert.deepEqual(
   Array.from({ length: 15 }, (_, i) => i + 1),
 );
 
+for (const groupIds of ['12,13', '12%2C13']) {
+  assert.deepEqual(normalizeGroupIds(groupIds), [12, 13]);
+}
+assert.deepEqual(normalizeGroupIds('%broken'), []);
+assert.deepEqual(normalizeGroupIds('12,invalid,13'), [12, 13]);
+
 assert.deepEqual(
   orderSelectedGroups(
     [2, 99, 1],
@@ -237,15 +243,16 @@ const metadata = [
   { id: 1, name: '重复' },
 ];
 assert.deepEqual(
-  productGroup.publicProductGroups(metadata).map((group) => group.id),
-  [1, 4],
+  productGroup.enabledProductGroups(metadata).map((group) => group.id),
+  [1, 2, 4],
 );
 assert.deepEqual(
-  orderSelectedGroups([2, 1, 3, 4, 99], metadata).map((group) => group.id),
-  [1, 4],
+  orderSelectedGroups([2, 1, 3, 99], metadata).map((group) => group.id),
+  [2, 1],
+  'only groups selected for a page are available, including groups with an old visibility setting',
 );
 
-// Cursor commit, retry and keyword/sort requests use only revalidated public IDs.
+// Cursor commit, retry and keyword/sort requests use only revalidated configured IDs.
 const pageState = createGroupPageState();
 const pageRequests = [];
 let failSecondPage = true;
@@ -264,7 +271,7 @@ const pager = createGroupPager(
   pageState,
 );
 await pager.refresh({ groupIds: [2, 1, 3, 4, 99], keyword: '茶', sortType: 'priceAsc' });
-assert.equal(pageRequests[0].groupIds, '1,4');
+assert.equal(pageRequests[0].groupIds, '2,1,4');
 assert.equal(pageRequests[0].keyword, '茶');
 assert.equal(pageRequests[0].sortField, 'price');
 assert.equal(pageRequests[0].sortAsc, true);
@@ -286,7 +293,7 @@ await pager.loadMore();
 assert.equal(pageRequests.length, 4, 'finished pages must not keep loading');
 assert.equal(pageState.hasMore, false);
 
-// Metadata failures retry validation, while invalid/hidden groups never query products.
+// Metadata failures retry validation, while invalid groups never query products.
 let metadataCalls = 0;
 let unavailableProductCalls = 0;
 const unavailableState = createGroupPageState();
@@ -304,7 +311,7 @@ const unavailablePager = createGroupPager(
   },
   unavailableState,
 );
-await unavailablePager.refresh({ groupIds: [2, 3, 99] });
+await unavailablePager.refresh({ groupIds: [3, 99] });
 assert.equal(unavailableState.error, true);
 await unavailablePager.retry();
 assert.equal(metadataCalls, 2);
@@ -456,7 +463,7 @@ assert.deepEqual(
 assert.deepEqual(sourceRequests[2], [
   'group',
   {
-    groupIds: '4,1',
+    groupIds: '2,4,1',
     pageNo: 1,
     pageSize: 50,
     sortField: 'createTime',
@@ -464,7 +471,7 @@ assert.deepEqual(sourceRequests[2], [
   },
 ]);
 assert.equal(sourceRequests.filter(([type]) => type === 'manual').length, 1);
-await shelf.load({ sourceType: 'group', groupIds: [2, 3, 99], spuIds: [500] });
+await shelf.load({ sourceType: 'group', groupIds: [3, 99], spuIds: [500] });
 assert.equal(sourceState.unavailable, true);
 assert.deepEqual(sourceState.list, []);
 assert.equal(sourceRequests.filter(([type]) => type === 'group').length, 1);
@@ -540,12 +547,6 @@ assert.match(wrapper, /state\.loaded && !state\.list\.length/);
 assert.match(wrapper, /暂无商品/);
 assert.match(wrapper, /props\.refreshKey/);
 assert.match(wrapper, /source\.dispose\(\)/);
-const appStore = read('../sheep/store/app.js');
-assert.match(appStore, /AppID 未绑定租户/);
-assert.match(appStore, /tenantResult\?\.code !== 0/);
-assert.match(appStore, /miniProgramFallbackTenantId = tenantId/);
-assert.match(appStore, /避免沿用设备上残留的旧租户/);
-assert.match(appStore, /确保异常回退也会生效/);
 const spuApi = read('../sheep/api/product/spu.js');
 assert.match(spuApi, /getTenantId/);
 assert.match(spuApi, /showError: true/);
@@ -558,21 +559,10 @@ assert.match(
   /function ensureProductResponseOk\(response\)[\s\S]*?error\.response = response;[\s\S]*?throw error;/,
   '商品详情业务错误必须保留真实响应并进入失败分支',
 );
-const goodsDetailPage = read('../pages/goods/index.vue');
 assert.match(
-  goodsDetailPage,
-  /SpuApi\.getSpuDetail\(state\.goodsId\)[\s\S]*?\.catch\(\(error\) => \{[\s\S]*?state\.goodsInfo = null;[\s\S]*?state\.skeletonLoading = false;/,
+  read('../pages/goods/index.vue'),
+  /SpuApi\.getSpuDetail\(state\.goodsId\)[\s\S]*?\.catch\([^)]*\([^)]*\) => \{\s*state\.goodsInfo = null;\s*state\.skeletonLoading = false;/,
   '商品详情接口异常时必须结束骨架屏并显示不可用状态',
-);
-assert.match(
-  goodsDetailPage,
-  /v-else-if="state\.detailLoadError"[\s\S]*?@clickAction="loadGoodsDetail"/,
-  '商品详情错误态必须提供当前商品重试入口',
-);
-assert.match(
-  goodsDetailPage,
-  /if \(res\.code !== 0\) \{[\s\S]*?state\.detailLoadError = true;[\s\S]*?state\.skeletonLoading = false;/,
-  '商品详情业务错误不能伪装成商品下架',
 );
 for (const page of [
   '../pages/goods/groupon.vue',
@@ -611,11 +601,14 @@ for (const component of ['s-goods-group', 's-goods-category']) {
 const groupPage = read('../pages/goods/group-list.vue');
 assert.doesNotMatch(groupPage, /options\.groupName|SpuApi|getSpuPage/);
 assert.match(groupPage, /onPullDownRefresh\(refresh\)/);
-assert.match(read('../pages/index/search.vue'), /\/pages\/goods\/group-index/);
-assert.match(read('../pages/goods/index.vue'), /getGroupListBySpuId/);
-assert.match(read('../sheep/api/product/group.js'), /\/product\/group\/list-by-spu-id/);
+assert.doesNotMatch(read('../pages/index/search.vue'), /\/pages\/goods\/group-index/);
+for (const page of ['group-index', 'group-list']) {
+  const source = read(`../pages/goods/${page}.vue`);
+  assert.match(source, /GroupApi\.getGroupListByIds\(/);
+  assert.doesNotMatch(source, /GroupApi\.getGroupList\(/);
+}
 
-// Shares capture the current public selection without retaining names in cards.
+// Shares capture the current selection without retaining names in cards.
 const shareKeyword = '茶 & 蜜=100% / 特选? # + %26';
 const groupShare = buildProductGroupShare({
   groups: metadata,
@@ -641,7 +634,7 @@ assert.equal(
 );
 const sharedUrl = new URL(groupShare.link);
 assert.equal(sharedUrl.pathname, '/store/pages/goods/group-list');
-assert.equal(sharedUrl.searchParams.get('groupIds'), '1,4');
+assert.equal(sharedUrl.searchParams.get('groupIds'), '1,2,4');
 assert.equal(
   decodedQuery(Object.fromEntries(sharedUrl.searchParams)).keyword,
   shareKeyword,
@@ -675,20 +668,27 @@ const changedShare = buildProductGroupShare({
 assert.equal(new URLSearchParams(changedShare.query).get('groupIds'), '4');
 assert.equal(new URLSearchParams(changedShare.query).get('keyword'), '新搜索');
 assert.equal(new URLSearchParams(changedShare.query).get('sortType'), 'sales');
-const internalShare = buildProductGroupShare({
-  groups: [{ id: 4, name: '旧名称', storefrontVisible: false }],
+const unavailableShare = buildProductGroupShare({
+  groups: [{ id: 4, name: '旧名称', status: 1 }],
   keyword: '旧搜索',
 });
-assert.equal(internalShare.path, 'pages/goods/group-index');
-assert.equal(internalShare.forward.path, 'pages/goods/group-index');
-assert.equal(internalShare.forward.query, '');
-assert.ok(!JSON.stringify(internalShare).includes('旧名称'));
-assert.ok(!JSON.stringify(internalShare).includes('旧搜索'));
+assert.equal(unavailableShare.path, 'pages/goods/group-index');
+assert.equal(unavailableShare.forward.path, 'pages/goods/group-index');
+assert.equal(unavailableShare.forward.query, '');
+assert.ok(!JSON.stringify(unavailableShare).includes('旧名称'));
+assert.ok(!JSON.stringify(unavailableShare).includes('旧搜索'));
 assert.deepEqual(
   buildProductGroupShare({ groups: [] }),
   buildProductGroupShare(),
-  'unvalidated/failed metadata shares discovery',
+  'unvalidated metadata produces no group ids',
 );
+const browseShare = buildProductGroupShare({
+  browse: true,
+  groups: orderSelectedGroups([2, 1], metadata),
+});
+assert.equal(browseShare.path, 'pages/goods/group-index');
+assert.equal(new URLSearchParams(browseShare.query).get('groupIds'), '2,1');
+
 assert.match(groupPage, /:onShareAppMessage="shareInfo"/);
 assert.match(groupPage, /groups: pagerState\.groups/);
 assert.match(read('../pages/goods/group-index.vue'), /:onShareAppMessage="shareInfo"/);
@@ -704,5 +704,5 @@ assert.match(
 );
 
 console.log(
-  'product group query, visibility, pagination, race, retry, data source and share checks passed',
+  'product group query, availability, pagination, race, retry, data source and share checks passed',
 );

@@ -39,22 +39,26 @@
   import GroupApi from '@/sheep/api/product/group';
   import {
     getProductGroupResponseData,
-    publicProductGroups,
+    normalizeGroupIds,
+    orderSelectedGroups,
   } from '@/sheep/components/s-goods-group/product-group.mjs';
   import { buildProductGroupShare } from './group-share.mjs';
 
   const keyword = ref('');
+  const groups = ref([]);
   const shareInfo = computed(() =>
     buildProductGroupShare({
+      groups: groups.value,
+      browse: true,
       linkAddress: sheep.$store('app').platform.share.linkAddress,
       image: sheep.$url.cdn(sheep.$store('app').info.logo),
     }),
   );
-  const groups = ref([]);
   const loading = ref(false);
   const failed = ref(false);
   let generation = 0;
   let firstShow = true;
+  let groupIds = [];
   const visibleGroups = computed(() =>
     groups.value.filter((group) =>
       String(group.name || '')
@@ -64,14 +68,20 @@
   );
 
   async function refresh() {
+    if (!groupIds.length) {
+      uni.stopPullDownRefresh();
+      return;
+    }
     const token = ++generation;
     loading.value = true;
     failed.value = false;
     groups.value = [];
     try {
-      const data = getProductGroupResponseData(await GroupApi.getGroupList());
+      const data = getProductGroupResponseData(
+        await GroupApi.getGroupListByIds(groupIds.join(',')),
+      );
       if (token !== generation) return;
-      groups.value = publicProductGroups(data);
+      groups.value = orderSelectedGroups(groupIds, data);
     } catch {
       if (token === generation) failed.value = true;
     } finally {
@@ -81,7 +91,10 @@
       }
     }
   }
-  onLoad(() => void refresh());
+  onLoad((options) => {
+    groupIds = normalizeGroupIds(options.groupIds);
+    void refresh();
+  });
   onShow(() => {
     sheep.$platform.share.updateShareInfo(shareInfo.value);
     if (firstShow) {
