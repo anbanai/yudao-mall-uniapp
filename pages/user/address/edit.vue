@@ -93,6 +93,8 @@
 </template>
 
 <script setup>
+  import SuSwitch from '../components/su-switch.vue';
+  import SuRegionPicker from '../components/su-region-picker.vue';
   import { ref, reactive, unref } from 'vue';
   import sheep from '@/sheep';
   import { onLoad } from '@dcloudio/uni-app';

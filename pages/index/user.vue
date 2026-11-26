@@ -9,6 +9,7 @@
     onShareAppMessage
     sharePage="user"
   >
+    <s-member-center :key="userStore.isFormalLogin ? userStore.userInfo.id : 'guest'" />
     <s-block
       v-for="(item, index) in template.components"
       :key="index"

@@ -39,6 +39,7 @@
 </template>
 
 <script setup>
+  import SAddressItem from '../components/s-address-item.vue';
   import { onBeforeMount, reactive } from 'vue';
   import { onLoad, onShow } from '@dcloudio/uni-app';
   import sheep from '@/sheep';

@@ -136,6 +136,7 @@
             </view>
             <view v-if="preSaleLabel" class="presale-label">{{ preSaleLabel }}</view>
             <view class="title-text ss-line-2 ss-m-b-6">{{ state.goodsInfo.name }}</view>
+            <view v-if="state.goodsInfo.brandName" class="ss-m-y-16">品牌：{{ state.goodsInfo.brandName }}</view>
             <view class="subtitle-text ss-line-1">{{ state.goodsInfo.introduction }}</view>
           </view>
 
@@ -223,6 +224,8 @@
 </template>
 
 <script setup>
+  import SCountDown from './components/s-count-down.vue';
+  import SActivityPop from './components/s-activity-pop.vue';
   import { reactive, computed } from 'vue';
   import { onLoad, onPageScroll } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
