@@ -1,51 +1,64 @@
 <!-- 商品分类列表 -->
 <template>
-  <s-layout :bgStyle="{ color: '#fff' }" tabbar="/pages/index/category" title="分类">
-    <view class="s-category">
-      <view class="three-level-wrap ss-flex ss-col-top">
-        <!-- 商品分类（左） -->
-        <view class="side-menu-wrap" :style="[{ top: Number(statusBarHeight + 88) + 'rpx' }]">
-          <scroll-view scroll-y :style="[{ height: pageHeight + 'px' }]">
+  <s-layout :bgStyle="{ color: '#fff' }" tabbar="/pages/index/category" title="找茶">
+    <view class="category-page">
+      <view class="search-wrap">
+        <uni-search-bar
+          v-model="state.keyword"
+          class="category-search"
+          radius="8"
+          placeholder="搜索商品"
+          cancelButton="none"
+          @confirm="onSearch"
+        />
+      </view>
+
+      <view class="category-body ss-flex ss-col-top">
+        <view class="side-menu-wrap" :style="[{ top: sideMenuTop }]">
+          <scroll-view
+            scroll-y
+            :scroll-into-view="state.menuScrollTarget"
+            :style="[{ height: pageHeight + 'px' }]"
+          >
             <view
-              class="menu-item ss-flex"
               v-for="(item, index) in state.categoryList"
+              :id="`menu-item-${item.id}`"
               :key="item.id"
+              class="menu-item ss-flex"
               :class="[{ 'menu-item-active': index === state.activeMenu }]"
               @tap="onMenu(index)"
             >
-              <view class="menu-title ss-line-1">
-                {{ item.name }}
-              </view>
+              <view class="menu-title ss-line-1">{{ item.name }}</view>
             </view>
           </scroll-view>
         </view>
-        <!-- 商品分类（右） -->
-        <view class="goods-list-box" v-if="state.categoryList?.length">
-          <scroll-view scroll-y :style="[{ height: pageHeight + 'px' }]">
-            <image
-              v-if="state.categoryList[state.activeMenu].picUrl"
-              class="banner-img"
-              :src="sheep.$url.cdn(state.categoryList[state.activeMenu].picUrl)"
-              mode="widthFix"
-            />
-            <first-one v-if="state.style === 'first_one'" :pagination="state.pagination" />
-            <first-two v-if="state.style === 'first_two'" :pagination="state.pagination" />
-            <second-one
-              v-if="state.style === 'second_one'"
-              :data="state.categoryList"
-              :activeMenu="state.activeMenu"
-            />
-            <uni-load-more
-              v-if="
-                (state.style === 'first_one' || state.style === 'first_two') &&
-                state.pagination.total > 0
-              "
-              :status="state.loadStatus"
-              :content-text="{
-                contentdown: '点击查看更多',
-              }"
-              @tap="loadMore"
-            />
+
+        <view class="goods-list-box">
+          <scroll-view
+            class="goods-list-scroll"
+            scroll-y
+            :scroll-into-view="state.scrollTarget"
+            :style="[{ height: pageHeight + 'px' }]"
+            @scroll="onRightScroll"
+            @touchmove="onRightTouchMove"
+          >
+            <template v-if="state.categoryList.length">
+              <view
+                v-for="category in state.categoryList"
+                :id="`category-section-${category.id}`"
+                :key="category.id"
+                class="category-anchor"
+                :style="category.id === lastCategoryId ? { minHeight: pageHeight + 'px' } : undefined"
+              >
+                <category-section
+                  :category="category"
+                  :products="state.sections[category.id]?.products || []"
+                  :loading="state.sections[category.id]?.loading"
+                  :error="state.sections[category.id]?.error"
+                />
+              </view>
+            </template>
+            <view v-else class="page-state">暂无分类</view>
           </scroll-view>
         </view>
       </view>
@@ -54,194 +67,317 @@
 </template>
 
 <script setup>
-  import secondOne from './components/second-one.vue';
-  import firstOne from './components/first-one.vue';
-  import firstTwo from './components/first-two.vue';
+  import { computed, getCurrentInstance, nextTick, reactive } from 'vue';
+  import { onShow, onUnload } from '@dcloudio/uni-app';
+
   import sheep from '@/sheep';
   import CategoryApi from '@/sheep/api/product/category';
   import SpuApi from '@/sheep/api/product/spu';
-  import { onLoad, onShow } from '@dcloudio/uni-app';
-  import { computed, reactive } from 'vue';
-  import { concat } from '@/sheep/helper/lodash';
-  import { handleTree } from '@/sheep/helper/utils';
+
+  import CategorySection from './components/category-section.vue';
+  import {
+    buildCategoryProductQuery,
+    createScrollIntentTracker,
+    findActiveCategoryIndex,
+    findInitialCategoryIndex,
+    getSecondLevelCategories,
+  } from './category-page.mjs';
 
   const state = reactive({
-    style: 'second_one', // first_one（一级 - 样式一）, first_two（二级 - 样式二）, second_one（二级）
-    categoryList: [], // 商品分类树
-    activeMenu: 0, // 选中的一级菜单，在 categoryList 的下标
-
-    pagination: {
-      // 商品分页
-      list: [], // 商品列表
-      total: [], // 商品总数
-      pageNo: 1,
-      pageSize: 6,
-    },
-    loadStatus: '',
+    categoryList: [],
+    activeMenu: 0,
+    sections: {},
+    keyword: '',
+    scrollTarget: '',
+    menuScrollTarget: '',
   });
 
+  const instance = getCurrentInstance();
   const { safeArea } = sheep.$platform.device;
-  const pageHeight = computed(() => safeArea.height - 44 - 50);
+  const pageHeight = computed(() => safeArea.height - 44 - 50 - 48);
+  const lastCategoryId = computed(() => state.categoryList[state.categoryList.length - 1]?.id);
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
+  const sideMenuTop = computed(() => `${Number(statusBarHeight + 180)}rpx`);
 
-  // 加载商品分类
-  async function getList() {
-    const { code, data } = await CategoryApi.getCategoryList();
-    if (code !== 0) {
-      return;
-    }
-    state.categoryList = handleTree(data);
-  }
+  let requestToken = 0;
+  let scrollSyncTimer;
+  let scrollTargetTimer;
+  let menuScrollTargetTimer;
+  let rightScrollTop = 0;
+  const scrollIntentTracker = createScrollIntentTracker();
+  let pendingScrollIntent = null;
 
-  // 选中菜单
-  const onMenu = (val) => {
-    state.activeMenu = val;
-    if (state.style === 'first_one' || state.style === 'first_two') {
-      state.pagination.pageNo = 1;
-      state.pagination.list = [];
-      state.pagination.total = 0;
-      getGoodsList();
-    }
-  };
-
-  // 加载商品列表
-  async function getGoodsList() {
-    // 加载列表
-    state.loadStatus = 'loading';
-    const res = await SpuApi.getSpuPage({
-      categoryId: state.categoryList[state.activeMenu].id,
-      pageNo: state.pagination.pageNo,
-      pageSize: state.pagination.pageSize,
+  async function loadCategoryProducts(categories, token) {
+    const sections = reactive({});
+    categories.forEach((category) => {
+      sections[category.id] = {
+        products: [],
+        loading: true,
+        error: false,
+      };
     });
-    if (res.code !== 0) {
-      return;
+    state.sections = sections;
+
+    await Promise.all(
+      categories.map(async (category) => {
+        const section = sections[category.id];
+        try {
+          const response = await SpuApi.getSpuPage(buildCategoryProductQuery(category));
+          if (token !== requestToken) {
+            return;
+          }
+          if (response?.code !== 0) {
+            section.error = true;
+            section.loading = false;
+            return;
+          }
+          section.products = Array.isArray(response.data?.list) ? response.data.list : [];
+          section.loading = false;
+        } catch {
+          if (token !== requestToken) {
+            return;
+          }
+          section.error = true;
+          section.loading = false;
+        }
+      }),
+    );
+
+    if (token === requestToken && pendingScrollIntent) {
+      const intent = pendingScrollIntent;
+      pendingScrollIntent = null;
+      if (scrollIntentTracker.isCurrent(intent.version)) {
+        scrollToCategory(intent.index);
+      }
     }
-    // 合并列表
-    state.pagination.list = concat(state.pagination.list, res.data.list);
-    state.pagination.total = res.data.total;
-    state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
+    if (token === requestToken) {
+      nextTick(onRightScroll);
+    }
   }
 
-  // 加载更多商品
-  function loadMore() {
-    if (state.loadStatus === 'noMore') {
+  function scrollToCategory(index, waitForProducts = false) {
+    const category = state.categoryList[index];
+    if (!category) {
       return;
     }
-    state.pagination.pageNo++;
-    getGoodsList();
+    const scrollVersion = scrollIntentTracker.capture();
+    pendingScrollIntent = waitForProducts ? { index, version: scrollVersion } : null;
+    syncActiveMenu(index);
+    state.scrollTarget = '';
+    clearTimeout(scrollTargetTimer);
+    nextTick(() => {
+      if (!scrollIntentTracker.isCurrent(scrollVersion)) {
+        return;
+      }
+      state.scrollTarget = `category-section-${category.id}`;
+      scrollTargetTimer = setTimeout(() => {
+        state.scrollTarget = '';
+      }, 500);
+    });
   }
+
+  function syncActiveMenu(index) {
+    const category = state.categoryList[index];
+    if (!category) {
+      return;
+    }
+    state.activeMenu = index;
+    state.menuScrollTarget = '';
+    clearTimeout(menuScrollTargetTimer);
+    nextTick(() => {
+      state.menuScrollTarget = `menu-item-${category.id}`;
+      menuScrollTargetTimer = setTimeout(() => {
+        state.menuScrollTarget = '';
+      }, 500);
+    });
+  }
+
+  function onMenu(index) {
+    scrollToCategory(index);
+  }
+
+  function onRightScroll(event) {
+    const eventScrollTop = Number(event?.detail?.scrollTop);
+    if (Number.isFinite(eventScrollTop)) {
+      rightScrollTop = eventScrollTop;
+    }
+    clearTimeout(scrollSyncTimer);
+    scrollSyncTimer = setTimeout(() => {
+      const query = uni.createSelectorQuery().in(instance?.proxy);
+      query.select('.goods-list-scroll').boundingClientRect();
+      query.selectAll('.category-anchor').boundingClientRect();
+      query.exec(([scrollRect, sectionRects]) => {
+        if (!scrollRect || !Array.isArray(sectionRects)) {
+          return;
+        }
+        const firstVisibleIndex = findActiveCategoryIndex(
+          sectionRects,
+          scrollRect,
+          rightScrollTop,
+        );
+        if (firstVisibleIndex >= 0 && firstVisibleIndex !== state.activeMenu) {
+          syncActiveMenu(firstVisibleIndex);
+        }
+      });
+    }, 80);
+  }
+
+  function onRightTouchMove() {
+    scrollIntentTracker.invalidate();
+    pendingScrollIntent = null;
+  }
+
   function initMenuIndex() {
-    // TODO @AI：可优化：增加一个 params.id 的兼容
     const appStore = sheep.$store('app');
-    // 处理 tabbar 传参的情况
     const tabbarParams = appStore.paramsForTabbar || {};
-    const id = tabbarParams.id;
-    appStore.clearParamsForTabbar(); // 使用完后清理，避免影响下次跳转
-    // 首页点击分类的处理：查找满足条件的分类
-    const foundCategory = state.categoryList.find((category) => category.id === Number(id));
-    // 如果找到则调用 onMenu 自动勾选相应分类，否则调用 onMenu(0) 勾选第一个分类
-    onMenu(foundCategory ? state.categoryList.indexOf(foundCategory) : 0);
+    const requestedId = Number(tabbarParams.id);
+    appStore.clearParamsForTabbar();
+
+    const selectedIndex = findInitialCategoryIndex(state.categoryList, requestedId);
+    scrollToCategory(selectedIndex, true);
+    void loadCategoryProducts(state.categoryList, requestToken);
   }
-  onShow(async () => {
-    await getList();
-    initMenuIndex();
+
+  async function getList() {
+    const token = ++requestToken;
+    rightScrollTop = 0;
+    clearTimeout(scrollSyncTimer);
+    clearTimeout(scrollTargetTimer);
+    clearTimeout(menuScrollTargetTimer);
+    scrollIntentTracker.invalidate();
+    pendingScrollIntent = null;
+    state.scrollTarget = '';
+    state.menuScrollTarget = '';
+    try {
+      const response = await CategoryApi.getCategoryList();
+      if (token !== requestToken || response?.code !== 0) {
+        if (token === requestToken && response?.code !== 0) {
+          state.categoryList = [];
+          state.sections = {};
+          state.activeMenu = 0;
+          pendingScrollIntent = null;
+        }
+        return;
+      }
+      state.categoryList = getSecondLevelCategories(response.data);
+      initMenuIndex();
+    } catch {
+      if (token === requestToken) {
+        state.categoryList = [];
+        state.sections = {};
+        state.activeMenu = 0;
+        pendingScrollIntent = null;
+      }
+    }
+  }
+
+  function onSearch(event) {
+    const keyword = typeof event === 'string' ? event : event?.value || state.keyword;
+    if (!keyword?.trim()) {
+      return;
+    }
+    sheep.$router.go('/pages/goods/list', { keyword: keyword.trim() });
+  }
+
+  onShow(() => {
+    void getList();
   });
 
-  function handleScrollToLower() {
-    loadMore();
-  }
+  onUnload(() => {
+    clearTimeout(scrollSyncTimer);
+    clearTimeout(scrollTargetTimer);
+    clearTimeout(menuScrollTargetTimer);
+    scrollIntentTracker.invalidate();
+    pendingScrollIntent = null;
+    requestToken += 1;
+  });
 </script>
 
 <style lang="scss" scoped>
-  .s-category {
-    :deep() {
-      .side-menu-wrap {
-        width: 200rpx;
-        height: 100%;
-        padding-left: 12rpx;
-        background-color: #f6f6f6;
-        position: fixed;
-        left: 0;
+  .category-page {
+    background: #fff;
+  }
 
-        .menu-item {
-          width: 100%;
-          height: 88rpx;
-          position: relative;
-          transition: all linear 0.2s;
+  .search-wrap {
+    padding: 12rpx 24rpx 20rpx;
+    background: #f7f7f7;
+  }
 
-          .menu-title {
-            line-height: 32rpx;
-            font-size: 30rpx;
-            font-weight: 400;
-            color: #333;
-            margin-left: 28rpx;
-            position: relative;
-            z-index: 0;
+  .category-search {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
 
-            &::before {
-              content: '';
-              width: 64rpx;
-              height: 12rpx;
-              background: linear-gradient(
-                90deg,
-                var(--ui-BG-Main-gradient),
-                var(--ui-BG-Main-light)
-              ) !important;
-              position: absolute;
-              left: -64rpx;
-              bottom: 0;
-              z-index: -1;
-              transition: all linear 0.2s;
-            }
-          }
+  .category-body {
+    position: relative;
+  }
 
-          &.menu-item-active {
-            background-color: #fff;
-            border-radius: 20rpx 0 0 20rpx;
+  .side-menu-wrap {
+    position: fixed;
+    left: 0;
+    width: 200rpx;
+    height: 100%;
+    padding-left: 12rpx;
+    background: #f6f6f6;
+    box-sizing: border-box;
+    z-index: 2;
+  }
 
-            &::before {
-              content: '';
-              position: absolute;
-              right: 0;
-              bottom: -20rpx;
-              width: 20rpx;
-              height: 20rpx;
-              background: radial-gradient(circle at 0 100%, transparent 20rpx, #fff 0);
-            }
+  .menu-item {
+    position: relative;
+    width: 100%;
+    height: 88rpx;
+    transition: all linear 0.2s;
+  }
 
-            &::after {
-              content: '';
-              position: absolute;
-              top: -20rpx;
-              right: 0;
-              width: 20rpx;
-              height: 20rpx;
-              background: radial-gradient(circle at 0% 0%, transparent 20rpx, #fff 0);
-            }
+  .menu-title {
+    position: relative;
+    z-index: 0;
+    margin-left: 28rpx;
+    color: #333;
+    font-size: 30rpx;
+    font-weight: 400;
+    line-height: 32rpx;
+  }
 
-            .menu-title {
-              font-weight: 600;
+  .menu-title::before {
+    content: '';
+    position: absolute;
+    left: -64rpx;
+    bottom: 0;
+    z-index: -1;
+    width: 64rpx;
+    height: 12rpx;
+    background: var(--ui-BG-Main-gradient);
+  }
 
-              &::before {
-                left: 0;
-              }
-            }
-          }
-        }
-      }
+  .menu-item-active {
+    background: #fff;
+    border-radius: 20rpx 0 0 20rpx;
+  }
 
-      .goods-list-box {
-        background-color: #fff;
-        width: calc(100vw - 200rpx);
-        padding: 10px;
-        margin-left: 200rpx;
-      }
+  .menu-item-active .menu-title {
+    font-weight: 600;
+  }
 
-      .banner-img {
-        width: calc(100vw - 130px);
-        border-radius: 5px;
-        margin-bottom: 20rpx;
-      }
-    }
+  .menu-item-active .menu-title::before {
+    left: 0;
+  }
+
+  .goods-list-box {
+    width: calc(100vw - 200rpx);
+    min-height: 100%;
+    margin-left: 200rpx;
+    padding: 20rpx 20rpx 40rpx;
+    box-sizing: border-box;
+    background: #fff;
+  }
+
+  .page-state {
+    padding: 120rpx 0;
+    color: #999;
+    font-size: 26rpx;
+    text-align: center;
   }
 </style>

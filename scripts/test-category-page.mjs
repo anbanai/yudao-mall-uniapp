@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import { nextTick, reactive, watchEffect } from 'vue';
+
 import {
   DEFAULT_DISPLAY_PRODUCT_COUNT,
   buildCategoryProductQuery,
@@ -82,7 +84,11 @@ const categorySection = readFileSync(
 assert.match(categoryPage, /requestToken/);
 assert.match(categoryPage, /buildCategoryProductQuery/);
 assert.match(categoryPage, /getSecondLevelCategories\(response\.data\)/);
-assert.match(categoryPage, /v-for="\(category, index\) in state\.categoryList"/);
+assert.match(
+  categoryPage,
+  /<view\s+v-for="category in state\.categoryList"\s+:id="`category-section-\$\{category\.id\}`"\s+:key="category\.id"\s+class="category-anchor"[^>]*>\s*<category-section/,
+);
+assert.match(categoryPage, /selectAll\('\.category-anchor'\)/);
 assert.match(categoryPage, /scroll-into-view="state\.scrollTarget"/);
 assert.match(categoryPage, /@touchmove="onRightTouchMove"/);
 assert.match(categoryPage, /scrollToCategory\(selectedIndex, true\)/);
@@ -93,5 +99,50 @@ const getListBody = categoryPage.match(/async function getList\(\) \{([\s\S]*?)\
 assert.match(getListBody, /rightScrollTop\s*=\s*0/);
 assert.match(getListBody, /scrollIntentTracker\.invalidate\(\)/);
 assert.doesNotMatch(`${categoryPage}\n${categorySection}`, /商品总数|查看全部/);
+
+// Observe the same loading state and product list that the page template reads.
+const loadProductsSource = categoryPage.match(
+  /async function loadCategoryProducts\(categories, token\) \{[\s\S]*?\n  \}/,
+)?.[0];
+assert.ok(loadProductsSource);
+const state = reactive({ sections: {} });
+let finishRequest;
+const productResponse = new Promise((resolve) => {
+  finishRequest = resolve;
+});
+const loadCategoryProducts = new Function(
+  'state',
+  'reactive',
+  'SpuApi',
+  'buildCategoryProductQuery',
+  'requestToken',
+  'pendingScrollIntent',
+  'nextTick',
+  'onRightScroll',
+  `${loadProductsSource}\nreturn loadCategoryProducts;`,
+)(
+  state,
+  reactive,
+  { getSpuPage: () => productResponse },
+  buildCategoryProductQuery,
+  1,
+  null,
+  nextTick,
+  () => {},
+);
+let visibleSection;
+const stop = watchEffect(() => {
+  const section = state.sections[23];
+  visibleSection = section && { loading: section.loading, products: section.products };
+});
+const loadProducts = loadCategoryProducts([{ id: 23 }], 1);
+await nextTick();
+assert.deepEqual(visibleSection, { loading: true, products: [] });
+const products = [{ id: 45, name: '盖碗' }];
+finishRequest({ code: 0, data: { list: products } });
+await loadProducts;
+await nextTick();
+assert.deepEqual(visibleSection, { loading: false, products });
+stop();
 
 console.log('category page checks passed');
