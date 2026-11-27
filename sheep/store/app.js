@@ -8,7 +8,7 @@ import $platform from '@/sheep/platform';
 import $router from '@/sheep/router';
 import user from './user';
 import sys from './sys';
-import { baseUrl, h5Url } from '@/sheep/config';
+import { baseUrl, cdnUrl, filesystem, h5Url, ossOrigin } from '@/sheep/config';
 
 // A persisted homepage template may mount before the current tenant is resolved.
 export const tenantReady = ref(false);
@@ -24,8 +24,9 @@ const app = defineStore('app', {
       copyright: '', // 版权信息 I
       copytime: '', // 版权信息 II
 
-      cdnurl: '', // 云存储域名
-      filesystem: '', // 云存储平台
+      cdnurl: cdnUrl,
+      ossOrigin,
+      filesystem,
     },
     platform: {
       share: {
@@ -91,8 +92,9 @@ const app = defineStore('app', {
           copyright: '全部开源，个人与企业可 100% 免费使用',
           copytime: 'Copyright© 2018-2025',
 
-          cdnurl: 'https://file.sheepjs.com', // 云存储域名
-          filesystem: 'qcloud', // 云存储平台
+          cdnurl: cdnUrl,
+          ossOrigin,
+          filesystem,
         };
         this.platform = {
           share: {

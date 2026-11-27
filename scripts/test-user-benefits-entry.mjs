@@ -22,13 +22,27 @@ assert.match(
 assert.match(userPage, /else showAuthModal\(\)/, '游客点击注册会员卡应打开登录授权弹窗');
 assert.match(
   userPage,
-  /title: '退款\/售后', path: '\/pages\/order\/aftersale\/list'/,
+  /title: '退款\/售后',[\s\S]{0,100}path: '\/pages\/order\/aftersale\/list'/,
   '退款售后入口应打开售后列表',
 );
 assert.equal(
-  (userPage.match(/<uni-icons class="account-icon"/g) || []).length,
+  (userPage.match(/<image class="shortcut-icon"/g) || []).length,
   2,
-  '订单和账户快捷入口都应使用本地图标字体',
+  '订单和账户快捷入口都应使用图片素材',
+);
+assert.match(userPage, /memberNavbarStyle/, '个人中心自定义导航栏应提供标题');
+assert.match(userPage, /profile-header\.jpg/, '会员顶部背景应使用提供的素材');
+assert.match(userPage, /member-promo\.jpg/, '会员卡应使用提供的素材');
+assert.match(
+  userPage,
+  /memberCenterAsset\('guest\.jpg'\)/,
+  '游客默认头像应从会员中心 OSS 素材目录加载',
+);
+assert.match(userPage, /aria-label="签到" @tap="openCheckin"/, '签到按钮应响应点击');
+assert.match(
+  userPage,
+  /function openCheckin\(\) \{\s*sheep\.\$router\.go\('\/pages\/app\/sign'\);\s*\}/,
+  '签到应经过路由守卫，以便游客登录后继续前往签到页',
 );
 assert.equal(
   userPage.includes('>会员权益中心</button>'),

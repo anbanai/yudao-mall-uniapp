@@ -5,30 +5,39 @@
     tabbar="/pages/index/user"
     navbar="custom"
     :bgStyle="template.page"
-    :navbarStyle="template.navigationBar"
+    :navbarStyle="memberNavbarStyle"
+    :showLeftButton="true"
     onShareAppMessage
     sharePage="user"
   >
     <view class="member-hero">
+      <image
+        class="member-hero-background"
+        :src="memberCenterAsset('profile-header.jpg')"
+        mode="scaleToFill"
+      />
       <view class="profile-row">
         <view class="profile-main" @tap="openProfile">
-          <image class="avatar" :src="avatarUrl" mode="aspectFill" />
+          <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="onAvatarError" />
           <text class="nickname">{{ nickname }}</text>
         </view>
-        <button class="checkin-button" @tap="openCheckin">
-          <uni-icons type="heart-filled" size="18" color="#ffd4a3" />
-          <text>签到</text>
-        </button>
       </view>
-      <view class="member-promo" @tap="openMembership">
-        <view class="promo-copy">
-          <text class="promo-title">注册会员 尊享权益</text>
-          <text class="promo-subtitle">限时专属新人礼 | 新人专属积分 | 15项会员权益</text>
-        </view>
-        <view class="promo-action">
-          <text>去注册</text>
-          <view class="promo-arrow"><uni-icons type="arrowright" size="15" color="#fff" /></view>
-        </view>
+      <button class="checkin-hit-area ss-reset-button" aria-label="签到" @tap="openCheckin" />
+    </view>
+    <view
+      class="member-promo"
+      role="button"
+      aria-label="注册会员 尊享权益，限时专属新人礼 | 新人专属积分 | 15项会员权益，去注册"
+      @tap="openMembership"
+    >
+      <image
+        class="member-promo-background"
+        :src="memberCenterAsset('member-promo.jpg')"
+        mode="scaleToFill"
+      />
+      <view class="member-promo-action">
+        <text>去注册</text>
+        <text class="member-promo-arrow">›</text>
       </view>
     </view>
     <view class="orders-panel">
@@ -43,7 +52,7 @@
           class="order-item"
           @tap="openOrderShortcut(item)"
         >
-          <uni-icons class="account-icon" :type="item.glyph" size="31" color="#201915" />
+          <image class="shortcut-icon" :src="item.icon" mode="aspectFit" />
           <text>{{ item.title }}</text>
         </view>
         <view
@@ -52,7 +61,7 @@
           class="order-item"
           @tap="openShortcut(item)"
         >
-          <uni-icons class="account-icon" :type="item.glyph" size="31" color="#201915" />
+          <image class="shortcut-icon" :src="item.icon" mode="aspectFit" />
           <text>{{ item.title }}</text>
         </view>
       </view>
@@ -85,7 +94,7 @@
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import { onShow, onPageScroll, onPullDownRefresh } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import { showAuthModal } from '@/sheep/hooks/useModal';
@@ -96,16 +105,37 @@
   });
 
   const template = computed(() => sheep.$store('app').template.user);
+  const memberTitleCells = [
+    { type: 'text', text: '会员中心', textColor: '#111111', width: 6, left: 1, borderRadius: 0 },
+  ];
+  const memberNavbarStyle = {
+    styleType: 'normal',
+    showType: 'always',
+    alwaysShow: true,
+    bgType: 'color',
+    bgColor: '#ffffff',
+    mpCells: memberTitleCells,
+    otherCells: memberTitleCells,
+  };
   const userStore = sheep.$store('user');
+  const memberCenterAsset = (path) => sheep.$url.static(`/static/member-center/${path}`);
   const productGroupRefreshKey = ref(0);
   const userDataError = ref('');
   const isFormalLogin = computed(() => userStore.isFormalLogin);
   const userInfo = computed(() => userStore.userInfo);
   const nickname = computed(() => userInfo.value?.nickname || '游客1782886...');
+  const avatarLoadError = ref(false);
+  const defaultAvatarUrl = memberCenterAsset('guest.jpg');
   const avatarUrl = computed(() =>
-    userInfo.value?.avatar
+    userInfo.value?.avatar && !avatarLoadError.value
       ? sheep.$url.cdn(userInfo.value.avatar)
-      : sheep.$url.static('/static/member-center/guest.webp'),
+      : defaultAvatarUrl,
+  );
+  watch(
+    () => userInfo.value?.avatar,
+    () => {
+      avatarLoadError.value = false;
+    },
   );
   const remainingComponents = computed(() =>
     (template.value?.components || []).filter(
@@ -113,18 +143,42 @@
     ),
   );
   const orderShortcuts = [
-    { title: '待付款', value: 1, glyph: 'wallet' },
-    { title: '待发货', value: 2, glyph: 'shop' },
-    { title: '待收货', value: 3, glyph: 'navigate' },
-    { title: '待/已评价', value: 4, glyph: 'compose' },
-    { title: '退款/售后', path: '/pages/order/aftersale/list', glyph: 'undo' },
+    { title: '待付款', value: 1, icon: memberCenterAsset('icons/waiting-payment.png') },
+    { title: '待发货', value: 2, icon: memberCenterAsset('icons/waiting-shipment.png') },
+    { title: '待收货', value: 3, icon: memberCenterAsset('icons/waiting-receipt.png') },
+    { title: '待/已评价', value: 4, icon: memberCenterAsset('icons/review.png') },
+    {
+      title: '退款/售后',
+      path: '/pages/order/aftersale/list',
+      icon: memberCenterAsset('icons/refund.png'),
+    },
   ];
   const accountShortcuts = [
-    { title: '我的团购', glyph: 'shop', path: '/pages/activity/groupon/order' },
-    { title: '我的足迹', glyph: 'eye', path: '/pages/user/goods-log' },
-    { title: '我的积分', glyph: 'wallet', path: '/pages/user/wallet/score' },
-    { title: '收货地址', glyph: 'location', path: '/pages/user/address/list' },
-    { title: '个人信息', glyph: 'person', path: '/pages/user/info' },
+    {
+      title: '我的团购',
+      icon: memberCenterAsset('icons/group-buy.png'),
+      path: '/pages/activity/groupon/order',
+    },
+    {
+      title: '我的足迹',
+      icon: memberCenterAsset('icons/footprints.png'),
+      path: '/pages/user/goods-log',
+    },
+    {
+      title: '我的积分',
+      icon: memberCenterAsset('icons/points.png'),
+      path: '/pages/user/wallet/score',
+    },
+    {
+      title: '收货地址',
+      icon: memberCenterAsset('icons/address.png'),
+      path: '/pages/user/address/list',
+    },
+    {
+      title: '个人信息',
+      icon: memberCenterAsset('icons/profile.png'),
+      path: '/pages/user/info',
+    },
   ];
   let hasShown = false;
 
@@ -140,6 +194,10 @@
 
   function openProfile() {
     sheep.$router.go('/pages/user/info');
+  }
+
+  function onAvatarError() {
+    avatarLoadError.value = true;
   }
 
   function openCheckin() {
@@ -194,105 +252,90 @@
 
 <style lang="scss" scoped>
   .member-hero {
-    height: 304rpx;
-    padding: 12rpx 30rpx 0;
-    box-sizing: border-box;
-    background: #faf5e9 url('/static/member-center/header.webp') no-repeat top center / 100% 100%;
+    position: relative;
+    height: 183.33rpx;
+    overflow: hidden;
   }
-
+  .member-hero-background,
+  .member-promo-background {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
   .profile-row {
-    height: 104rpx;
+    z-index: 1;
+    position: absolute;
+    top: 48rpx;
+    left: 22rpx;
+    right: 170rpx;
+    height: 108rpx;
     display: flex;
     align-items: center;
-    justify-content: space-between;
   }
   .profile-main {
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 28rpx;
+    gap: 22rpx;
   }
   .avatar {
-    width: 104rpx;
-    height: 104rpx;
+    width: 108rpx;
+    height: 108rpx;
     flex: none;
     border-radius: 50%;
   }
   .nickname {
-    max-width: 460rpx;
+    max-width: 400rpx;
     overflow: hidden;
     color: #171513;
-    font-size: 34rpx;
+    font-size: 40rpx;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  .checkin-button {
-    width: 150rpx;
-    height: 54rpx;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12rpx;
-    border: 0;
-    border-radius: 40rpx;
-    background: #765035;
-    color: #fff;
-    font-size: 26rpx;
-  }
-  .checkin-button::after {
-    border: 0;
+  .checkin-hit-area {
+    position: absolute;
+    z-index: 1;
+    top: 58rpx;
+    right: 0;
+    width: 178rpx;
+    height: 90rpx;
+    background: transparent;
   }
   .member-promo {
-    height: 108rpx;
-    margin: 14rpx 38rpx 0;
-    padding: 0 22rpx 0 30rpx;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-sizing: border-box;
-    border-radius: 20rpx;
+    position: relative;
+    height: 131.94rpx;
     overflow: hidden;
-    background: #f8bd82 url('/static/member-center/card.webp') no-repeat center / 100% 100%;
-    color: #765035;
   }
-  .promo-copy {
-    min-width: 0;
-  }
-  .promo-title,
-  .promo-subtitle {
-    display: block;
-    white-space: nowrap;
-  }
-  .promo-title {
-    font-size: 30rpx;
-    font-weight: 700;
-  }
-  .promo-subtitle {
-    margin-top: 10rpx;
-    font-size: 20rpx;
-  }
-  .promo-action {
-    flex: none;
+  .member-promo-action {
+    position: absolute;
+    z-index: 1;
+    top: 43%;
+    right: 74rpx;
     display: flex;
     align-items: center;
-    gap: 8rpx;
-    font-size: 25rpx;
+    gap: 10rpx;
+    transform: translateY(-50%);
+    color: #765035;
+    font-size: 24rpx;
   }
-  .promo-arrow {
-    width: 28rpx;
-    height: 28rpx;
+  .member-promo-arrow {
     display: flex;
+    width: 25rpx;
+    height: 25rpx;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     background: #765035;
+    color: #fff;
+    font-size: 28rpx;
+    line-height: 1;
   }
   .orders-panel {
     position: relative;
     z-index: 1;
-    margin: -5rpx 30rpx 0;
-    padding: 22rpx 24rpx 14rpx;
+    margin: 0 20rpx;
+    padding: 20rpx 28rpx 24rpx;
     border-radius: 28rpx;
     background: #fff;
     box-shadow: 0 5rpx 12rpx rgba(63, 48, 29, 0.09);
@@ -301,8 +344,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 12rpx 14rpx;
-    font-size: 31rpx;
+    padding-bottom: 16rpx;
+    font-size: 28rpx;
     color: #111;
   }
   .all-orders {
@@ -312,7 +355,7 @@
   .order-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    row-gap: 18rpx;
+    row-gap: 24rpx;
   }
   .order-item {
     min-width: 0;
@@ -321,16 +364,26 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8rpx;
+    gap: 0;
     color: #111;
-    font-size: 20rpx;
+    font-size: 24rpx;
     white-space: nowrap;
   }
-  .account-icon {
-    width: 62rpx;
-    height: 62rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .shortcut-icon {
+    width: 74rpx;
+    height: 74rpx;
+  }
+  :deep(.nav-icon .icon-box) {
+    width: 70rpx !important;
+    height: 70rpx !important;
+    border-radius: 50% !important;
+  }
+  :deep(.nav-icon .icon-button-left) {
+    width: 70rpx !important;
+    height: 70rpx !important;
+  }
+  :deep(.nav-icon .line),
+  :deep(.nav-icon .icon-button-right) {
+    display: none !important;
   }
 </style>
