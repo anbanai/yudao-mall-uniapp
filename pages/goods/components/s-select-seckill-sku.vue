@@ -89,7 +89,8 @@
       <view class="modal-footer">
         <view class="buy-box ss-flex ss-col-center ss-flex ss-col-center ss-row-center">
           <button class="ss-reset-button buy-btn" :disabled="isBuyDisabled" @tap="onBuy">
-            {{ pointShortfall > 0 ? '积分不足' : '确认' }}
+            <text v-if="pointShortfall > 0">还差 {{ pointShortfall }} 积分</text>
+            <text v-else>确认</text>
           </button>
         </view>
       </view>
