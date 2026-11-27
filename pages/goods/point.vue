@@ -154,6 +154,7 @@
   import { isEmpty } from '@/sheep/helper/lodash';
   import { fen2yuan, formatGoodsSwiper } from '@/sheep/hooks/useGoods';
   import detailNavbar from './components/detail/detail-navbar.vue';
+  import SSelectSeckillSku from './components/s-select-seckill-sku.vue';
   import detailCellSku from './components/detail/detail-cell-sku.vue';
   import detailTabbar from './components/detail/detail-tabbar.vue';
   import detailSkeleton from './components/detail/detail-skeleton.vue';

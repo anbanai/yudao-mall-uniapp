@@ -41,7 +41,7 @@ assert.deepEqual(
 );
 
 const skuSelectorSource = readFileSync(
-  new URL('../sheep/components/s-select-seckill-sku/s-select-seckill-sku.vue', import.meta.url),
+  new URL('../pages/goods/components/s-select-seckill-sku.vue', import.meta.url),
   'utf8',
 );
 const pointDetailSource = readFileSync(

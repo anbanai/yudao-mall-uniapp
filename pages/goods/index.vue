@@ -225,6 +225,7 @@
 
 <script setup>
   import SCountDown from './components/s-count-down.vue';
+  import SSelectSku from './components/s-select-sku.vue';
   import SActivityPop from './components/s-activity-pop.vue';
   import { reactive, computed } from 'vue';
   import { onLoad, onPageScroll } from '@dcloudio/uni-app';

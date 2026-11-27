@@ -251,6 +251,7 @@
 
 <script setup>
   import SDiscountList from './components/s-discount-list.vue';
+  import SCouponSelect from './components/s-coupon-select.vue';
   import { computed, reactive, ref, watch } from 'vue';
   import { onLoad } from '@dcloudio/uni-app';
   import AddressSelection from '@/pages/order/addressSelection.vue';
