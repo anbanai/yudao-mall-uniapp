@@ -1,6 +1,6 @@
 {
   "name": "不忍独享",
-  "appid": "wx427975d783c9d126",
+  "appid": "wxb185cc101a8508ab",
   "description": "基于 uni-app + Vue3 技术驱动的在线商城系统，内含诸多功能与丰富的活动，期待您的使用和反馈。",
   "versionName": "2026.08",
   "versionCode": "183",
@@ -182,7 +182,7 @@
     "versionCode": 100
   },
   "mp-weixin": {
-    "appid": "wx427975d783c9d126",
+    "appid": "wxb185cc101a8508ab",
     "setting": {
       "urlCheck": false,
       "minified": true,
