@@ -3,19 +3,21 @@
   <su-swiper
     :list="imgList"
     :dotStyle="data.indicator === 'dot' ? 'long' : 'tag'"
-    imageMode="scaleToFill"
+    :imageMode="layout.imageMode"
     dotCur="bg-mask-40"
     :seizeHeight="300"
     :autoplay="data.autoplay"
     :interval="data.interval * 1000"
     :mode="data.type"
-    :height="px2rpx(data.height)"
+    :height="px2rpx(layout.height)"
+    :aspectRatio="layout.aspectRatio"
   />
 </template>
 
 <script setup>
   import { computed } from 'vue';
   import sheep from '@/sheep';
+  import { getBannerLayout } from './banner-layout.mjs';
 
   // 轮播图
   const props = defineProps({
@@ -34,6 +36,8 @@
     let scale = uni.upx2px(100) / 100;
     return px / scale;
   }
+
+  const layout = computed(() => getBannerLayout(props.data));
 
   const imgList = computed(() =>
     props.data.items.map((item, index) => {

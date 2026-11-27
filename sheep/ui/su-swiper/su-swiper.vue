@@ -1,7 +1,12 @@
 <template>
   <view>
-    <view class="ui-swiper" :class="[props.mode, props.bg, props.ui]">
+    <view
+      class="ui-swiper"
+      :class="[props.mode, props.bg, props.ui, { 'ratio-layout': ratioPadding }]"
+    >
+      <view v-if="ratioPadding" aria-hidden="true" :style="{ paddingTop: ratioPadding }" />
       <swiper
+        :class="{ 'ratio-swiper': ratioPadding }"
         :circular="props.circular"
         :current="state.cur"
         :autoplay="props.autoplay && !state.videoPlaySataus"
@@ -38,7 +43,7 @@
               :index="index"
               :moveX="state.moveX"
               :initialTime="item.currentTime || 0"
-              :height="seizeHeight"
+              :height="ratioPadding ? '100%' : seizeHeight"
               @videoTimeupdate="videoTimeupdate"
             ></su-video>
           </view>
@@ -89,6 +94,7 @@
 
   import { reactive, computed } from 'vue';
   import sheep from '@/sheep';
+  import { getSwiperRatioPadding } from './swiper-layout.mjs';
   import { clone } from '@/sheep/helper/lodash';
 
   // 数据
@@ -150,6 +156,10 @@
       default: 'bg-none',
     },
     height: {
+      type: Number,
+      default: 0,
+    },
+    aspectRatio: {
       type: Number,
       default: 0,
     },
@@ -240,8 +250,11 @@
     props.list[state.cur].currentTime = e.detail.currentTime;
   };
 
+  const ratioPadding = computed(() => getSwiperRatioPadding(props.aspectRatio, props.mode));
+
   // 自动计算高度
   const customStyle = computed(() => {
+    if (ratioPadding.value) return undefined;
     let height;
 
     // 固定高度情况
@@ -266,7 +279,7 @@
 
   // 计算轮播图片最大高度
   function onImgLoad(e) {
-    if (props.height === 0) {
+    if (!ratioPadding.value && props.height === 0) {
       let newHeight = (e.detail.height / e.detail.width) * 750;
       if (state.imgHeight < newHeight) {
         state.imgHeight = newHeight;
@@ -278,6 +291,14 @@
 <style lang="scss" scoped>
   .ui-swiper {
     position: relative;
+
+    .ratio-swiper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
 
     .ui-swiper-main {
       width: 100%;
@@ -369,6 +390,11 @@
     }
 
     &.card {
+      &.ratio-layout .swiper-item {
+        width: 81.333333% !important;
+        left: 9.333333%;
+      }
+
       .swiper-item {
         width: 610rpx !important;
         left: 70rpx;

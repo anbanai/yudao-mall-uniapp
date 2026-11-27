@@ -1,10 +1,10 @@
 <template>
-  <view class="ui-video-wrap">
+  <view class="ui-video-wrap" :style="{ height: height === '100%' ? height : undefined }">
     <!-- #ifndef APP-PLUS -->
     <video
       :id="`sVideo${uid}`"
       class="radius"
-      :style="[{ height: height + 'rpx' }]"
+      :style="{ height: videoHeight }"
       :src="src"
       controls
       object-fit="contain"
@@ -27,7 +27,7 @@
       ref="domVideo"
       :id="`sVideo${uid}`"
       class="radius"
-      :style="[{ height: height + 'rpx' }]"
+      :style="{ height: videoHeight }"
       object-fit="contain"
       :controls="true"
       :show-progress="false"
@@ -71,7 +71,7 @@
    *
    */
 
-  import { reactive, nextTick, getCurrentInstance } from 'vue';
+  import { computed, reactive, nextTick, getCurrentInstance } from 'vue';
   import DomVideo from './components/dom-video.vue';
   import sheep from '@/sheep';
   const vm = getCurrentInstance();
@@ -100,7 +100,7 @@
     },
     // 视频高度
     height: {
-      type: Number,
+      type: [Number, String],
       default: 300,
     },
     // 视频宽度
@@ -122,6 +122,10 @@
       default: 'https://img1.baidu.com/it/u=1601695551,235775011&fm=26&fmt=auto',
     },
   });
+
+  const videoHeight = computed(() =>
+    typeof props.height === 'number' ? `${props.height}rpx` : props.height,
+  );
 
   // 事件
   const emits = defineEmits(['videoTimeupdate']);
