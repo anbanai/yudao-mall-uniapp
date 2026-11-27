@@ -13,6 +13,23 @@ assert.equal(
   true,
   '用户中心应显示会员权益中心入口',
 );
+assert.match(userPage, /注册会员\s+尊享权益/, '会员卡主标题应与参考图一致');
+assert.match(
+  userPage,
+  /限时专属新人礼 \| 新人专属积分 \| 15项会员权益/,
+  '会员卡权益文案应与参考图一致',
+);
+assert.match(userPage, /else showAuthModal\(\)/, '游客点击注册会员卡应打开登录授权弹窗');
+assert.match(
+  userPage,
+  /title: '退款\/售后', path: '\/pages\/order\/aftersale\/list'/,
+  '退款售后入口应打开售后列表',
+);
+assert.equal(
+  (userPage.match(/<uni-icons class="account-icon"/g) || []).length,
+  2,
+  '订单和账户快捷入口都应使用本地图标字体',
+);
 assert.equal(
   userPage.includes('>会员权益中心</button>'),
   false,
