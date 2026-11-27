@@ -23,7 +23,7 @@
           <image
             class="content-img"
             :src="avatarUrl"
-            mode="aspectFill"
+            mode="scaleToFill"
             @tap="previewAvatar"
             @error="onAvatarError"
           />

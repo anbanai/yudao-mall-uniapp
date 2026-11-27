@@ -36,8 +36,8 @@ assert.match(userPage, /profile-header\.jpg/, '会员顶部背景应使用提供
 assert.match(userPage, /member-promo\.jpg/, '会员卡应使用提供的素材');
 assert.match(
   userAvatar,
-  /\/static\/member-center\/guest\.jpg/,
-  '游客默认头像应从会员中心 OSS 素材目录加载',
+  /\/static\/img\/shop\/default_avatar\.png/,
+  '个人中心应沿用用户资料页原有的默认头像',
 );
 assert.match(userPage, /aria-label="签到" @tap="openCheckin"/, '签到按钮应响应点击');
 assert.match(

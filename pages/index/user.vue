@@ -18,7 +18,7 @@
       />
       <view class="profile-row">
         <view class="profile-main" @tap="openProfile">
-          <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="onAvatarError" />
+          <image class="avatar" :src="avatarUrl" mode="scaleToFill" @error="onAvatarError" />
           <text class="nickname">{{ nickname }}</text>
         </view>
       </view>

@@ -13,7 +13,7 @@ const loadHook = new Function(
    return useUserAvatar;`,
 );
 const cdnUrl = 'https://cdn.example.com';
-const defaultAvatarUrl = 'https://cdn.example.com/static/member-center/guest.jpg';
+const defaultAvatarUrl = 'https://cdn.example.com/static/img/shop/default_avatar.png';
 const useUserAvatar = loadHook(computed, ref, watch, {
   $url: {
     cdn: (path) => (path ? cdnUrl + path : ''),

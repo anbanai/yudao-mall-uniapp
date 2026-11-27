@@ -4,7 +4,7 @@ import sheep from '@/sheep';
 export function useUserAvatar(getAvatar) {
   const avatarLoadError = ref(false);
   const sourceUrl = computed(() => sheep.$url.cdn(getAvatar()));
-  const defaultAvatarUrl = sheep.$url.static('/static/member-center/guest.jpg');
+  const defaultAvatarUrl = sheep.$url.static('/static/img/shop/default_avatar.png');
   const avatarUrl = computed(() => (!avatarLoadError.value && sourceUrl.value) || defaultAvatarUrl);
 
   watch(sourceUrl, retryAvatar);
