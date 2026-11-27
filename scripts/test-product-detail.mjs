@@ -26,7 +26,7 @@ const [goodsPage, pointPage, tabbar, selector, orderConfirm] = await Promise.all
   read('pages/goods/index.vue'),
   read('pages/goods/point.vue'),
   read('pages/goods/components/detail/detail-tabbar.vue'),
-  read('sheep/components/s-select-seckill-sku/s-select-seckill-sku.vue'),
+  read('pages/goods/components/s-select-seckill-sku.vue'),
   read('pages/order/confirm.vue'),
 ]);
 

@@ -57,6 +57,7 @@
         </view>
       </view>
     </view>
+    <s-member-center :key="isFormalLogin ? userInfo.id : 'guest'" />
     <s-block
       v-for="(item, index) in remainingComponents"
       :key="index"
@@ -104,7 +105,7 @@
   const avatarUrl = computed(() =>
     userInfo.value?.avatar
       ? sheep.$url.cdn(userInfo.value.avatar)
-      : sheep.$url.static('/static/member-center/guest.jpg'),
+      : sheep.$url.static('/static/member-center/guest.webp'),
   );
   const remainingComponents = computed(() =>
     (template.value?.components || []).filter(
@@ -196,7 +197,7 @@
     height: 304rpx;
     padding: 12rpx 30rpx 0;
     box-sizing: border-box;
-    background: #faf5e9 url('/static/member-center/header.jpg') no-repeat top center / 100% 100%;
+    background: #faf5e9 url('/static/member-center/header.webp') no-repeat top center / 100% 100%;
   }
 
   .profile-row {
@@ -252,7 +253,7 @@
     box-sizing: border-box;
     border-radius: 20rpx;
     overflow: hidden;
-    background: #f8bd82 url('/static/member-center/card.jpg') no-repeat center / 100% 100%;
+    background: #f8bd82 url('/static/member-center/card.webp') no-repeat center / 100% 100%;
     color: #765035;
   }
   .promo-copy {

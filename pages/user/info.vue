@@ -209,6 +209,7 @@
 </template>
 
 <script setup>
+  import SuRadio from './components/su-radio.vue';
   import { computed, reactive, onBeforeMount } from 'vue';
   import sheep from '@/sheep';
   import { clone } from '@/sheep/helper/lodash';

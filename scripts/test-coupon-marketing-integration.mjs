@@ -12,7 +12,7 @@ const [couponApi, homeCoupons, detail, orderApi, confirm, selector, router] = aw
   read('pages/coupon/detail.vue'),
   read('sheep/api/trade/order.js'),
   read('pages/order/confirm.vue'),
-  read('sheep/components/s-coupon-select/s-coupon-select.vue'),
+  read('pages/order/components/s-coupon-select.vue'),
   read('sheep/router/index.js'),
 ]);
 

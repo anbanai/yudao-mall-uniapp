@@ -97,7 +97,7 @@
   import { onLoad } from '@dcloudio/uni-app';
   import { computed, reactive } from 'vue';
   import OrderApi from '@/sheep/api/trade/order';
-  import HighlightNumber from '@/pages/components/HighlightNumberText.vue';
+  import HighlightNumber from '../components/HighlightNumberText.vue';
   import { createExpressTrackLoader, loadOrderInfo } from '@/sheep/helper/orderLogistics.mjs';
 
   const state = reactive({

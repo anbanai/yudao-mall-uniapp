@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const goodsSource = await readFile(new URL('../sheep/hooks/useGoods.js', import.meta.url), 'utf8');
 const selectorSource = await readFile(
-  new URL('../sheep/components/s-select-sku/s-select-sku.vue', import.meta.url),
+  new URL('../pages/goods/components/s-select-sku.vue', import.meta.url),
   'utf8',
 );
 const grouponSelectorSource = await readFile(
@@ -11,7 +11,7 @@ const grouponSelectorSource = await readFile(
   'utf8',
 );
 const seckillSelectorSource = await readFile(
-  new URL('../sheep/components/s-select-seckill-sku/s-select-seckill-sku.vue', import.meta.url),
+  new URL('../pages/goods/components/s-select-seckill-sku.vue', import.meta.url),
   'utf8',
 );
 const detailSkuSource = await readFile(

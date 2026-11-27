@@ -1,6 +1,12 @@
 import request from '@/sheep/request';
 
 const UserApi = {
+  recoverYouzanAssets: (code) => request({
+    url: '/member/user/recover-youzan-assets',
+    method: 'POST',
+    data: { code },
+    custom: { auth: true, formalAuth: true, noRefresh: true, loadingMsg: '恢复中' },
+  }),
   // 获得基本信息
   getUserInfo: () => {
     return request({
