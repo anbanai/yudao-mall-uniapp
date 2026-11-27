@@ -8,6 +8,7 @@ const CouponApi = {
       method: 'GET',
       params: { ids },
       custom: {
+        isToken: false, // 装修卡片只使用模板信息，领取资格单独查询
         showLoading: false, // 不展示 Loading，避免领取优惠劵时，不成功提示
         showError: false,
       },
@@ -38,14 +39,20 @@ const CouponApi = {
     });
   },
   // 首页新人券资格（公开查询）
-  getNewcomerCoupon: (id) => {
+  getNewcomerCoupon: (id, { isToken = true, noRefresh = false } = {}) => {
     return request({
       url: '/promotion/coupon-template/newcomer',
       method: 'GET',
       params: { id },
-      custom: { showLoading: false, showError: false },
+      custom: { showLoading: false, showError: false, isToken, noRefresh },
     });
   },
+  getWeixinVisitorEntry: (code) => request({
+    url: '/promotion/coupon-template/newcomer-weixin-visitor',
+    method: 'POST',
+    data: { code },
+    custom: { isToken: false, noRefresh: true, showLoading: false, showError: false },
+  }),
   // 授权领取首页新人券
   takeNewcomerCoupon: (templateId) => {
     return request({

@@ -3,11 +3,15 @@ import ConfigApi from '@/sheep/api/infra/config';
 import { getTenantByWebsite } from '@/sheep/api/infra/tenant';
 import { getTenantId } from '@/sheep/request';
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import $platform from '@/sheep/platform';
 import $router from '@/sheep/router';
 import user from './user';
 import sys from './sys';
 import { baseUrl, h5Url } from '@/sheep/config';
+
+// A persisted homepage template may mount before the current tenant is resolved.
+export const tenantReady = ref(false);
 
 const app = defineStore('app', {
   state: () => ({
@@ -64,7 +68,8 @@ const app = defineStore('app', {
       }
 
       // 加载租户
-      await adaptTenant();
+      tenantReady.value = false;
+      tenantReady.value = await adaptTenant();
 
       // 加载装修配置
       await adaptTemplate(this.template, templateId);
@@ -158,7 +163,8 @@ const adaptTenant = async () => {
 
       // 如果 URL 参数中没有，则通过 host 获取
       if (!newTenantId && window.location.host) {
-        const { data } = await getTenantByWebsite(window.location.host);
+        const { code, data } = await getTenantByWebsite(window.location.host);
+        if (code !== 0) return false;
         newTenantId = data?.id;
       }
     }
@@ -168,7 +174,8 @@ const adaptTenant = async () => {
     // #ifdef MP
     const appId = uni.getAccountInfoSync()?.miniProgram?.appId;
     if (appId) {
-      const { data } = await getTenantByWebsite(appId);
+      const { code, data } = await getTenantByWebsite(appId);
+      if (code !== 0) return false;
       newTenantId = data?.id;
     }
     // #endif
@@ -178,14 +185,16 @@ const adaptTenant = async () => {
     if (newTenantId && newTenantId != oldTenantId) {
       // 清理掉登录用户的 token
       const userStore = user();
-      userStore.setToken();
+      userStore.resetUserData();
 
       // 设置新的 tenantId 到本地存储
       uni.setStorageSync('tenant-id', newTenantId);
       console.log('租户 ID 已更新:', `${oldTenantId} -> ${newTenantId}`);
     }
+    return Boolean(getTenantId());
   } catch (error) {
     console.error('adaptTenant 执行失败:', error);
+    return false;
   }
 };
 

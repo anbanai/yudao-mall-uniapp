@@ -11,21 +11,30 @@
       sharePage="home"
     >
       <template v-if="homeTemplateReady">
-        <s-block
-          v-for="(item, index) in homeComponents"
-          :key="index"
-          :styles="item.property.style"
-          :allow-overflow="
-            (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
-          "
-        >
-          <s-block-item
-            :type="item.id"
+        <template v-for="(item, index) in homeComponents" :key="index">
+          <s-coupon-block
+            v-if="item.id === 'CouponCard' || item.id === 'NewcomerCoupon'"
             :data="item.property"
             :styles="item.property.style"
-            :refresh-key="productGroupRefreshKey"
+            :newcomer-only="item.id === 'NewcomerCoupon'"
+            :refresh-key="couponRefreshKey"
+            wrap-block
           />
-        </s-block>
+          <s-block
+            v-else
+            :styles="item.property.style"
+            :allow-overflow="
+              (item.id === 'ProductGroup' || item.id === 'ProductCategory') && item.property.sticky
+            "
+          >
+            <s-block-item
+              :type="item.id"
+              :data="item.property"
+              :styles="item.property.style"
+              :refresh-key="productGroupRefreshKey"
+            />
+          </s-block>
+        </template>
       </template>
       <view v-else class="home-loading" aria-label="首页加载中">
         <view class="home-loading__search" />
@@ -62,6 +71,7 @@
   );
   const homeTemplateReady = computed(() => Array.isArray(template.value?.components));
   const productGroupRefreshKey = ref(0);
+  const couponRefreshKey = ref(0);
   let hasShown = false;
   // 在此处拦截改变一下首页轮播图 此处先写死后期复活 放到启动函数里
   // (async function() {
@@ -113,7 +123,7 @@
 
   onShow(async () => {
     if (hasShown) {
-      productGroupRefreshKey.value += 1;
+      couponRefreshKey.value += 1;
     } else {
       hasShown = true;
     }
@@ -132,6 +142,7 @@
 
   // 下拉刷新
   onPullDownRefresh(() => {
+    couponRefreshKey.value += 1;
     productGroupRefreshKey.value += 1;
     sheep.$store('app').init();
     setTimeout(function () {

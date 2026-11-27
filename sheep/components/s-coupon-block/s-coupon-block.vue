@@ -1,77 +1,85 @@
 <!-- 装修营销组件：优惠券  -->
 <template>
-  <scroll-view
-    class="scroll-box"
-    scroll-x
-    scroll-anchoring
-    :style="[bgStyle, { marginLeft: `${data.space}px` }]"
-  >
-    <view
-      v-if="couponList.length"
-      class="coupon-box ss-flex"
-      :style="couponList.length === 2 ? couponBoxStyleTwo : couponBoxStyleNormal"
+  <s-block v-if="couponList.length || newcomerCoupons.length" :styles="wrapBlock ? styles : undefined">
+    <scroll-view
+      class="scroll-box"
+      scroll-x
+      scroll-anchoring
+      :style="[bgStyle, { marginLeft: `${data.space || 0}px` }]"
     >
       <view
-        class="coupon-item"
-        :style="[couponBg, { marginLeft: `${data.space}px` }]"
-        v-for="(item, index) in couponList"
-        :key="index"
+        v-if="couponList.length"
+        class="coupon-box ss-flex"
+        :style="couponList.length === 2 ? couponBoxStyleTwo : couponBoxStyleNormal"
       >
-        <su-coupon
-          :size="SIZE_LIST[columns - 1]"
-          :textColor="data.textColor"
-          background=""
-          :couponId="item.id"
-          :title="formatCouponTitle(item)"
-          :type="formatCouponDiscountType(item)"
-          :value="formatCouponDiscountValue(item)"
-          :sellBy="formatValidityType(item)"
-          :surplus="item.totalCount === -1 ? -1 : item.totalCount - item.takeCount"
+        <view
+          class="coupon-item"
+          :style="[couponBg, { marginLeft: `${data.space || 0}px` }]"
+          v-for="(item, index) in couponList"
+          :key="index"
         >
-          <template v-slot:btn>
-            <!-- 两列时，领取按钮坚排 -->
-            <button
-              v-if="columns === 2"
-              @click.stop="onGetCoupon(item.id)"
-              class="ss-reset-button card-btn vertical"
-              :style="[btnStyles]"
-            >
-              <view class="btn-text">立即领取</view>
-            </button>
-            <button
-              v-else
-              class="ss-reset-button card-btn"
-              :style="[btnStyles]"
-              @click.stop="onGetCoupon(item.id)"
-            >
-              立即领取
-            </button>
-          </template>
-        </su-coupon>
+          <su-coupon
+            :size="SIZE_LIST[columns - 1]"
+            :textColor="data.textColor"
+            background=""
+            :couponId="item.id"
+            :title="formatCouponTitle(item)"
+            :type="formatCouponDiscountType(item)"
+            :value="formatCouponDiscountValue(item)"
+            :sellBy="formatValidityType(item)"
+            :surplus="item.totalCount === -1 ? -1 : item.totalCount - item.takeCount"
+          >
+            <template v-slot:btn>
+              <!-- 两列时，领取按钮坚排 -->
+              <button
+                v-if="columns === 2"
+                @click.stop="onGetCoupon(item.id)"
+                class="ss-reset-button card-btn vertical"
+                :style="[btnStyles]"
+              >
+                <view class="btn-text">立即领取</view>
+              </button>
+              <button
+                v-else
+                class="ss-reset-button card-btn"
+                :style="[btnStyles]"
+                @click.stop="onGetCoupon(item.id)"
+              >
+                立即领取
+              </button>
+            </template>
+          </su-coupon>
+        </view>
       </view>
-    </view>
-    <view v-for="item in newcomerCoupons" :key="item.templateId" class="newcomer-coupon">
-      <view class="newcomer-copy">
-        <text class="newcomer-title">{{ item.name }}</text>
-        <text class="newcomer-desc">{{ item.description || newcomerOffer(item) }}</text>
-        <text v-if="!item.canTake && item.reason" class="newcomer-reason">{{ item.reason }}</text>
+      <view v-for="item in newcomerCoupons" :key="item.templateId" class="newcomer-coupon">
+        <view class="newcomer-copy">
+          <text class="newcomer-title">{{ newcomerOnly && data.title ? data.title : item.name }}</text>
+          <text class="newcomer-desc">{{ item.description || newcomerOffer(item) }}</text>
+          <text v-if="!item.canTake && item.reason" class="newcomer-reason">{{ item.reason }}</text>
+        </view>
+        <button class="newcomer-button" :disabled="claimingId === item.templateId" @tap="claimNewcomer(item)">
+          {{ claimingId === item.templateId ? '领取中' : item.reasonCode === 'LOGIN_REQUIRED' ? '登录领取' : item.canTake ? (newcomerOnly && data.buttonText || '立即领取') : '暂不可领' }}
+        </button>
       </view>
-      <button class="newcomer-button" :disabled="claimingId === item.templateId" @tap="claimNewcomer(item)">
-        {{ claimingId === item.templateId ? '领取中' : item.reasonCode === 'LOGIN_REQUIRED' ? '登录领取' : item.canTake ? '立即领取' : '暂不可领' }}
-      </button>
-    </view>
-  </scroll-view>
+    </scroll-view>
+  </s-block>
 </template>
 
 <script setup>
   import sheep from '@/sheep';
   import CouponApi from '@/sheep/api/promotion/coupon';
-  import { ref, onMounted, computed } from 'vue';
+  import { tenantReady } from '@/sheep/store/app';
+  import { sessionEpoch, isCurrentSession } from '@/sheep/helper/sessionEpoch.mjs';
+  import { getVisibleNewcomerCoupons } from '@/sheep/helper/newcomerCoupons.mjs';
+  import { ref, watch, computed, onUnmounted } from 'vue';
   import { CouponTemplateValidityTypeEnum, PromotionDiscountTypeEnum } from '@/sheep/helper/const';
   import { floatToFixed2, formatDate } from '@/sheep/helper/utils';
   import { formatDiscountPercent } from '@/sheep/hooks/useGoods';
 
   const props = defineProps({
+    newcomerOnly: Boolean,
+    wrapBlock: Boolean,
+    refreshKey: Number,
     data: {
       type: Object,
       default: () => ({}),
@@ -81,15 +89,15 @@
       default: () => ({}),
     },
   });
-  const { columns, button } = props.data;
+  const columns = computed(() => props.data.columns || 1);
   const SIZE_LIST = ['lg', 'md', 'xs'];
-  const couponBg = {
+  const couponBg = computed(() => ({
     background: `url(${sheep.$url.cdn(props.data.bgImg)}) no-repeat top center / 100% 100%`,
-  };
-  const btnStyles = {
-    background: button.bgColor,
-    color: button.color,
-  };
+  }));
+  const btnStyles = computed(() => ({
+    background: props.data.button?.bgColor,
+    color: props.data.button?.color,
+  }));
   // 两列优惠券时的排版方式
   const couponBoxStyleNormal = {
     display: 'flex',
@@ -154,22 +162,12 @@
 
   const couponList = ref([]);
   const newcomerCoupons = ref([]);
-  const newcomerTemplateIds = ref(new Set());
+  let latestRequest = 0;
   const claimingId = ref(null);
 
   function newcomerOffer(item) {
     if (item.discountType === 1) return `满${floatToFixed2(item.usePrice)}元减${floatToFixed2(item.discountPrice)}元`;
     return `满${floatToFixed2(item.usePrice)}元打${formatDiscountPercent(item.discountPercent)}折`;
-  }
-
-  async function loadNewcomerCoupons(templates) {
-    const candidates = templates || [];
-    const results = await Promise.all(candidates.map((item) => CouponApi.getNewcomerCoupon(item.id)));
-    const configured = results.filter((result) => result?.code === 0 && result.data?.templateId);
-    newcomerTemplateIds.value = new Set(configured.map((result) => String(result.data.templateId)));
-    newcomerCoupons.value = configured
-      .filter((result) => result.data.showEntry)
-      .map((result) => result.data);
   }
 
   async function claimNewcomer(item) {
@@ -179,12 +177,8 @@
       await sheep.$router.requireFormalAuth(async () => {
         const result = await CouponApi.takeNewcomerCoupon(item.templateId);
         if (result?.code === 0) {
-          if (result.data?.reasonCode === 'ALREADY_TAKEN') {
-            uni.showToast({ title: result.data.reason || '已领取', icon: 'none' });
-          } else {
-            uni.showToast({ title: '领取成功', icon: 'success' });
-          }
-          await refreshCouponLists();
+          uni.showToast({ title: result.data?.reason || '暂不可领取', icon: 'none' });
+          await getCouponTemplateList();
         } else if (result?.data?.reason) {
           uni.showToast({ title: result.data.reason, icon: 'none' });
         }
@@ -192,10 +186,6 @@
     } finally {
       claimingId.value = null;
     }
-  }
-
-  async function refreshCouponLists() {
-    await getCouponTemplateList();
   }
 
   // 立即领取优惠券
@@ -209,22 +199,45 @@
       await getCouponTemplateList();
     });
   }
-  const getCouponTemplateList = async () => {
-    const ids = props.data.couponIds || [];
-    if (!ids.length) {
-      couponList.value = [];
-      newcomerCoupons.value = [];
-      newcomerTemplateIds.value = new Set();
-      return;
+  const templateIds = computed(() => props.newcomerOnly
+    ? [props.data.templateId].filter(Boolean)
+    : props.data.couponIds || []);
+
+  async function getCouponTemplateList() {
+    const request = ++latestRequest;
+    const epoch = sessionEpoch();
+    const current = () => request === latestRequest && isCurrentSession(epoch);
+    newcomerCoupons.value = [];
+    couponList.value = [];
+    const ids = templateIds.value;
+    if (!ids.length) return;
+    try {
+      let newcomerIds = ids;
+      if (!props.newcomerOnly) {
+        const result = await CouponApi.getCouponTemplateListByIds(ids.join(','));
+        if (!current() || result?.code !== 0) return;
+        const templates = result.data || [];
+        couponList.value = templates.filter((item) => item.newcomerOnly === false);
+        newcomerIds = templates.filter((item) => item.newcomerOnly === true).map((item) => item.id);
+      }
+      if (!tenantReady.value || !current()) return;
+      const visible = await getVisibleNewcomerCoupons(newcomerIds, {
+        api: CouponApi,
+        hasToken: Boolean(uni.getStorageSync('token')),
+        weixin: sheep.$platform.name === 'WechatMiniProgram',
+        getCode: async () => (await uni.login({ provider: 'weixin' })).code,
+        current,
+        epoch,
+        refreshKey: props.refreshKey,
+      });
+      if (current()) newcomerCoupons.value = visible;
+    } catch (error) {
+      if (current()) console.warn('[首页新人券] 无法确认展示资格', error);
     }
-    const { data } = await CouponApi.getCouponTemplateListByIds(ids.join(','));
-    const templates = data || [];
-    await loadNewcomerCoupons(templates);
-    couponList.value = templates.filter((item) => !newcomerTemplateIds.value.has(String(item.id)));
-  };
-  onMounted(() => {
-    getCouponTemplateList();
-  });
+  }
+
+  watch([tenantReady, templateIds, sessionEpoch, () => props.refreshKey], getCouponTemplateList, { immediate: true });
+  onUnmounted(() => { latestRequest += 1; });
 </script>
 
 <style lang="scss" scoped>
