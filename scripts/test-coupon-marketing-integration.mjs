@@ -34,6 +34,44 @@ assert.match(confirm, /effectiveCouponIds/);
 assert.match(confirm, /couponExclusionReasons/);
 assert.match(router, /pendingFormalAuthContinuation/);
 
+// A cached CouponCard must wait for tenant resolution before requesting templates.
+const tenantReady = { value: false };
+const couponList = { value: [] };
+const ordinaryCoupon = { id: 5, newcomerOnly: false };
+let templateReads = 0;
+const loadCouponTemplates = new Function(
+  'tenantReady', 'couponList', 'CouponApi', 'getVisibleNewcomerCoupons',
+  `let latestRequest = 0;
+  const newcomerCoupons = { value: [] };
+  const templateIds = { value: [5] };
+  const props = { newcomerOnly: false };
+  const sessionEpoch = () => 1;
+  const isCurrentSession = () => true;
+  const uni = { getStorageSync: () => '' };
+  const sheep = { $platform: { name: 'H5' } };
+  ${homeCoupons.slice(
+    homeCoupons.indexOf('async function getCouponTemplateList()'),
+    homeCoupons.indexOf('watch([tenantReady'),
+  )}
+  return getCouponTemplateList;`,
+)(tenantReady, couponList, {
+  async getCouponTemplateListByIds() {
+    templateReads++;
+    return { code: 0, data: [ordinaryCoupon] };
+  },
+}, async () => []);
+await loadCouponTemplates();
+assert.equal(templateReads, 0, '缓存的普通券模板应等待租户解析完成');
+assert.deepEqual(couponList.value, []);
+tenantReady.value = true;
+await loadCouponTemplates();
+assert.equal(templateReads, 1);
+assert.deepEqual(couponList.value, [ordinaryCoupon]);
+const pendingTemplates = loadCouponTemplates();
+tenantReady.value = false;
+await pendingTemplates;
+assert.deepEqual(couponList.value, [], '重新解析租户时应丢弃尚未返回的模板');
+
 const { getVisibleNewcomerCoupons } = await import('../sheep/helper/newcomerCoupons.mjs');
 const anonymous = { reasonCode: 'LOGIN_REQUIRED', showEntry: false };
 const visible = { templateId: 5, showEntry: true };

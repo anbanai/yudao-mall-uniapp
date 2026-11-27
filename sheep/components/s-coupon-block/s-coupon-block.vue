@@ -206,11 +206,11 @@
   async function getCouponTemplateList() {
     const request = ++latestRequest;
     const epoch = sessionEpoch();
-    const current = () => request === latestRequest && isCurrentSession(epoch);
+    const current = () => tenantReady.value && request === latestRequest && isCurrentSession(epoch);
     newcomerCoupons.value = [];
     couponList.value = [];
     const ids = templateIds.value;
-    if (!ids.length) return;
+    if (!tenantReady.value || !ids.length) return;
     try {
       let newcomerIds = ids;
       if (!props.newcomerOnly) {
@@ -220,7 +220,6 @@
         couponList.value = templates.filter((item) => item.newcomerOnly === false);
         newcomerIds = templates.filter((item) => item.newcomerOnly === true).map((item) => item.id);
       }
-      if (!tenantReady.value || !current()) return;
       const visible = await getVisibleNewcomerCoupons(newcomerIds, {
         api: CouponApi,
         hasToken: Boolean(uni.getStorageSync('token')),
