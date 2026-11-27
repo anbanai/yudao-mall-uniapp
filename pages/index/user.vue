@@ -27,7 +27,7 @@
     <view
       class="member-promo"
       role="button"
-      aria-label="注册会员 尊享权益，限时专属新人礼 | 新人专属积分 | 15项会员权益，去注册"
+      :aria-label="isFormalLogin ? '进入会员权益中心' : '注册会员 尊享权益，限时专属新人礼 | 新人专属积分 | 15项会员权益，去注册'"
       @tap="openMembership"
     >
       <image
@@ -36,7 +36,7 @@
         mode="scaleToFill"
       />
       <view class="member-promo-action">
-        <text>去注册</text>
+        <text>{{ isFormalLogin ? '查看权益' : '去注册' }}</text>
         <text class="member-promo-arrow">›</text>
       </view>
     </view>

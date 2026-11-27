@@ -24,26 +24,14 @@
         <text v-if="formal && tier.level === progress.current?.level">（当前等级）</text>
       </view>
     </view>
-    <!-- #ifdef MP-WEIXIN -->
-    <view class="ss-m-t-24">
-      <button v-if="!formal" @tap="login">微信登录，查看旧资产</button>
-      <button v-else-if="state.needsRefresh" :disabled="state.busy" @tap="refreshOnly">资产显示未更新，重新刷新</button>
-      <button v-else open-type="getPhoneNumber" :disabled="state.busy" :loading="state.busy" @getphonenumber="recover">授权微信手机号，恢复旧资产</button>
-      <view class="note">按本人微信授权手机号匹配，旧积分累加、等级取高</view>
-      <view v-if="formal && state.message" aria-live="polite">{{ state.message }}</view>
-    </view>
-    <!-- #endif -->
   </view>
 </template>
 
 <script setup>
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, ref } from 'vue';
   import sheep from '@/sheep';
-  import { showAuthModal } from '@/sheep/hooks/useModal';
   import LevelApi from '@/sheep/api/member/level';
-  import UserApi from '@/sheep/api/member/user';
-  import { createRecovery, discountText, getMemberProgress } from '@/sheep/helper/member.mjs';
-  import { sessionEpoch } from '@/sheep/helper/sessionEpoch.mjs';
+  import { discountText, getMemberProgress } from '@/sheep/helper/member.mjs';
 
   const user = sheep.$store('user');
   const formal = computed(() => user.isFormalLogin);
@@ -52,12 +40,6 @@
   const loading = ref(false);
   const loadFailed = ref(false);
   const progress = computed(() => getMemberProgress(formal.value ? user.userInfo : {}, levels.value));
-  const state = reactive({ busy: false, needsRefresh: false, message: '' });
-  const login = () => showAuthModal('wechatLogin');
-  const { recover, refreshOnly } = createRecovery(state, {
-    formal: () => formal.value, login, epoch: sessionEpoch,
-    submit: UserApi.recoverYouzanAssets, refresh: () => user.getInfo(),
-  });
 
   async function loadLevels() {
     if (loading.value) return;
@@ -82,5 +64,4 @@
   .member-title { font-size: 38rpx; font-weight: 600; }
   .badge { width: 48rpx; height: 48rpx; margin-right: 12rpx; }
   .points { text-align: right; }
-  .note { margin-top: 12rpx; color: #65756a; font-size: 24rpx; }
 </style>

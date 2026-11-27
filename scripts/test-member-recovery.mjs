@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 import test from 'node:test';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { createRecovery, discountText, getMemberProgress, getRecoveryMessage } from '../sheep/helper/member.mjs';
 
 const source = (path) => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
@@ -93,7 +95,7 @@ test('切换账号不回写旧请求', async () => {
   assert.equal(member.state.message, '');
 });
 test('业务失败、未匹配和未知返回不显示到账', async () => {
-  for (const [result, pattern] of [[{ code: 12 }, /未确认/], [{ code: 0, data: { status: 'NOT_FOUND' } }, /暂未匹配/], [{ code: 0 }, /暂不可用/]]) {
+  for (const [result, pattern] of [[{ code: 12 }, /未确认/], [{ code: 403 }, /用微信手机号重新登录/], [{ code: 0, data: { status: 'NOT_FOUND' } }, /暂未匹配/], [{ code: 0 }, /暂不可用/]]) {
     const member = harness({ submit: async () => result });
     await member.recover(authorized('one'));
     assert.match(member.state.message, pattern);
@@ -109,11 +111,67 @@ test('恢复 API 只提交 code；禁止 401 自动重放', async () => {
   assert.equal(config.method, 'POST');
   for (const flag of ['auth', 'formalAuth', 'noRefresh']) assert.equal(config.custom[flag], true);
 });
-test('固定首屏不替换装修；恢复复用微信协议登录；品牌无 ID 回退', () => {
+test('个人中心保留等级卡和装修，恢复入口放在会员权益中心', () => {
   assert.match(source('pages/index/user.vue'), /<s-member-center[^>]*\/>\s*<s-block\b/);
   const card = source('sheep/components/s-member-center/s-member-center.vue');
-  assert.match(card, /showAuthModal\('wechatLogin'\)/);
-  assert.match(card, /open-type="getPhoneNumber"[^>]+@getphonenumber="recover"/);
-  assert.doesNotMatch(card, /smsLogin|<input/);
+  const benefitsPage = source('pages/user/benefits/index.vue');
+  const phoneButton = /open-type="getPhoneNumber"[^>]+@getphonenumber="recover"/;
+  assert.match(benefitsPage, phoneButton);
+  assert.match(benefitsPage, /showAuthModal\('wechatLogin'\)/);
+  assert.doesNotMatch(benefitsPage, /smsLogin|<input/);
+  assert.doesNotMatch(card, phoneButton);
+});
+
+test('权益概览加载失败时仍可使用恢复入口', () => {
+  const template = source('pages/user/benefits/index.vue').split('</template>\n\n<script setup>')[0];
+  assert.match(
+    template,
+    /<view v-else-if="state\.overview">[\s\S]*<\/view>\s*<!-- #ifdef MP-WEIXIN -->\s*<view class="asset-recovery">/,
+    '恢复入口应独立于概览的加载和错误分支',
+  );
+});
+
+test('原地换号立即清空旧概览，并忽略旧账号未完成的请求', async () => {
+  const setup = source('pages/user/benefits/index.vue')
+    .split('<script setup>')[1].split('</script>')[0].replace(/^\s*import .*$/gm, '');
+  const epoch = ref(1);
+  const user = reactive({ isFormalLogin: true, userInfo: { id: 1 } });
+  const pending = [];
+  let showPage;
+  const page = runInNewContext(setup + '\n;({ state })', {
+    computed, reactive, watch, createRecovery,
+    sheep: { $store: () => user },
+    UserApi: { recoverYouzanAssets() {} },
+    BenefitApi: { getOverview: () => new Promise((resolve) => pending.push(resolve)) },
+    onShow(callback) { showPage = callback; },
+    sessionEpoch: () => epoch.value,
+    showAuthModal() {},
+  });
+  const overview = (point) => ({ code: 0, data: { point, levels: [], benefits: [] } });
+  const firstLoad = showPage();
+  pending.shift()(overview(100));
+  await firstLoad;
+  assert.equal(page.state.overview.point, 100);
+
+  const oldLoad = showPage();
+  const respondToOldLoad = pending.shift();
+  epoch.value++;
+  user.isFormalLogin = false;
+  await nextTick();
+  assert.equal(page.state.overview, null);
+
+  user.userInfo.id = 2;
+  user.isFormalLogin = true;
+  await nextTick();
+  assert.equal(pending.length, 1, '新账号应自动读取积分和等级');
+  pending.shift()(overview(50));
+  await nextTick();
+  respondToOldLoad({ code: 500 });
+  await oldLoad;
+  assert.equal(page.state.overview.point, 50);
+  assert.equal(page.state.error, false);
+});
+
+test('商品详情品牌无 ID 时仍显示品牌名', () => {
   assert.match(source('pages/goods/index.vue'), /v-if="state\.goodsInfo\.brandName"[^>]*>品牌：{{ state\.goodsInfo\.brandName }}/);
 });

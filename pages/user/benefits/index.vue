@@ -1,82 +1,143 @@
 <template>
   <s-layout title="会员权益中心" :bgStyle="{ color: '#F7F8F3' }">
-    <view v-if="state.loading" class="state">正在加载权益...</view>
-    <view v-else-if="state.error" class="state">
-      <text>权益暂时无法加载</text>
-      <button class="retry" @tap="load">重新加载</button>
-    </view>
-    <view v-else class="page">
-      <view class="member-card">
-        <view class="card-head">
-          <view>
-            <text class="eyebrow">TEA MEMBERSHIP</text>
-            <text class="level">{{ state.overview.levelName || '普通会员' }}</text>
-          </view>
-          <text class="level-mark">V{{ state.overview.level || 0 }}</text>
-        </view>
-        <view class="card-stats">
-          <view @tap="openPoints"><text class="stat-label">当前积分 ›</text><text class="stat-value">{{ state.overview.point || 0 }}</text></view>
-          <view><text class="stat-label">购物返积分</text><text class="stat-value">{{ multiplierText }} 倍</text></view>
-        </view>
-        <text class="card-note">按确认收货后的商品实付金额计算，不含运费</text>
+    <view class="page">
+      <view v-if="state.loading" class="state">正在加载权益...</view>
+      <view v-else-if="state.error" class="state">
+        <text>权益暂时无法加载</text>
+        <button class="retry" @tap="load">重新加载</button>
       </view>
+      <view v-else-if="state.overview">
+        <view class="member-card">
+          <view class="card-head">
+            <view>
+              <text class="eyebrow">TEA MEMBERSHIP</text>
+              <text class="level">{{ state.overview.levelName || '普通会员' }}</text>
+            </view>
+            <text class="level-mark">V{{ state.overview.level || 0 }}</text>
+          </view>
+          <view class="card-stats">
+            <view @tap="openPoints"><text class="stat-label">当前积分 ›</text><text class="stat-value">{{ state.overview.point || 0 }}</text></view>
+            <view><text class="stat-label">购物返积分</text><text class="stat-value">{{ multiplierText }} 倍</text></view>
+          </view>
+          <text class="card-note">按确认收货后的商品实付金额计算，不含运费</text>
+        </view>
 
-      <view class="upgrade-block">
-        <view class="upgrade-heading">
-          <text>成长值</text>
-          <text v-if="state.overview.nextExperience !== null">
-            {{ state.overview.experience || 0 }} / {{ state.overview.nextExperience }}
+        <view class="upgrade-block">
+          <view class="upgrade-heading">
+            <text>成长值</text>
+            <text v-if="state.overview.nextExperience !== null">
+              {{ state.overview.experience || 0 }} / {{ state.overview.nextExperience }}
+            </text>
+            <text v-else>已达最高等级</text>
+          </view>
+          <view class="progress-track">
+            <view class="progress-fill" :style="{ width: `${progress}%` }" />
+          </view>
+          <text v-if="state.overview.nextExperience !== null" class="upgrade-note">
+            再获得 {{ Math.max(0, state.overview.nextExperience - (state.overview.experience || 0)) }} 成长值升级
           </text>
-          <text v-else>已达最高等级</text>
         </view>
-        <view class="progress-track">
-          <view class="progress-fill" :style="{ width: `${progress}%` }" />
-        </view>
-        <text v-if="state.overview.nextExperience !== null" class="upgrade-note">
-          再获得 {{ Math.max(0, state.overview.nextExperience - (state.overview.experience || 0)) }} 成长值升级
-        </text>
       </view>
 
-      <view class="section-head"><text class="section-title">我的权益</text><text class="section-note">当前等级</text></view>
-      <view class="view-tabs" role="tablist">
-        <button v-for="tab in tabs" :key="tab.key" class="view-tab" :class="{ active: state.view === tab.key }" @tap="switchView(tab.key)">{{ tab.name }}</button>
+      <!-- #ifdef MP-WEIXIN -->
+      <view class="asset-recovery">
+        <button v-if="!user.isFormalLogin" @tap="loginForRecovery">微信登录，查看旧资产</button>
+        <button v-else-if="recoveryState.needsRefresh" :disabled="recoveryState.busy" @tap="refreshOnly">
+          资产显示未更新，重新刷新
+        </button>
+        <button
+          v-else
+          open-type="getPhoneNumber"
+          :disabled="recoveryState.busy"
+          :loading="recoveryState.busy"
+          @getphonenumber="recover"
+        >
+          授权微信手机号，恢复旧资产
+        </button>
+        <text class="recovery-note">按本人微信授权手机号匹配，旧积分累加、等级取高</text>
+        <view v-if="user.isFormalLogin && recoveryState.message" class="recovery-message" aria-live="polite">
+          {{ recoveryState.message }}
+        </view>
       </view>
-      <view v-if="state.view === 'levels'" class="level-tabs">
-        <button v-for="level in state.overview.levels" :key="level.level" class="view-tab" :class="{ active: state.selectedLevel === level.level }" @tap="state.selectedLevel = level.level">V{{ level.level }}</button>
-      </view>
-      <view v-if="!visibleBenefits.length" class="empty">暂无权益</view>
-      <view v-else class="benefits">
-        <view v-for="item in visibleBenefits" :key="item.code" class="benefit-row">
-          <view class="benefit-icon">{{ iconText(item) }}</view>
-          <view class="benefit-main">
-            <view class="benefit-title"><text>{{ item.name }}</text></view>
-            <text class="benefit-desc">{{ item.description || '会员专属权益' }}</text>
+      <!-- #endif -->
+
+      <view v-if="state.overview && !state.loading && !state.error">
+        <view class="section-head"><text class="section-title">我的权益</text><text class="section-note">当前等级</text></view>
+        <view class="view-tabs" role="tablist">
+          <button v-for="tab in tabs" :key="tab.key" class="view-tab" :class="{ active: state.view === tab.key }" @tap="switchView(tab.key)">{{ tab.name }}</button>
+        </view>
+        <view v-if="state.view === 'levels'" class="level-tabs">
+          <button v-for="level in state.overview.levels" :key="level.level" class="view-tab" :class="{ active: state.selectedLevel === level.level }" @tap="state.selectedLevel = level.level">V{{ level.level }}</button>
+        </view>
+        <view v-if="!visibleBenefits.length" class="empty">暂无权益</view>
+        <view v-else class="benefits">
+          <view v-for="item in visibleBenefits" :key="item.code" class="benefit-row">
+            <view class="benefit-icon">{{ iconText(item) }}</view>
+            <view class="benefit-main">
+              <view class="benefit-title"><text>{{ item.name }}</text></view>
+              <text class="benefit-desc">{{ item.description || '会员专属权益' }}</text>
+            </view>
           </view>
         </view>
-      </view>
 
-      <view v-if="state.view === 'levels' && selectedLevel" class="level-requirement">
-        {{ selectedLevel.name }} · 升级成长值 {{ selectedLevel.experience || 0 }}
+        <view v-if="state.view === 'levels' && selectedLevel" class="level-requirement">
+          {{ selectedLevel.name }} · 升级成长值 {{ selectedLevel.experience || 0 }}
+        </view>
+        <view class="section-head"><text class="section-title">权益说明</text></view>
+        <view class="explain">折扣按会员等级生效。当前升级条件以成长值为准。</view>
       </view>
-      <view class="section-head"><text class="section-title">权益说明</text></view>
-      <view class="explain">折扣按会员等级生效。当前升级条件以成长值为准。</view>
     </view>
   </s-layout>
 </template>
 
 <script setup>
-  import { computed, reactive } from 'vue';
+  import { computed, reactive, watch } from 'vue';
   import { onShow } from '@dcloudio/uni-app';
+  import sheep from '@/sheep';
   import BenefitApi from '@/sheep/api/member/benefit';
+  import { sessionEpoch } from '@/sheep/helper/sessionEpoch.mjs';
+  // #ifdef MP-WEIXIN
+  import UserApi from '@/sheep/api/member/user';
+  import { createRecovery } from '@/sheep/helper/member.mjs';
+  import { showAuthModal } from '@/sheep/hooks/useModal';
+  // #endif
 
   const tabs = [{ key: 'mine', name: '我的权益' }, { key: 'levels', name: '等级对比' }];
-  const state = reactive({ loading: true, error: false, view: 'mine', selectedLevel: 1, overview: { benefits: [], levels: [] } });
-  const selectedLevel = computed(() => state.overview.levels.find((item) => item.level === state.selectedLevel));
-  const visibleBenefits = computed(() => state.view === 'mine' ? state.overview.benefits : selectedLevel.value?.benefits || []);
-  const multiplierText = computed(() => ((state.overview.pointTradeGiveMultiplier || 1000) / 1000).toFixed(1));
+  const user = sheep.$store('user');
+  const state = reactive({ loading: true, error: false, view: 'mine', selectedLevel: 1, overview: null });
+  let overviewRequestId = 0;
+  const selectedLevel = computed(() => state.overview?.levels.find((item) => item.level === state.selectedLevel));
+  const visibleBenefits = computed(() => (state.view === 'mine' ? state.overview?.benefits : selectedLevel.value?.benefits) || []);
+  const multiplierText = computed(() => ((state.overview?.pointTradeGiveMultiplier || 1000) / 1000).toFixed(1));
   const progress = computed(() => {
-    const next = state.overview.nextExperience;
+    const next = state.overview?.nextExperience;
     return next ? Math.min(100, Math.round(((state.overview.experience || 0) / next) * 100)) : 100;
+  });
+
+  // #ifdef MP-WEIXIN
+  const recoveryState = reactive({ busy: false, needsRefresh: false, message: '' });
+  const loginForRecovery = () => showAuthModal('wechatLogin');
+  const { recover, refreshOnly } = createRecovery(recoveryState, {
+    formal: () => user.isFormalLogin,
+    login: loginForRecovery,
+    epoch: sessionEpoch,
+    submit: UserApi.recoverYouzanAssets,
+    refresh: async () => {
+      await Promise.all([user.getInfo(), loadOverview()]);
+    },
+  });
+  // #endif
+
+  watch([sessionEpoch, () => user.isFormalLogin], ([, formal]) => {
+    overviewRequestId++;
+    state.overview = null;
+    state.loading = false;
+    state.error = false;
+    // #ifdef MP-WEIXIN
+    recoveryState.message = '';
+    recoveryState.needsRefresh = false;
+    // #endif
+    if (formal) void load();
   });
 
   function iconText(item) {
@@ -87,16 +148,36 @@
   }
   function openPoints() { uni.navigateTo({ url: '/pages/user/wallet/score' }); }
   function switchView(view) { state.view = view; }
-  async function load() {
-    state.loading = true;
-    state.error = false;
+  async function loadOverview({ showLoading = false } = {}) {
+    const owner = sessionEpoch();
+    const requestId = ++overviewRequestId;
+    const isCurrent = () => sessionEpoch() === owner && requestId === overviewRequestId;
+    if (showLoading) {
+      state.loading = true;
+      state.error = false;
+    }
     try {
       const result = await BenefitApi.getOverview();
+      if (!isCurrent()) return;
       if (result?.code !== 0) throw new Error('权益加载失败');
       state.overview = result.data || { benefits: [], levels: [] };
       state.selectedLevel = state.overview.level || 1;
-    } catch { state.error = true; }
-    finally { state.loading = false; }
+      state.error = false;
+    } catch (error) {
+      if (!isCurrent()) return;
+      if (state.loading) state.error = true;
+      throw error;
+    } finally {
+      if (isCurrent()) state.loading = false;
+    }
+  }
+
+  async function load() {
+    try {
+      await loadOverview({ showLoading: true });
+    } catch {
+      // The overview error state displays the retry action.
+    }
   }
   onShow(load);
 </script>
@@ -119,6 +200,10 @@
   .progress-fill { height: 100%; border-radius: inherit; background: #54836a; }
   .upgrade-note, .level-requirement { display: block; margin-top: 10rpx; color: #65756a; font-size: 21rpx; }
   .section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 44rpx 0 18rpx; }
+  .asset-recovery { margin-top: 24rpx; padding: 24rpx; border-radius: 10rpx; background: #fff; }
+  .asset-recovery button { background: #e2eee6; color: #1f4a38; font-size: 26rpx; }
+  .recovery-note, .recovery-message { display: block; margin-top: 12rpx; color: #65756a; font-size: 23rpx; line-height: 1.5; }
+  .recovery-message { color: #1f4a38; }
   .section-title { font-size: 32rpx; font-weight: 600; }
   .section-note { color: #65756a; font-size: 22rpx; }
   .benefit-row { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 0; border-bottom: 1px solid #e5e9e3; }

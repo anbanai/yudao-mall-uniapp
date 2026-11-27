@@ -52,7 +52,9 @@ export function createRecovery(state, { formal, login, epoch, submit, refresh })
         const result = await submit(detail.code);
         if (epoch() !== owner) return;
         if (!result || result.code !== 0) {
-          state.message = '恢复未确认，请重新授权重试';
+          state.message = result?.code === 403
+            ? '恢复验证未通过，请用微信手机号重新登录后再授权。若仍失败，请联系客服。'
+            : '恢复未确认，请重新授权重试';
           if (result?.code === 401) await refresh();
           return;
         }
