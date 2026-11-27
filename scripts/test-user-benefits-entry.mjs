@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const userPage = await readFile(resolve(scriptDir, '../pages/index/user.vue'), 'utf8');
+const userAvatar = await readFile(resolve(scriptDir, '../sheep/hooks/useUserAvatar.js'), 'utf8');
 const benefitsPage = await readFile(resolve(scriptDir, '../pages/user/benefits/index.vue'), 'utf8');
 const benefitApi = await readFile(resolve(scriptDir, '../sheep/api/member/benefit.js'), 'utf8');
 
@@ -34,8 +35,8 @@ assert.match(userPage, /memberNavbarStyle/, '个人中心自定义导航栏应�
 assert.match(userPage, /profile-header\.jpg/, '会员顶部背景应使用提供的素材');
 assert.match(userPage, /member-promo\.jpg/, '会员卡应使用提供的素材');
 assert.match(
-  userPage,
-  /memberCenterAsset\('guest\.jpg'\)/,
+  userAvatar,
+  /\/static\/member-center\/guest\.jpg/,
   '游客默认头像应从会员中心 OSS 素材目录加载',
 );
 assert.match(userPage, /aria-label="签到" @tap="openCheckin"/, '签到按钮应响应点击');

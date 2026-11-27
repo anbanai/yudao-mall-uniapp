@@ -20,15 +20,12 @@
       <!-- 头像 -->
       <view class="ss-flex ss-row-center ss-col-center ss-p-t-60 ss-p-b-0 bg-white">
         <view class="header-box-content">
-          <su-image
+          <image
             class="content-img"
-            isPreview
-            :current="0"
-            :src="state.model?.avatar || sheep.$url.static('/static/img/shop/default_avatar.png')"
-            :height="160"
-            :width="160"
-            :radius="80"
-            mode="scaleToFill"
+            :src="avatarUrl"
+            mode="aspectFill"
+            @tap="previewAvatar"
+            @error="onAvatarError"
           />
           <view class="avatar-action">
             <!-- #ifdef MP -->
@@ -215,6 +212,7 @@
   import { clone } from '@/sheep/helper/lodash';
   import { showAuthModal } from '@/sheep/hooks/useModal';
   import { authorizePhoneNumber } from '@/sheep/hooks/usePhoneAuthorization';
+  import { useUserAvatar } from '@/sheep/hooks/useUserAvatar';
   import UserApi from '@/sheep/api/member/user';
   import {
     chooseAndUploadFile,
@@ -243,6 +241,16 @@
   ];
 
   const userInfo = computed(() => sheep.$store('user').userInfo);
+  const { avatarUrl, onAvatarError, retryAvatar } = useUserAvatar(() => state.model?.avatar);
+
+  function previewAvatar() {
+    uni.previewImage({
+      urls: [avatarUrl.value],
+      longPressActions: {
+        itemList: ['发送给朋友', '保存图片', '收藏'],
+      },
+    });
+  }
 
   // 选择性别
   function onChangeGender(e) {
@@ -268,7 +276,6 @@
 
   // 选择微信的头像，进行上传
   async function onChooseAvatar(e) {
-    debugger;
     const tempUrl = e.detail.avatarUrl || '';
     if (!tempUrl) return;
     const files = await uploadFilesFromPath(tempUrl);
@@ -336,6 +343,7 @@
       // 个人信息
       const userInfo = await sheep.$store('user').getInfo();
       state.model = clone(userInfo);
+      retryAvatar();
 
       // 获得社交用户的信息
       // #ifndef MP-WEIXIN
@@ -451,7 +459,9 @@
   }
 
   .content-img {
-    border-radius: 50%;
+    display: block;
+    width: 100%;
+    height: 100%;
   }
   .header-box-content {
     position: relative;

@@ -94,10 +94,11 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch } from 'vue';
+  import { computed, ref } from 'vue';
   import { onShow, onPageScroll, onPullDownRefresh } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import { showAuthModal } from '@/sheep/hooks/useModal';
+  import { useUserAvatar } from '@/sheep/hooks/useUserAvatar';
 
   // 隐藏原生tabBar
   uni.hideTabBar({
@@ -124,19 +125,7 @@
   const isFormalLogin = computed(() => userStore.isFormalLogin);
   const userInfo = computed(() => userStore.userInfo);
   const nickname = computed(() => userInfo.value?.nickname || '游客1782886...');
-  const avatarLoadError = ref(false);
-  const defaultAvatarUrl = memberCenterAsset('guest.jpg');
-  const avatarUrl = computed(() =>
-    userInfo.value?.avatar && !avatarLoadError.value
-      ? sheep.$url.cdn(userInfo.value.avatar)
-      : defaultAvatarUrl,
-  );
-  watch(
-    () => userInfo.value?.avatar,
-    () => {
-      avatarLoadError.value = false;
-    },
-  );
+  const { avatarUrl, onAvatarError, retryAvatar } = useUserAvatar(() => userInfo.value?.avatar);
   const remainingComponents = computed(() =>
     (template.value?.components || []).filter(
       (item) => !['UserCard', 'UserWallet', 'UserOrder', 'Divider'].includes(item.id),
@@ -196,10 +185,6 @@
     sheep.$router.go('/pages/user/info');
   }
 
-  function onAvatarError() {
-    avatarLoadError.value = true;
-  }
-
   function openCheckin() {
     sheep.$router.go('/pages/app/sign');
   }
@@ -226,6 +211,7 @@
     try {
       userDataError.value = '';
       await userStore.updateUserData({ force: true });
+      retryAvatar();
     } catch (error) {
       userDataError.value = getUserDataErrorMessage(error);
       console.error('[用户中心] 用户信息加载失败', error);
