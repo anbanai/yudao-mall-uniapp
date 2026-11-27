@@ -299,7 +299,7 @@
     ) {
       // 点击已被选中的，删除并填充 ''
       isChecked = false;
-      state.currentPropertyArray.splice(propertyId, 1, '');
+      state.currentPropertyArray[propertyId] = '';
     } else {
       // 选中
       state.currentPropertyArray[propertyId] = valueId;

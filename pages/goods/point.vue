@@ -1,4 +1,4 @@
-<!-- 秒杀商品详情 -->
+<!-- 积分商品详情 -->
 <template>
   <s-layout :onShareAppMessage="shareInfo" navbar="goods">
     <!-- 标题栏 -->
@@ -48,9 +48,6 @@
                   !getShowPrice.price || getShowPrice.price === 0 ? '' : `+￥${getShowPrice.price}`
                 }}
               </text>
-            </view>
-            <view class="sales-text">
-              {{ formatExchange(state.goodsInfo.sales_show_type, state.goodsInfo.sales) }}
             </view>
           </view>
           <view class="origin-price-text ss-m-b-60" v-if="state.goodsInfo.marketPrice">
@@ -148,7 +145,7 @@
 </template>
 
 <script setup>
-  import { computed, reactive, ref, unref } from 'vue';
+  import { computed, reactive, ref } from 'vue';
   import { onLoad, onPageScroll } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import { isEmpty } from '@/sheep/helper/lodash';
@@ -175,7 +172,7 @@
   onPageScroll(() => {});
   const state = reactive({
     skeletonLoading: true,
-    goodsInfo: {},
+    goodsInfo: null,
     showSelectSku: false,
     goodsSwiper: [],
     selectedSku: {},
@@ -265,10 +262,10 @@
 
   // 分享信息
   const shareInfo = computed(() => {
-    if (isEmpty(unref(activity))) return {};
+    if (!activity.value || !state.goodsInfo) return {};
     return sheep.$platform.share.getShareInfo(
       {
-        title: activity.value.name,
+        title: state.goodsInfo.name,
         image: sheep.$url.cdn(state.goodsInfo.picUrl),
         params: {
           page: SharePageEnum.POINT.value,
@@ -277,7 +274,7 @@
       },
       {
         type: 'goods', // 商品海报
-        title: activity.value.name, // 商品标题
+        title: state.goodsInfo.name, // 商品标题
         image: sheep.$url.cdn(state.goodsInfo.picUrl), // 商品主图
         price: (getShowPrice.value.price || 0) + ` + ${getShowPrice.value.point} 积分`, // 积分价格
         marketPrice: fen2yuan(state.goodsInfo.marketPrice), // 商品原价
@@ -319,12 +316,6 @@
       return;
     }
     activity.value = data;
-    if (data.status !== 20) {
-      state.activityError = data.status === 10 ? '活动尚未开始' : '活动已结束或关闭';
-      state.goodsInfo = null;
-      state.skeletonLoading = false;
-      return;
-    }
     // 查询商品
     await getSpu(data.spuId);
   };
@@ -341,23 +332,28 @@
       return;
     }
     if (!data) {
+      state.activityError = '商品不存在或已下架';
       state.goodsInfo = null;
       state.skeletonLoading = false;
       return;
     }
     data.activity_type = PromotionActivityTypeEnum.POINT.type;
-    state.goodsInfo = data;
-    state.goodsInfo.stock = Math.min(data.stock, activity.value.stock);
     // 处理轮播图
-    state.goodsSwiper = formatGoodsSwiper(state.goodsInfo.sliderPicUrls);
+    state.goodsSwiper = formatGoodsSwiper(data.sliderPicUrls);
+    if (!state.goodsSwiper.length) {
+      state.goodsSwiper = formatGoodsSwiper([data.picUrl]);
+    }
 
     // 价格、库存使用活动的
+    const stockLimit = Math.min(data.stock, activity.value.stock);
+    let exchangeStock = 0;
     data.skus.forEach((sku) => {
       const product = activity.value.products.find((product) => product.skuId === sku.id);
       if (product) {
         sku.point = product.point;
         sku.pointPrice = product.price;
-        sku.stock = Math.min(sku.stock, product.stock);
+        sku.stock = Math.min(sku.stock, product.stock, stockLimit);
+        exchangeStock += sku.stock;
         // 设置限购数量
         sku.limitCount = product.count;
       } else {
@@ -365,7 +361,8 @@
         sku.stock = 0;
       }
     });
-
+    data.stock = Math.min(exchangeStock, stockLimit);
+    state.goodsInfo = data;
     state.skeletonLoading = false;
   };
 
@@ -515,12 +512,6 @@
       text-decoration: line-through;
       color: $gray-c;
       font-family: OPPOSANS;
-    }
-
-    .sales-text {
-      font-size: 26rpx;
-      font-weight: 500;
-      color: $gray-c;
     }
 
     .discounts-box {

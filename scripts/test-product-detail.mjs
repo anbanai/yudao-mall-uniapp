@@ -40,6 +40,7 @@ assert.match(tabbar, /cicon-home-o/);
 assert.match(tabbar, /cicon-cart-o/);
 assert.match(selector, /pointShortfall/);
 assert.match(selector, /:disabled="isBuyDisabled"/);
-assert.match(orderConfirm, /state\.orderPayload\.addressInfo\?\.id/);
+assert.match(orderConfirm, /addressState\.value\.addressInfo = state\.orderPayload\.addressInfo \|\| \{\}/);
+assert.match(orderConfirm, /addressId: addressState\.value\.addressInfo\.id/);
 
 console.log('product detail checks passed');
