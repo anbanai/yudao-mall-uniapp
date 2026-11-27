@@ -77,7 +77,8 @@
             <view class="label-text">购买数量</view>
             <su-number-box
               :min="1"
-              :max="min([singleLimitCount, state.selectedSku.stock])"
+              :max="maxBuyCount"
+              :disabled="isPointActivity && !state.selectedSku.id"
               :step="1"
               v-model="state.selectedSku.count"
               @change="onBuyCountChange($event)"
@@ -109,7 +110,7 @@
   import { convertProductPropertyList, fen2yuan } from '@/sheep/hooks/useGoods';
   import { isEmpty, min } from '@/sheep/helper/lodash';
   import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
-  import { getPointExchangeStatus } from '@/sheep/helper/productDetail.mjs';
+  import { getPointExchangeStatus, getPointSkuQuantityLimit } from '@/sheep/helper/productDetail.mjs';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
   const props = defineProps({
@@ -150,8 +151,17 @@
     }
     return getPointExchangeStatus(props.pointBalance, state.selectedSku.point, state.selectedSku.count || 1).shortfall;
   });
+  const isPointActivity = computed(
+    () => state.goodsInfo.activity_type === PromotionActivityTypeEnum.POINT.type,
+  );
+  const maxBuyCount = computed(() =>
+    isPointActivity.value
+      ? getPointSkuQuantityLimit(state.selectedSku)
+      : min([props.singleLimitCount, state.selectedSku.stock]),
+  );
   const isBuyDisabled = computed(
-    () => !state.selectedSku.id || state.selectedSku.stock <= 0 || pointShortfall.value > 0,
+    () => !state.selectedSku.id || state.selectedSku.stock <= 0 || pointShortfall.value > 0 ||
+      (isPointActivity.value && (state.selectedSku.count < 1 || state.selectedSku.count > maxBuyCount.value)),
   );
   const propertyList = convertProductPropertyList(state.goodsInfo.skus);
   // SKU 列表
@@ -180,7 +190,7 @@
         sheep.$helper.toast('库存不足');
       } else if (pointShortfall.value > 0) {
         sheep.$helper.toast('积分不足');
-      } else {
+      } else if (!isBuyDisabled.value) {
         emits('buy', state.selectedSku);
       }
     } else {
@@ -189,7 +199,8 @@
   };
 
   // 购买数量改变
-  function onBuyCountChange(buyCount) {
+  function onBuyCountChange(value) {
+    const buyCount = isPointActivity.value ? Math.min(value, maxBuyCount.value) : value;
     if (buyCount > 0 && state.selectedSku.count !== buyCount) {
       state.selectedSku.count = buyCount;
     }
@@ -320,8 +331,10 @@
 
     // 判断所有 property 大类是否选择完成
     if (choosePropertyId.length === propertyList.length && newSkuList.length) {
-      newSkuList[0].count = state.selectedSku.count || 1;
-      state.selectedSku = newSkuList[0];
+      const [sku] = newSkuList;
+      const count = state.selectedSku.count || 1;
+      sku.count = isPointActivity.value ? Math.min(count, getPointSkuQuantityLimit(sku)) : count;
+      state.selectedSku = sku;
     } else {
       state.selectedSku = {};
     }

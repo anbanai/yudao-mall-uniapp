@@ -7,6 +7,10 @@ export function getRemainingStock(selectedSku, product) {
   return toCount(selectedSku?.id ? selectedSku.stock : product?.stock);
 }
 
+export function getPointSkuQuantityLimit(sku) {
+  return Math.min(toCount(sku?.stock), toCount(sku?.limitCount ?? 1));
+}
+
 export function getRedeemedCount(activity) {
   return Math.max(toCount(activity?.totalStock) - toCount(activity?.stock), 0);
 }

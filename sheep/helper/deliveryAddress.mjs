@@ -7,7 +7,7 @@ export function createDeliveryAddressLoader({ getSession, fetchAddresses, applyA
 
   function syncSession() {
     const session = getSession();
-    const nextKey = session.isLogin ? `member:${session.userId ?? 'unknown'}` : 'guest';
+    const nextKey = session.isLogin ? `member:${session.epoch ?? session.userId ?? 'unknown'}` : 'guest';
     if (nextKey !== sessionKey) {
       sessionKey = nextKey;
       sessionVersion += 1;

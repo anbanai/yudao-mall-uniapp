@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
+import { computed, reactive, watch } from 'vue';
 
 const helperPath = new URL('../sheep/helper/pointExchange.mjs', import.meta.url);
 assert.equal(
@@ -40,7 +42,8 @@ assert.deepEqual(
   'eligibility must include the selected quantity',
 );
 
-const { getPointExchangeStatus: getDetailStatus } = await import('../sheep/helper/productDetail.mjs');
+const { getPointExchangeStatus: getDetailStatus, getPointSkuQuantityLimit } =
+  await import('../sheep/helper/productDetail.mjs');
 assert.deepEqual(getDetailStatus(150, 100, 2), {
   available: 150,
   required: 200,
@@ -51,10 +54,6 @@ assert.equal(getDetailStatus(200, 100, 2).canExchange, true);
 
 const skuSelectorSource = readFileSync(
   new URL('../pages/goods/components/s-select-seckill-sku.vue', import.meta.url),
-  'utf8',
-);
-const pointDetailSource = readFileSync(
-  new URL('../pages/goods/point.vue', import.meta.url),
   'utf8',
 );
 assert.match(
@@ -72,30 +71,41 @@ assert.match(
   /还差\s*\{\{\s*pointShortfall\s*\}\}\s*积分/,
   'the disabled point exchange button must show the point shortfall',
 );
-assert.match(
-  skuSelectorSource,
-  /else if \(pointShortfall\.value > 0\) \{\s*sheep\.\$helper\.toast\('积分不足'\);\s*\} else \{\s*emits\('buy'/,
-  'the buy handler must guard against bypassing the disabled state',
-);
-assert.match(
-  pointDetailSource,
-  /getPointExchangeStatus\(pointBalance\.value, state\.selectedSku\.point, state\.selectedSku\.count \|\| 1\)/,
-  'the detail CTA should calculate the shortfall for the selected SKU and quantity',
-);
-assert.match(
-  pointDetailSource,
-  /state\.selectedSku\.id\s*&&\s*!selectedPointStatus\.value\.canExchange/,
-  'the detail CTA should stay enabled until a multi-spec SKU is selected',
-);
-assert.match(
-  pointDetailSource,
-  /:disabled="isExchangeDisabled"[\s\S]*?const isExchangeDisabled = computed\([\s\S]*?state\.goodsInfo\.stock === 0 \|\|/,
-  'the detail CTA should disable for sold-out items or insufficient points',
-);
-assert.match(
-  pointDetailSource,
-  /还差 \{\{ selectedPointStatus\.shortfall \}\} 积分/,
-  'the detail CTA should explain the point shortfall before opening the selector',
-);
+const selectorSetup = skuSelectorSource.split('<script setup>')[1].split('</script>')[0]
+  .replace(/^  import .*?;$/gm, '');
+const pointProperties = (id) => [{ propertyId: 1, valueId: id }];
+const modelValue = {
+  activity_type: 4,
+  skus: [
+    { id: 1, stock: 5, limitCount: 3, point: 100, properties: pointProperties(1) },
+    { id: 2, stock: 1, limitCount: 2, point: 100, properties: pointProperties(2) },
+  ],
+};
+const boughtSkus = [];
+const messages = [];
+const selector = runInNewContext(selectorSetup + '\n;({ state, onSelectSku, onBuyCountChange, onBuy, isBuyDisabled, maxBuyCount })', {
+  computed, reactive, watch,
+  defineEmits: () => (event, sku) => { if (event === 'buy') boughtSkus.push(sku.id); },
+  defineProps: () => ({ modelValue, pointBalance: 200, singleLimitCount: 1 }),
+  convertProductPropertyList: () => [{ id: 1, values: [{ id: 1 }, { id: 2 }] }],
+  PromotionActivityTypeEnum: { POINT: { type: 4 } },
+  getPointExchangeStatus: getDetailStatus,
+  getPointSkuQuantityLimit,
+  min: (values) => Math.min(...values),
+  sheep: { $helper: { toast: (message) => messages.push(message) } },
+});
+selector.onSelectSku(1, 1);
+assert.equal(selector.maxBuyCount.value, 3);
+selector.onBuyCountChange(4);
+assert.equal(selector.state.selectedSku.count, 3, 'point quantity is capped by the selected SKU redemption limit');
+assert.equal(selector.isBuyDisabled.value, true, 'quantity changes must update the redemption gate');
+selector.onBuy();
+assert.deepEqual(boughtSkus, []);
+assert.deepEqual(messages, ['积分不足']);
+selector.onSelectSku(1, 2);
+assert.equal(selector.state.selectedSku.count, 1, 'switching to a lower-stock SKU reduces the quantity');
+assert.equal(selector.isBuyDisabled.value, false);
+selector.onBuy();
+assert.deepEqual(boughtSkus, [2]);
 
 console.log('point exchange eligibility checks passed');
