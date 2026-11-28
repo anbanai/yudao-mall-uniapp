@@ -22,11 +22,6 @@
         </view>
       </view>
 
-      <view v-if="state.isWechatFallback" class="fallback-notice ss-flex ss-col-center ss-m-x-20">
-        <text class="cicon-info-o fallback-notice-icon" />
-        <text>微信物流暂不可用，已切换到基础物流查询</text>
-      </view>
-
       <!-- 物流轨迹 -->
       <view class="log-content ss-m-20 ss-r-10">
         <view
@@ -106,7 +101,6 @@
     tracks: [],
     trackStatus: 'loading',
     trackError: '',
-    isWechatFallback: false,
   });
 
   const goodsImages = computed(() => {
@@ -147,7 +141,6 @@
 
   onLoad((options) => {
     state.orderId = options.id;
-    state.isWechatFallback = options.fallback === '1';
     getExpressDetail(state.orderId);
     getOrderDetail(state.orderId);
   });
@@ -233,24 +226,6 @@
       .warning-color {
         color: #999;
       }
-    }
-  }
-
-  .fallback-notice {
-    box-sizing: border-box;
-    min-height: 72rpx;
-    padding: 16rpx 20rpx;
-    color: #8a5a00;
-    font-size: 24rpx;
-    line-height: 36rpx;
-    background: #fff8e6;
-    border: 1rpx solid #f1d18a;
-    border-radius: 8rpx;
-
-    .fallback-notice-icon {
-      flex-shrink: 0;
-      margin-right: 12rpx;
-      font-size: 30rpx;
     }
   }
 

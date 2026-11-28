@@ -297,7 +297,7 @@
   import DeliveryApi from '@/sheep/api/trade/delivery';
   import PayOrderApi from '@/sheep/api/pay/order';
   import PickUpVerify from '@/pages/order/pickUpVerify.vue';
-  import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';
+  import { openOrderLogistics } from './hooks/useOrderLogistics';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const headerBg = sheep.$url.css('/static/img/shop/order/order_bg.png');

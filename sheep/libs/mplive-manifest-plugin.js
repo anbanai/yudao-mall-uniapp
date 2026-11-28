@@ -12,11 +12,12 @@ function mpliveMainfestPlugin(isOpen) {
   const manifestData = JSON.parse(Manifest);
 
   if (isOpen === '0') {
-    delete manifestData['mp-weixin'].plugins['live-player-plugin'];
+    delete manifestData['mp-weixin'].plugins?.['live-player-plugin'];
   }
 
   if (isOpen === '1') {
-    manifestData['mp-weixin'].plugins['live-player-plugin'] = {
+    const plugins = (manifestData['mp-weixin'].plugins ??= {});
+    plugins['live-player-plugin'] = {
       version: '1.3.5',
       provider: 'wx2b03c6e691cd7370',
     };

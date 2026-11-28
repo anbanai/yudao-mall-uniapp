@@ -131,7 +131,7 @@
   import { concat, isEmpty } from '@/sheep/helper/lodash';
   import OrderApi from '@/sheep/api/trade/order';
   import { resetPagination } from '@/sheep/helper/utils';
-  import { openOrderLogistics } from '@/sheep/hooks/useOrderLogistics';
+  import { openOrderLogistics } from './hooks/useOrderLogistics';
 
   // 数据
   const state = reactive({

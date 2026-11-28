@@ -6,121 +6,31 @@ import { parse as parseSfc } from '@vue/compiler-sfc';
 import * as orderLogistics from '../sheep/helper/orderLogistics.mjs';
 
 const {
-  createOrderLogisticsOpener,
   createExpressTrackLoader,
   loadOrderInfo,
-  getLogisticsFallbackParams,
 } = orderLogistics;
 
+const pagesConfig = JSON.parse(await readFile(new URL('../pages.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
-assert.deepEqual(
-  manifest['mp-weixin']?.plugins?.logisticsPlugin,
-  {
-    version: '2.3.0',
-    provider: 'wx9ad912bf20548d92',
-  },
-  'the compatible WeChat logistics plugin must be declared inside mp-weixin.plugins',
-);
 assert.equal(
-  manifest['mp-weixin']?.logisticsPlugin,
-  undefined,
-  'the plugin declaration must not be emitted as an unsupported app.json field',
+  (pagesConfig.subPackages ?? []).some(({ plugins }) => plugins?.logisticsPlugin),
+  false,
 );
-
-function createHarness(overrides = {}) {
-  const calls = {
-    ensure: [],
-    requirePlugin: [],
-    openPlugin: [],
-    fallback: [],
-  };
-  const dependencies = {
-    getPlatformName: () => 'WechatMiniProgram',
-    ensureWechatWaybillToken: async (id) => {
-      calls.ensure.push(id);
-      return { code: 0, data: 'token-123' };
-    },
-    requireLogisticsPlugin: (name) => {
-      calls.requirePlugin.push(name);
-      return {
-        openWaybillTracking: async (options) => calls.openPlugin.push(options),
-      };
-    },
-    openFallback: (id, reason) => calls.fallback.push({ id, reason }),
-    ...overrides,
-  };
-  return { open: createOrderLogisticsOpener(dependencies), calls };
-}
-
-{
-  const { open, calls } = createHarness();
-  assert.equal(await open(1001), true);
-  assert.deepEqual(calls.ensure, [1001]);
-  assert.deepEqual(calls.requirePlugin, ['logisticsPlugin']);
-  assert.deepEqual(calls.openPlugin, [{ waybillToken: 'token-123' }]);
-  assert.deepEqual(calls.fallback, []);
-}
-
-for (const response of [{ code: 0, data: '' }, { code: 500, data: 'ignored-token' }, null]) {
-  const { open, calls } = createHarness({
-    ensureWechatWaybillToken: async (id) => {
-      calls.ensure.push(id);
-      return response;
-    },
-  });
-  assert.equal(await open(1002), false);
-  assert.deepEqual(calls.requirePlugin, []);
-  assert.deepEqual(calls.fallback, [{ id: 1002, reason: 'token-unavailable' }]);
-}
-
-{
-  const failure = new Error('network failure');
-  const { open, calls } = createHarness({
-    ensureWechatWaybillToken: async () => {
-      throw failure;
-    },
-  });
-  assert.equal(await open(1003), false);
-  assert.deepEqual(calls.fallback, [{ id: 1003, reason: 'token-request-failed' }]);
-}
-
-{
-  const failure = new Error('plugin unavailable');
-  const { open, calls } = createHarness({
-    requireLogisticsPlugin: () => {
-      throw failure;
-    },
-  });
-  assert.equal(await open(1004), false);
-  assert.deepEqual(calls.fallback, [{ id: 1004, reason: 'plugin-unavailable' }]);
-}
-
-{
-  const { open, calls } = createHarness({ requireLogisticsPlugin: () => null });
-  assert.equal(await open(1004), false);
-  assert.deepEqual(calls.fallback, [{ id: 1004, reason: 'plugin-unavailable' }]);
-}
-
-{
-  const failure = new Error('plugin open failed');
-  const { open, calls } = createHarness({
-    requireLogisticsPlugin: () => ({
-      openWaybillTracking: async () => {
-        throw failure;
-      },
-    }),
-  });
-  assert.equal(await open(1005), false);
-  assert.deepEqual(calls.fallback, [{ id: 1005, reason: 'plugin-open-failed' }]);
-}
-
-{
-  const { open, calls } = createHarness({ getPlatformName: () => 'H5' });
-  assert.equal(await open(1006), false);
-  assert.deepEqual(calls.ensure, []);
-  assert.deepEqual(calls.requirePlugin, []);
-  assert.deepEqual(calls.fallback, [{ id: 1006, reason: undefined }]);
-}
+assert.equal(manifest['mp-weixin']?.plugins?.logisticsPlugin, undefined);
+assert.equal(
+  Object.values(pagesConfig.subPackages).some(({ plugins }) => plugins?.logisticsPlugin),
+  false,
+);
+const logisticsHookSource = await readFile(
+  new URL('../pages/order/hooks/useOrderLogistics.js', import.meta.url),
+  'utf8',
+);
+assert.match(
+  logisticsHookSource,
+  /sheep\.\$router\.go\('\/pages\/order\/express\/log',\s*\{\s*id:\s*orderId\s*\}\)/,
+  'order logistics should open the in-app tracking page',
+);
+assert.doesNotMatch(logisticsHookSource, /requirePlugin|ensureWechatWaybillToken/);
 
 assert.equal(
   typeof createExpressTrackLoader,
@@ -202,17 +112,6 @@ assert.deepEqual(
   {},
 );
 
-assert.equal(
-  typeof getLogisticsFallbackParams,
-  'function',
-  'the router needs to distinguish normal cross-platform usage from a WeChat fallback',
-);
-assert.deepEqual(getLogisticsFallbackParams(3001), { id: 3001 });
-assert.deepEqual(getLogisticsFallbackParams(3002, 'plugin-open-failed'), {
-  id: 3002,
-  fallback: '1',
-});
-
 const fallbackPageSource = await readFile(
   new URL('../pages/order/express/log.vue', import.meta.url),
   'utf8',
@@ -247,15 +146,6 @@ function hasConditional(element, condition) {
 }
 
 const fallbackElements = collectElements(fallbackPageTemplate);
-const fallbackNotice = fallbackElements.find((element) =>
-  hasConditional(element, 'state.isWechatFallback'),
-);
-assert.match(
-  getTextContent(fallbackNotice || {}),
-  /已切换到基础物流查询/,
-  'a WeChat fallback must be explained instead of appearing as an unexplained page change',
-);
-
 const loadingState = fallbackElements.find((element) =>
   hasConditional(element, "state.trackStatus === 'loading'"),
 );
@@ -359,4 +249,4 @@ assert.deepEqual(expressApiFactory(2006), {
   custom: { showError: false },
 });
 
-console.log('wechat logistics plugin fallback checks passed');
+console.log('in-app logistics checks passed');

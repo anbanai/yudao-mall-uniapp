@@ -1,49 +1,3 @@
-export function createOrderLogisticsOpener({
-  getPlatformName,
-  ensureWechatWaybillToken,
-  requireLogisticsPlugin,
-  openFallback,
-}) {
-  return async function openOrderLogistics(orderId) {
-    const fallback = (reason) => {
-      openFallback(orderId, reason);
-      return false;
-    };
-
-    if (getPlatformName() !== 'WechatMiniProgram') {
-      return fallback();
-    }
-
-    let response;
-    try {
-      response = await ensureWechatWaybillToken(orderId);
-    } catch (_error) {
-      return fallback('token-request-failed');
-    }
-    const waybillToken = response?.code === 0 ? response.data : '';
-    if (typeof waybillToken !== 'string' || !waybillToken.trim()) {
-      return fallback('token-unavailable');
-    }
-
-    let plugin;
-    try {
-      plugin = requireLogisticsPlugin('logisticsPlugin');
-    } catch (_error) {
-      return fallback('plugin-unavailable');
-    }
-    if (typeof plugin?.openWaybillTracking !== 'function') {
-      return fallback('plugin-unavailable');
-    }
-
-    try {
-      await plugin.openWaybillTracking({ waybillToken });
-      return true;
-    } catch (_error) {
-      return fallback('plugin-open-failed');
-    }
-  };
-}
-
 export function createExpressTrackLoader({ getOrderExpressTrackList, onStateChange }) {
   const publish = (state) => {
     onStateChange(state);
@@ -88,8 +42,4 @@ export async function loadOrderInfo(getOrderDetail, orderId) {
     // The tracking state remains independently usable when order details fail.
   }
   return {};
-}
-
-export function getLogisticsFallbackParams(orderId, reason) {
-  return reason ? { id: orderId, fallback: '1' } : { id: orderId };
 }
