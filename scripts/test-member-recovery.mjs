@@ -141,34 +141,53 @@ test('权益概览加载失败时仍可使用恢复入口', () => {
   );
 });
 
-test('原地换号立即清空旧概览，并忽略旧账号未完成的请求', async () => {
+function setupBenefits(user, getOverview, epoch = ref(1)) {
   const setup = source('pages/user/benefits/index.vue')
     .split('<script setup>')[1].split('</script>')[0].replace(/^\s*import .*$/gm, '');
-  const epoch = ref(1);
-  const user = reactive({ isFormalLogin: true, userInfo: { id: 1 } });
-  const pending = [];
   let showPage;
   const page = runInNewContext(setup + '\n;({ state })', {
     computed, reactive, watch, createRecovery,
     sheep: { $store: () => user },
     UserApi: { recoverYouzanAssets() {} },
-    BenefitApi: { getOverview: () => new Promise((resolve) => pending.push(resolve)) },
+    BenefitApi: { getOverview },
     onShow(callback) { showPage = callback; },
     sessionEpoch: () => epoch.value,
     showAuthModal() {},
   });
+  return { ...page, showPage };
+}
+
+test('重新显示权益页时刷新会员卡的积分、等级和成长值', async () => {
+  let profile = { point: 100, level: { level: 1 }, experience: 10 };
+  const user = reactive({
+    isFormalLogin: true,
+    userInfo: profile,
+    async getInfo() { this.userInfo = profile; },
+  });
+  const page = setupBenefits(user, async () => ({ code: 0, data: { levels: [], benefits: [] } }));
+  await page.showPage();
+  profile = { point: 0, level: { level: 2 }, experience: 200 };
+  await page.showPage();
+  assert.deepEqual(user.userInfo, profile);
+});
+
+test('原地换号立即清空旧概览，并忽略旧账号未完成的请求', async () => {
+  const epoch = ref(1);
+  const user = reactive({ isFormalLogin: true, userInfo: { id: 1 }, async getInfo() {} });
+  const pending = [];
+  const { state, showPage } = setupBenefits(user, () => new Promise((resolve) => pending.push(resolve)), epoch);
   const overview = (point) => ({ code: 0, data: { point, levels: [], benefits: [] } });
   const firstLoad = showPage();
   pending.shift()(overview(100));
   await firstLoad;
-  assert.equal(page.state.overview.point, 100);
+  assert.equal(state.overview.point, 100);
 
   const oldLoad = showPage();
   const respondToOldLoad = pending.shift();
   epoch.value++;
   user.isFormalLogin = false;
   await nextTick();
-  assert.equal(page.state.overview, null);
+  assert.equal(state.overview, null);
 
   user.userInfo.id = 2;
   user.isFormalLogin = true;
@@ -178,8 +197,8 @@ test('原地换号立即清空旧概览，并忽略旧账号未完成的请求',
   await nextTick();
   respondToOldLoad({ code: 500 });
   await oldLoad;
-  assert.equal(page.state.overview.point, 50);
-  assert.equal(page.state.error, false);
+  assert.equal(state.overview.point, 50);
+  assert.equal(state.error, false);
 });
 
 test('商品详情品牌无 ID 时仍显示品牌名', () => {

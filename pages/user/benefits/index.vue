@@ -148,11 +148,11 @@
   }
 
   async function load() {
-    try {
-      await loadOverview({ showLoading: true });
-    } catch {
-      // The overview error state displays the retry action.
+    const requests = [loadOverview({ showLoading: true })];
+    if (user.isFormalLogin) {
+      requests.push(user.getInfo());
     }
+    await Promise.allSettled(requests);
   }
   onShow(load);
 </script>
