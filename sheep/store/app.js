@@ -10,6 +10,11 @@ import user from './user';
 import sys from './sys';
 import { baseUrl, cdnUrl, filesystem, h5Url, ossOrigin } from '@/sheep/config';
 
+let shopLogo = '/static/logo.png';
+// #ifdef H5
+shopLogo = new URL('../../static/logo.png', import.meta.url).href;
+// #endif
+
 // A persisted homepage template may mount before the current tenant is resolved.
 export const tenantReady = ref(false);
 
@@ -19,7 +24,7 @@ const app = defineStore('app', {
     info: {
       // 应用信息
       name: '', // 商城名称
-      logo: '', // logo
+      logo: shopLogo, // logo
       version: '', // 版本号
       copyright: '', // 版权信息 I
       copytime: '', // 版权信息 II
@@ -86,8 +91,8 @@ const app = defineStore('app', {
       // TODO 芋艿：【初始化优化】未来支持管理后台可配；对应 https://api.shopro.sheepjs.com/shop/api/init
       if (true) {
         this.info = {
-          name: '芋道商城',
-          logo: 'https://static.iocoder.cn/ruoyi-vue-pro-logo.png',
+          name: '好茶引力',
+          logo: shopLogo,
           version: '2026.09',
           copyright: '全部开源，个人与企业可 100% 免费使用',
           copytime: 'Copyright© 2018-2025',
@@ -107,7 +112,7 @@ const app = defineStore('app', {
             },
             forwardInfo: {
               title: '',
-              image: shareCover.default || '',
+              image: shareCover.default || shopLogo,
               desc: '',
             },
             cover: shareCover,

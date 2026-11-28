@@ -74,8 +74,3 @@
   - 来源：API /promotion/article/list
 - http://test.yudao.iocoder.cn/f716a8fe41dd6f3d57113ecb6f06018904c6504a92433d141231f2138f0ede69.png
   - 来源：API /promotion/article/list
-
-## static.iocoder.cn（1 张）
-
-- https://static.iocoder.cn/ruoyi-vue-pro-logo.png
-  - 来源：本地源码

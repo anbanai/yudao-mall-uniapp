@@ -1,5 +1,5 @@
 {
-  "name": "不忍独享",
+  "name": "好茶引力",
   "appid": "wxb185cc101a8508ab",
   "description": "基于 uni-app + Vue3 技术驱动的在线商城系统，内含诸多功能与丰富的活动，期待您的使用和反馈。",
   "versionName": "2026.08",
@@ -132,33 +132,33 @@
       },
       "icons": {
         "android": {
-          "hdpi": "unpackage/res/icons/72x72.png",
-          "xhdpi": "unpackage/res/icons/96x96.png",
-          "xxhdpi": "unpackage/res/icons/144x144.png",
-          "xxxhdpi": "unpackage/res/icons/192x192.png"
+          "hdpi": "resources/app-icons/72x72.png",
+          "xhdpi": "resources/app-icons/96x96.png",
+          "xxhdpi": "resources/app-icons/144x144.png",
+          "xxxhdpi": "resources/app-icons/192x192.png"
         },
         "ios": {
-          "appstore": "unpackage/res/icons/1024x1024.png",
+          "appstore": "resources/app-icons/1024x1024.png",
           "ipad": {
-            "app": "unpackage/res/icons/76x76.png",
-            "app@2x": "unpackage/res/icons/152x152.png",
-            "notification": "unpackage/res/icons/20x20.png",
-            "notification@2x": "unpackage/res/icons/40x40.png",
-            "proapp@2x": "unpackage/res/icons/167x167.png",
-            "settings": "unpackage/res/icons/29x29.png",
-            "settings@2x": "unpackage/res/icons/58x58.png",
-            "spotlight": "unpackage/res/icons/40x40.png",
-            "spotlight@2x": "unpackage/res/icons/80x80.png"
+            "app": "resources/app-icons/76x76.png",
+            "app@2x": "resources/app-icons/152x152.png",
+            "notification": "resources/app-icons/20x20.png",
+            "notification@2x": "resources/app-icons/40x40.png",
+            "proapp@2x": "resources/app-icons/167x167.png",
+            "settings": "resources/app-icons/29x29.png",
+            "settings@2x": "resources/app-icons/58x58.png",
+            "spotlight": "resources/app-icons/40x40.png",
+            "spotlight@2x": "resources/app-icons/80x80.png"
           },
           "iphone": {
-            "app@2x": "unpackage/res/icons/120x120.png",
-            "app@3x": "unpackage/res/icons/180x180.png",
-            "notification@2x": "unpackage/res/icons/40x40.png",
-            "notification@3x": "unpackage/res/icons/60x60.png",
-            "settings@2x": "unpackage/res/icons/58x58.png",
-            "settings@3x": "unpackage/res/icons/87x87.png",
-            "spotlight@2x": "unpackage/res/icons/80x80.png",
-            "spotlight@3x": "unpackage/res/icons/120x120.png"
+            "app@2x": "resources/app-icons/120x120.png",
+            "app@3x": "resources/app-icons/180x180.png",
+            "notification@2x": "resources/app-icons/40x40.png",
+            "notification@3x": "resources/app-icons/60x60.png",
+            "settings@2x": "resources/app-icons/58x58.png",
+            "settings@3x": "resources/app-icons/87x87.png",
+            "spotlight@2x": "resources/app-icons/80x80.png",
+            "spotlight@3x": "resources/app-icons/120x120.png"
           }
         }
       }
@@ -230,7 +230,7 @@
     "async": {
       "timeout": 20000
     },
-    "title": "不忍独享",
+    "title": "好茶引力",
     "optimization": {
       "treeShaking": {
         "enable": true

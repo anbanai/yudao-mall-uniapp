@@ -1,7 +1,7 @@
 <template>
   <s-layout :bgStyle="{ color: '#fff' }" class="set-wrap" title="系统设置">
     <view class="header-box ss-flex-col ss-row-center ss-col-center">
-      <image class="logo-img" :src="sheep.$url.cdn(appInfo.logo)" mode="aspectFit"></image>
+      <image class="logo-img" :src="appInfo.logo" mode="aspectFit"></image>
     </view>
 
     <view class="container-list">

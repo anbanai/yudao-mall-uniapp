@@ -51,7 +51,7 @@
       groups: groups.value,
       browse: true,
       linkAddress: sheep.$store('app').platform.share.linkAddress,
-      image: sheep.$url.cdn(sheep.$store('app').info.logo),
+      image: sheep.$store('app').info.logo,
     }),
   );
   const loading = ref(false);

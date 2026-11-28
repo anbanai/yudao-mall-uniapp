@@ -149,7 +149,7 @@
       keyword: state.keyword,
       sortType: state.sortType,
       linkAddress: sheep.$store('app').platform.share.linkAddress,
-      image: sheep.$url.cdn(sheep.$store('app').info.logo),
+      image: sheep.$store('app').info.logo,
     }),
   );
   const pageTitle = computed(() =>

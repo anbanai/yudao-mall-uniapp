@@ -1,9 +1,9 @@
 {
   "id": "shopro",
   "name": "shopro",
-  "displayName": "芋道商城",
+  "displayName": "好茶引力",
   "version": "2026.09",
-  "description": "芋道商城，一套代码，同时发行到iOS、Android、H5、微信小程序多个平台，请使用手机扫码快速体验强大功能",
+  "description": "好茶引力茶商城",
   "scripts": {
     "prettier": "prettier --write  \"{pages,sheep}/**/*.{js,json,tsx,css,less,scss,vue,html,md}\"",
     "test:product-detail": "node scripts/test-product-detail.mjs && node scripts/test-point-detail.mjs",
