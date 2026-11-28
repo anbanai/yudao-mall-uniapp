@@ -1,67 +1,45 @@
 <template>
   <s-layout title="会员权益中心" :bgStyle="{ color: '#F7F8F3' }">
     <view class="page">
+      <s-member-center :key="memberSession">
+        <view v-if="user.isFormalLogin" class="member-card-details">
+          <view class="member-card-actions">
+            <text v-if="state.overview">购物返积分 {{ multiplierText }} 倍</text>
+            <button class="ss-reset-button points-link" @tap="openPoints">积分明细 ›</button>
+          </view>
+          <text v-if="state.overview" class="card-note">
+            按确认收货后的商品实付金额计算，不含运费
+          </text>
+        </view>
+        <!-- #ifdef MP-WEIXIN -->
+        <view class="asset-recovery">
+          <button v-if="!user.isFormalLogin" @tap="loginForRecovery">微信登录，查看旧资产</button>
+          <button v-else-if="recoveryState.needsRefresh" :disabled="recoveryState.busy" @tap="refreshOnly">
+            资产显示未更新，重新刷新
+          </button>
+          <button
+            v-else
+            open-type="getPhoneNumber"
+            :disabled="recoveryState.busy"
+            :loading="recoveryState.busy"
+            @getphonenumber="recover"
+          >
+            授权微信手机号，恢复旧资产
+          </button>
+          <text class="recovery-note">按本人微信授权手机号匹配，旧积分累加、等级取高</text>
+          <view v-if="user.isFormalLogin && recoveryState.message" class="recovery-message" aria-live="polite">
+            {{ recoveryState.message }}
+          </view>
+        </view>
+        <!-- #endif -->
+      </s-member-center>
+
       <view v-if="state.loading" class="state">正在加载权益...</view>
       <view v-else-if="state.error" class="state">
         <text>权益暂时无法加载</text>
         <button class="retry" @tap="load">重新加载</button>
       </view>
       <view v-else-if="state.overview">
-        <view class="member-card">
-          <view class="card-head">
-            <view>
-              <text class="eyebrow">TEA MEMBERSHIP</text>
-              <text class="level">{{ state.overview.levelName || '普通会员' }}</text>
-            </view>
-            <text class="level-mark">V{{ state.overview.level || 0 }}</text>
-          </view>
-          <view class="card-stats">
-            <view @tap="openPoints"><text class="stat-label">当前积分 ›</text><text class="stat-value">{{ state.overview.point || 0 }}</text></view>
-            <view><text class="stat-label">购物返积分</text><text class="stat-value">{{ multiplierText }} 倍</text></view>
-          </view>
-          <text class="card-note">按确认收货后的商品实付金额计算，不含运费</text>
-        </view>
-
-        <view class="upgrade-block">
-          <view class="upgrade-heading">
-            <text>成长值</text>
-            <text v-if="state.overview.nextExperience !== null">
-              {{ state.overview.experience || 0 }} / {{ state.overview.nextExperience }}
-            </text>
-            <text v-else>已达最高等级</text>
-          </view>
-          <view class="progress-track">
-            <view class="progress-fill" :style="{ width: `${progress}%` }" />
-          </view>
-          <text v-if="state.overview.nextExperience !== null" class="upgrade-note">
-            再获得 {{ Math.max(0, state.overview.nextExperience - (state.overview.experience || 0)) }} 成长值升级
-          </text>
-        </view>
-      </view>
-
-      <!-- #ifdef MP-WEIXIN -->
-      <view class="asset-recovery">
-        <button v-if="!user.isFormalLogin" @tap="loginForRecovery">微信登录，查看旧资产</button>
-        <button v-else-if="recoveryState.needsRefresh" :disabled="recoveryState.busy" @tap="refreshOnly">
-          资产显示未更新，重新刷新
-        </button>
-        <button
-          v-else
-          open-type="getPhoneNumber"
-          :disabled="recoveryState.busy"
-          :loading="recoveryState.busy"
-          @getphonenumber="recover"
-        >
-          授权微信手机号，恢复旧资产
-        </button>
-        <text class="recovery-note">按本人微信授权手机号匹配，旧积分累加、等级取高</text>
-        <view v-if="user.isFormalLogin && recoveryState.message" class="recovery-message" aria-live="polite">
-          {{ recoveryState.message }}
-        </view>
-      </view>
-      <!-- #endif -->
-
-      <view v-if="state.overview && !state.loading && !state.error">
         <view class="section-head"><text class="section-title">我的权益</text><text class="section-note">当前等级</text></view>
         <view class="view-tabs" role="tablist">
           <button v-for="tab in tabs" :key="tab.key" class="view-tab" :class="{ active: state.view === tab.key }" @tap="switchView(tab.key)">{{ tab.name }}</button>
@@ -104,15 +82,12 @@
 
   const tabs = [{ key: 'mine', name: '我的权益' }, { key: 'levels', name: '等级对比' }];
   const user = sheep.$store('user');
+  const memberSession = computed(sessionEpoch);
   const state = reactive({ loading: true, error: false, view: 'mine', selectedLevel: 1, overview: null });
   let overviewRequestId = 0;
   const selectedLevel = computed(() => state.overview?.levels.find((item) => item.level === state.selectedLevel));
   const visibleBenefits = computed(() => (state.view === 'mine' ? state.overview?.benefits : selectedLevel.value?.benefits) || []);
   const multiplierText = computed(() => ((state.overview?.pointTradeGiveMultiplier || 1000) / 1000).toFixed(1));
-  const progress = computed(() => {
-    const next = state.overview?.nextExperience;
-    return next ? Math.min(100, Math.round(((state.overview.experience || 0) / next) * 100)) : 100;
-  });
 
   // #ifdef MP-WEIXIN
   const recoveryState = reactive({ busy: false, needsRefresh: false, message: '' });
@@ -184,23 +159,12 @@
 
 <style lang="scss" scoped>
   .page { padding: 28rpx 30rpx 60rpx; color: #17211b; }
-  .member-card { padding: 34rpx; border-radius: 10rpx; background: #1f4a38; color: #fff; box-shadow: 0 12rpx 28rpx rgba(31, 74, 56, .12); }
-  .card-head, .card-stats, .benefit-title, .upgrade-heading { display: flex; align-items: center; justify-content: space-between; }
-  .eyebrow { display: block; font-size: 18rpx; letter-spacing: 2rpx; opacity: .72; }
-  .level { display: block; margin-top: 10rpx; font-size: 42rpx; font-weight: 600; }
-  .level-mark { font-size: 40rpx; opacity: .8; }
-  .card-stats { margin-top: 46rpx; justify-content: flex-start; gap: 88rpx; }
-  .stat-label, .stat-value { display: block; }
-  .stat-label { font-size: 22rpx; opacity: .72; }
-  .stat-value { margin-top: 8rpx; font-size: 34rpx; font-weight: 600; }
-  .card-note { display: block; margin-top: 30rpx; font-size: 21rpx; opacity: .75; }
-  .upgrade-block { padding: 26rpx 0 4rpx; }
-  .upgrade-heading { color: #34473a; font-size: 23rpx; }
-  .progress-track { height: 10rpx; margin-top: 14rpx; overflow: hidden; border-radius: 8rpx; background: #e2e9e3; }
-  .progress-fill { height: 100%; border-radius: inherit; background: #54836a; }
-  .upgrade-note, .level-requirement { display: block; margin-top: 10rpx; color: #65756a; font-size: 21rpx; }
+  .member-card-details { margin-top: 24rpx; font-size: 24rpx; }
+  .member-card-actions, .benefit-title { display: flex; align-items: center; justify-content: space-between; }
+  .points-link { margin-left: auto; color: #1f4a38; font-size: 24rpx; }
+  .card-note, .level-requirement { display: block; margin-top: 10rpx; color: #65756a; font-size: 21rpx; }
   .section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 44rpx 0 18rpx; }
-  .asset-recovery { margin-top: 24rpx; padding: 24rpx; border-radius: 10rpx; background: #fff; }
+  .asset-recovery { margin-top: 24rpx; }
   .asset-recovery button { background: #e2eee6; color: #1f4a38; font-size: 26rpx; }
   .recovery-note, .recovery-message { display: block; margin-top: 12rpx; color: #65756a; font-size: 23rpx; line-height: 1.5; }
   .recovery-message { color: #1f4a38; }

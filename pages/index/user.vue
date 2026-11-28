@@ -66,7 +66,6 @@
         </view>
       </view>
     </view>
-    <s-member-center :key="isFormalLogin ? userInfo.id : 'guest'" />
     <s-block
       v-for="(item, index) in remainingComponents"
       :key="index"

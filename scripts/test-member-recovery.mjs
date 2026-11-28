@@ -111,22 +111,32 @@ test('恢复 API 只提交 code；禁止 401 自动重放', async () => {
   assert.equal(config.method, 'POST');
   for (const flag of ['auth', 'formalAuth', 'noRefresh']) assert.equal(config.custom[flag], true);
 });
-test('个人中心保留等级卡和装修，恢复入口放在会员权益中心', () => {
-  assert.match(source('pages/index/user.vue'), /<s-member-center[^>]*\/>\s*<s-block\b/);
+test('完整会员卡和恢复入口一同迁入会员权益中心', () => {
+  const userPage = source('pages/index/user.vue');
+  assert.doesNotMatch(userPage, /<s-member-center\b/);
+  assert.match(userPage, /<s-block\b/);
   const card = source('sheep/components/s-member-center/s-member-center.vue');
   const benefitsPage = source('pages/user/benefits/index.vue');
+  const memberCard = benefitsPage.match(/<s-member-center\b[^>]*>([\s\S]*?)<\/s-member-center>/)?.[1];
+  assert.ok(memberCard, '会员权益中心应挂载完整会员卡');
   const phoneButton = /open-type="getPhoneNumber"[^>]+@getphonenumber="recover"/;
-  assert.match(benefitsPage, phoneButton);
+  assert.match(memberCard, phoneButton);
+  assert.match(memberCard, /旧积分累加、等级取高/);
+  assert.match(memberCard, /recoveryState\.message/);
+  assert.match(card, /好茶引力/);
+  assert.match(card, /可用积分/);
+  assert.match(card, /成长值/);
+  assert.match(card, /当前生效权益/);
+  assert.match(card, /<slot\s*\/>/);
   assert.match(benefitsPage, /showAuthModal\('wechatLogin'\)/);
   assert.doesNotMatch(benefitsPage, /smsLogin|<input/);
-  assert.doesNotMatch(card, phoneButton);
 });
 
 test('权益概览加载失败时仍可使用恢复入口', () => {
   const template = source('pages/user/benefits/index.vue').split('</template>\n\n<script setup>')[0];
   assert.match(
     template,
-    /<view v-else-if="state\.overview">[\s\S]*<\/view>\s*<!-- #ifdef MP-WEIXIN -->\s*<view class="asset-recovery">/,
+    /<s-member-center\b(?![^>]*v-(?:if|else))[^>]*>[\s\S]*?<view class="asset-recovery">[\s\S]*?<\/s-member-center>\s*<view v-if="state\.loading"/,
     '恢复入口应独立于概览的加载和错误分支',
   );
 });

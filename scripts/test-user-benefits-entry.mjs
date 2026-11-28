@@ -7,6 +7,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const userPage = await readFile(resolve(scriptDir, '../pages/index/user.vue'), 'utf8');
 const userAvatar = await readFile(resolve(scriptDir, '../sheep/hooks/useUserAvatar.js'), 'utf8');
 const benefitsPage = await readFile(resolve(scriptDir, '../pages/user/benefits/index.vue'), 'utf8');
+const memberCard = await readFile(resolve(scriptDir, '../sheep/components/s-member-center/s-member-center.vue'), 'utf8');
 const benefitApi = await readFile(resolve(scriptDir, '../sheep/api/member/benefit.js'), 'utf8');
 
 assert.equal(
@@ -56,7 +57,7 @@ assert.equal(
   '会员权益中心页面应保留，便于后续恢复',
 );
 assert.match(benefitsPage, /state\.overview\.levels/, '等级对比应使用后端返回的启用等级');
-assert.match(benefitsPage, /nextExperience/, '会员权益中心应展示升级经验条件');
+assert.match(memberCard, /progress\.remaining/, '会员权益中心的等级卡应展示还差多少成长值');
 assert.doesNotMatch(benefitsPage, /\[1, 2, 3, 4, 5\]/, '等级数量不能硬编码');
 assert.doesNotMatch(benefitsPage, /领取记录|function claim\(/, '页面不能展示未实现的领取流程');
 assert.doesNotMatch(benefitApi, /getRecords|claim:/, '客户端不能调用未实现的领取接口');

@@ -1,5 +1,5 @@
 <template>
-  <view class="member-center ss-m-20 ss-p-30">
+  <view class="member-center ss-p-30">
     <button class="ss-reset-button card-head" @tap="expanded = !expanded">
       <view>
         <view class="member-title">好茶引力</view>
@@ -24,6 +24,7 @@
         <text v-if="formal && tier.level === progress.current?.level">（当前等级）</text>
       </view>
     </view>
+    <slot />
   </view>
 </template>
 
